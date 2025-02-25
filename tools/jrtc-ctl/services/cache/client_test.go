@@ -1,7 +1,6 @@
 //go:build !ci
 // +build !ci
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+
 package cache
 
 import (
