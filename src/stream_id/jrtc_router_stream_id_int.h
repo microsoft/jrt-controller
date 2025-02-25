@@ -1,4 +1,5 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 // Wrapper functions which are exported
 #ifndef JRTC_ROUTER_STREAM_ID_INT_
 #define JRTC_ROUTER_STREAM_ID_INT_

@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 ## provide bash functions to help build docker containers
 
 ## get cmake build flags

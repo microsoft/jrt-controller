@@ -1,4 +1,6 @@
-# Copyright (c) Microsoft Corporation. All rights reserved.
+#!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 rm -rf jbpf-protobuf
 rm -rf tools/jrtc-ctl/3p/googleapis
 

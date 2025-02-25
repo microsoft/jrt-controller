@@ -1,4 +1,5 @@
-# Minimum CMake version and project name
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 project(python_loader C)
 set(PYTHON_LOADER jrtc_pythonapp_loader)
 

@@ -1,4 +1,5 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 /**
     This test tests the controller API by initializing the controller and stopping it.
     It creates two threads, one to stop the jrt-controller after 5 seconds and another to start the jrtc.

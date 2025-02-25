@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 ## example: sudo -E script -q -c "./run.sh" output.txt
 ## cat output.txt | grep "Aggregate counter so far is"
 

@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 ARG JRTC_IMAGE
 ARG JRTC_IMAGE_TAG
 

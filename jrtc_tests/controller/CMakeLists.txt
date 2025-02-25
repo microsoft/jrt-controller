@@ -1,4 +1,5 @@
-# Copyright (c) Microsoft Corporation. All rights reserved.
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 set(CONTROLLER_TESTS ${TESTS_BASE}/controller)
 file(GLOB CONTROLLER_TESTS_SOURCES ${CONTROLLER_TESTS}/*.c)
 set(JRTC_TESTS ${JRTC_TESTS} PARENT_SCOPE)

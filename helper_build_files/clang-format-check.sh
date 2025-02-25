@@ -1,4 +1,6 @@
 #!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 
 for i in "$@"; do
     ## if given parameter is file

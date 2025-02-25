@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 FROM mcr.microsoft.com/mirror/docker/library/ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive

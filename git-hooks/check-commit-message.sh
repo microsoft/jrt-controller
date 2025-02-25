@@ -1,4 +1,6 @@
 #!/bin/sh
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 
 echo "Running check-commit-message pre-commit hook..."
 # Read the commit message from the argument

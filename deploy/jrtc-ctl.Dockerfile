@@ -1,3 +1,5 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 ARG builder_image
 ARG builder_image_tag
 FROM ${builder_image}:${builder_image_tag} AS builder

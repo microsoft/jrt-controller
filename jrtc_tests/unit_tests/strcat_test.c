@@ -1,4 +1,5 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 /**
     This test tests the concat function in jrtc_int.c
  */

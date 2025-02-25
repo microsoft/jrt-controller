@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 #ifndef JRTC_INT_H
 #define JRTC_INT_H
 

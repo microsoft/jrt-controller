@@ -1,4 +1,5 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 #include "jrtc_router_stream_id.h"
 
 #include "jrtc_logging.h"

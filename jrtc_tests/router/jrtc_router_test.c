@@ -1,4 +1,5 @@
-// Copyright (c) Microsoft Corporation. All rights reserved.
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 /**
     This test tests the jrtc by forking a child process to act as an agent and the parent process to act as a router.
     In the process of router, two applications are registered and data is sent and received between the agent and the
