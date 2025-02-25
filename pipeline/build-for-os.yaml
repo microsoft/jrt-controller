@@ -1,0 +1,103 @@
+parameters:
+  - name: dockerTypes
+    displayName: "Configuration Types"
+    type: object
+    default:
+      - value: "azurelinux"
+        displayName: "Azure Linux"
+        id: "mariner"
+      - value: "ubuntu22_04"
+        displayName: "Ubuntu 22.04"
+        id: "ubuntu22_04"
+      - value: "ubuntu24_04"
+        displayName: "Ubuntu 24.04"
+        id: "ubuntu24_04"
+
+  - name: testCases
+    displayName: Test Cases
+    type: object
+    default:
+      - description: "Address Sanitizer"
+        id: test1
+        sanitizerBuildParam: "-e SANITIZER=1"
+
+      - description: "No Address Sanitizer"
+        id: test2
+        sanitizerBuildParam: "-e SANITIZER=0"
+
+stages:
+  - stage: CoverageTests
+    displayName: CoverageTests
+    dependsOn: []
+    jobs:
+      - job: Cleanup
+        displayName: Cleanup
+        condition: always()
+        steps:
+          - template: agentpool/cleanup.yaml@templates
+      - job: BuildAndRunCoverageTests
+        dependsOn: Cleanup
+        displayName: BuildAndRunCoverageTests
+        steps:
+          - template: agentpool/cleanup.yaml@templates
+          - template: print-debug-info.yaml
+          - template: build-lib.yaml
+            parameters:
+              dockerType: ubuntu24_04
+          - bash: |
+              set -x
+              if ! docker run --init --privileged --network host --cap-add=SYS_ADMIN --shm-size=1g --mount type=tmpfs,destination=/dev/shm -v `pwd`:/jrtc_out_lib -v `pwd`/build:/jrtc/build -e JRTC_PATH=/jrtc -e CLANG_FORMAT_CHECK=0 -e JRTC_COVERAGE=1 -e JRTC_DEBUG=1 $(containerRegistry)/jrtc-ubuntu24_04:$(imageTag); then
+                  echo ERROR Running Coverage Tests
+                  exit 1
+              fi
+              cat build/Testing/Temporary/LastTest.log
+              cp build/Testing/Temporary/LastTest.log $(Build.ArtifactStagingDirectory)
+              cp -R `pwd`/out/jrtc_coverage.xml $(Build.ArtifactStagingDirectory)
+            displayName: Run Coverage Tests
+            continueOnError: false
+          - task: PublishBuildArtifacts@1
+            condition: always()
+            inputs:
+              ArtifactName: artifacts
+          - task: UseDotNet@2
+            displayName: 'Use .NET Core sdk'
+            inputs:
+              packageType: sdk
+              version: 6.0.x
+              installationPath: $(Agent.ToolsDirectory)/dotnet
+          # Publish code coverage results v1
+          # Publish Cobertura or JaCoCo code coverage results from a build.
+          - task: PublishCodeCoverageResults@2
+            inputs:
+              codeCoverageTool: 'Cobertura' # 'Cobertura' | 'JaCoCo'. Required. Code coverage tool. Default: JaCoCo.
+              summaryFileLocation: 'out/jrtc_coverage.xml'
+              #pathToSources: # string. Path to Source files.
+              #reportDirectory: # string. Report directory.
+              #additionalCodeCoverageFiles: # string. Additional files.
+              #failIfCoverageEmpty: false # boolean. Fail when code coverage results are missing. Default: false.
+
+          - template: agentpool/cleanup.yaml@templates
+
+  - ${{ each dockerType in parameters.dockerTypes }}:
+      - stage: ${{ dockerType.id }}
+        displayName: ${{ dockerType.displayName }}
+        dependsOn: []
+        jobs:
+          - ${{ each testCase in parameters.testCases }}:
+              - job: ${{ testCase.id }}_${{ dockerType.id }}
+                dependsOn: []
+                displayName: Test - ${{ testCase.description }}
+                workspace:
+                  clean: all
+                steps:
+                  - template: agentpool/cleanup.yaml@templates
+                  - template: setup-on-vm.yaml
+                  - template: print-debug-info.yaml
+                  - template: build-lib.yaml
+                    parameters:
+                      dockerType: ${{ dockerType.value }}
+                  - template: standard-tests.yaml
+                    parameters:
+                      dockerType: ${{ dockerType.value }}
+                      testCase: ${{ testCase }}
+                  - template: agentpool/cleanup.yaml@templates
