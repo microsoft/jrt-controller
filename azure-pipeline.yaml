@@ -1,0 +1,92 @@
+trigger:
+  branches:
+    include:
+      - main
+      - stable
+
+pr:
+  branches:
+    include:
+      - main
+      - stable
+
+pool:
+  name: agent-pool-onprem-ubuntu
+  # demands: Agent.CPU -equals 8
+
+schedules:
+  - cron: "0 0 1 * *"
+    displayName: Monthly scheduled build
+    branches:
+      include:
+        - main
+    always: true
+  - cron: "0 0 * * *"
+    displayName: Daily scheduled build
+    branches:
+      include:
+        - stable
+    always: true
+
+variables:
+  acr: jrtc
+  ComponentDetection.Timeout: 1200
+  containerRegistry: $[format('{0}.azurecr.io',variables['acr'])]
+  DOCKER_BUILDKIT: 1
+  imageTag: "$[format('pipeline-{0}-{1}', replace(variables['build.buildnumber'], '.', '-'), variables['build.sourceversion'])]"
+  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
+    imageTags: $(imageTag),latest
+  ${{ else }}:
+    imageTags: $(imageTag)
+
+resources:
+  repositories:
+    - repository: templates
+      type: git
+      name: 5GRack/PipelineTemplates
+      ref: refs/heads/main
+
+stages:
+  - stage: CheckVars
+    jobs:
+      - job: CheckVars
+        displayName: Env
+        steps:
+          - template: environment/vm-info.yaml@templates
+          - template: environment/print.yaml@templates
+            parameters:
+              rootParameters: ${{ parameters }}
+
+  - stage: Guardian
+    jobs:
+      - job: guardian
+        pool:
+          vmImage: windows-latest
+        displayName: Guardian
+        steps:
+          # Don't checkout submodules, because we don't want to run the guardian checks on 3P code.
+          - checkout: self
+            submodules: false
+          - template: agentpool/guardian-checks.yaml@templates
+
+  - stage: ComponentsGoverance
+    dependsOn: []
+    jobs:
+      - job: componentsgovernance
+        displayName: Components Governance
+        steps:
+          - template: agentpool/component-governance.yaml@templates
+            parameters:
+              outputformat: 'text'
+              outputfile: '$(System.DefaultWorkingDirectory)/NOTICE'
+
+  - template: pipeline/build-for-os.yaml
+
+  - stage: Doxygen
+    dependsOn: []
+    displayName: Doxygen
+    jobs:
+      - job: doxygen
+        displayName: Doxygen
+        steps:
+          - template: pipeline/doxygen.yaml

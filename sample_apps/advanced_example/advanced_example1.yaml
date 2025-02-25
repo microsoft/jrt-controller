@@ -1,0 +1,26 @@
+# yaml-language-server: $schema=../../tools/schemas/jrtc-ctl.schema.json
+# Copyright (c) Microsoft Corporation. All rights reserved.
+
+name: AdvancedExample1
+
+decoder:
+  - type: decodergrpc
+    port: 20789
+
+app:
+  - name: app1
+    app: ${JRTC_PATH}/sample_apps/advanced_example/app1.so
+    port: 3001
+    app_params: []
+
+jbpf:
+  device:
+    - id: 1
+      port: 8080
+
+  codelet_set:
+    - device: 1
+      config: ${JRTC_PATH}/sample_apps/advanced_example/jbpf_codelets/data_generator/data_generator_codelet.yaml
+
+    - device: 1
+      config: ${JRTC_PATH}/sample_apps/advanced_example/jbpf_codelets/simple_input/codeletset.yaml
