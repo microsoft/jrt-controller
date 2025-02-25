@@ -1,0 +1,48 @@
+parameters:
+  - name: arguments
+    type: string
+    default: ""
+  - name: buildContext
+    type: string
+    default: "."
+  - name: dependencies
+    type: object
+    default: []
+  - name: dockerfile
+    type: string
+  - name: repository
+    type: string
+  - name: tags
+    type: string
+
+steps:
+  - ${{ each dependency in parameters.dependencies }}:
+      - bash: |
+          set -e
+          if [[ "$(docker images -q ${{ dependency.imageName }} 2> /dev/null)" == "" ]]; then
+            docker pull ${{ dependency.imageName }}
+          fi
+          DIGEST=$(docker image inspect --format='{{index .RepoDigests 0}}' ${{ dependency.imageName }} | cut -d@ -f2)
+          set +e
+          afo_labels="$(afo_labels) afo.image.${{ dependency.name }}.ref.name=${{ dependency.imageName }} afo.image.${{ dependency.name }}.digest=${DIGEST}"
+          echo "##vso[task.setvariable variable=afo_labels;]$afo_labels"
+        displayName: ${{ dependency.name }} - Pull and add label
+  - bash: |
+      BUILD_ARGS="${{ parameters.arguments }}"
+      for label in $(afo_labels); do
+          BUILD_ARGS="$BUILD_ARGS --label $label"
+      done
+      BUILD_ARGS="$BUILD_ARGS"
+      echo "##vso[task.setvariable variable=buildArgs;]$BUILD_ARGS"
+      echo Build args - $BUILD_ARGS
+    displayName: Display Labels
+
+
+  - template: images/build.v2.yaml@templates
+    parameters:
+      arguments: $(buildArgs)
+      buildContext: ${{ parameters.buildContext }}
+      registry: $(containerRegistry)
+      dockerfile: ${{ parameters.dockerfile }}
+      repository: ${{ parameters.repository }}
+      tags: ${{ parameters.tags }}

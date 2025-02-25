@@ -1,0 +1,16 @@
+parameters:
+  - name: dockerType
+    type: string
+    default: ""
+
+steps:
+  - template: submodules.yaml
+
+  - template: images/build.v2.yaml@templates
+    parameters:
+      arguments: ""
+      dockerfile: deploy/${{ parameters.dockerType }}.Dockerfile
+      registry: $(containerRegistry)
+      repository: jrtc-${{ parameters.dockerType }}
+      tags: |
+        $(imageTag)
