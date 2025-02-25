@@ -1,4 +1,5 @@
-# Copyright (c) Microsoft Corporation. All rights reserved.
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 set(JRTC_UNIT_TESTS ${TESTS_BASE}/unit_tests)
 file(GLOB JRTC_UNIT_TESTS_SOURCES ${JRTC_UNIT_TESTS}/*.c)
 set(JRTC_TESTS ${JRTC_TESTS} PARENT_SCOPE)

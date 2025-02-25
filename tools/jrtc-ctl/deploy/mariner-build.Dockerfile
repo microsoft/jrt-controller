@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 FROM mcr.microsoft.com/azurelinux/base/core:3.0
 RUN echo "*** Installing packages"
 RUN tdnf upgrade tdnf --refresh -y

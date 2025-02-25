@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 #include <Python.h>
 #include <stdio.h>
 #include <stdlib.h>

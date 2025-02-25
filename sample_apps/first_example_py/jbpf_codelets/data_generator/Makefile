@@ -1,4 +1,5 @@
-# // Copyright (c) Microsoft Corporation. All rights reserved.
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 CC = clang
 INC= -I${JRTC_OUT_DIR}/inc -I${NANO_PB}
 CFLAGS = -O2 -target bpf -Wall -DJBPF_EXPERIMENTAL_FEATURES -DJBPF_DEBUG_ENABLED -D__x86_64__ -DPB_FIELD_32BIT=1 -DUSE_JBPF_PRINTF_HELPER -DJBPF_PRINTF_HELPER_ENABLED -DJBPF_DEBUG

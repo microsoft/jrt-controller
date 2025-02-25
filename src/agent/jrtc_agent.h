@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 #ifndef JRTC_AGENT_
 #define JRTC_AGENT_
 

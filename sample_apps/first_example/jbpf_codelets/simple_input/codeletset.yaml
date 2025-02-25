@@ -1,5 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 # yaml-language-server: $schema=../../../../tools/schemas/jbpf.schema.json
-# Copyright (c) Microsoft Corporation. All rights reserved.
 codeletset_id: unique_id_for_codelet_simple_input
 codelet_descriptor:
   - codelet_name: codelet1

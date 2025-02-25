@@ -1,4 +1,5 @@
-# Copyright (c) Microsoft Corporation. All rights reserved.
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 cmake_minimum_required(VERSION 3.16)
 
 project(stream_id)

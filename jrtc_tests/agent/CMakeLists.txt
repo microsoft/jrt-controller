@@ -1,4 +1,5 @@
-# Copyright (c) Microsoft Corporation. All rights reserved.
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
 set(AGENT_TESTS ${TESTS_BASE}/agent)
 file(GLOB AGENT_TESTS_SOURCES ${AGENT_TESTS}/*.c)
 set(JRTC_TESTS ${JRTC_TESTS} PARENT_SCOPE)

@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 package jbpf
 
 // LoadCodeletSetRequestSerde is a model contains serde information

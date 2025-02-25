@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft Corporation.
+// Licensed under the MIT license.
 #ifndef JRTC_SCHED_H
 #define JRTC_SCHED_H
 

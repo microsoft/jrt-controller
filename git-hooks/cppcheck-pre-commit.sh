@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 echo "Running cppcheck pre-commit hook..."
 
 # Define the cppcheck executable

@@ -1,4 +1,7 @@
 #!/bin/bash
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 source "/jrtc/helper_build_files/build_utils.sh"
 
 ## get the build flags and targets from env parameters
