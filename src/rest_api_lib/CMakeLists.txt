@@ -1,5 +1,4 @@
-make_minimum_required(VERSION 3.16)
-
+# Copyright (c) Microsoft Corporation. All rights reserved.
 cmake_minimum_required(VERSION 3.16)
 
 project(rest_api)
