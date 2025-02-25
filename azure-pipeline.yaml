@@ -34,10 +34,6 @@ variables:
   containerRegistry: $[format('{0}.azurecr.io',variables['acr'])]
   DOCKER_BUILDKIT: 1
   imageTag: "$[format('pipeline-{0}-{1}', replace(variables['build.buildnumber'], '.', '-'), variables['build.sourceversion'])]"
-  ${{ if eq(variables['Build.SourceBranch'], 'refs/heads/master') }}:
-    imageTags: $(imageTag),latest
-  ${{ else }}:
-    imageTags: $(imageTag)
 
 resources:
   repositories:
