@@ -1,0 +1,51 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+
+syntax = "proto3";
+
+package dynamicdecoder;
+
+option go_package = "./decoder";
+
+import "google/api/annotations.proto";
+
+// jrt-controller decoder API
+service DynamicDecoder {
+  // add a descriptor/module
+  rpc UpsertProtoPackage(Schema) returns (Response) {
+    option (google.api.http) = { put: "/v1/schema" body: "*" };
+  }
+
+  // add a descriptor/module
+  rpc AddStreamToSchemaAssociation(AddSchemaAssociation) returns (Response) {
+    option (google.api.http) = { put: "/v1/stream" body: "*" };
+  }
+
+  // delete a descriptor/module
+  rpc DeleteStreamToSchemaAssociation(RemoveSchemaAssociation) returns (Response) {
+    option (google.api.http) = { delete: "/v1/stream" };
+  }
+}
+
+message Schema {
+  bytes proto_descriptor = 1;
+}
+
+message AddSchemaAssociation {
+  bytes stream_id = 1;
+  string proto_package = 2;
+  string proto_msg = 3;
+}
+
+message RemoveSchemaAssociation {
+  bytes stream_id = 1;
+}
+
+enum ResponseStatus {
+  STATUS_OK = 0;
+  STATUS_FAILED = 1;
+}
+
+message Response {
+  ResponseStatus status = 1;
+  string message = 2;
+}

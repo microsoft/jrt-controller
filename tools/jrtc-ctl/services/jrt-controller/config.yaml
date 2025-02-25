@@ -1,0 +1,8 @@
+# Copyright (c) Microsoft Corporation. All rights reserved.
+
+# yaml-language-server: $schema=https://raw.githubusercontent.com/deepmap/oapi-codegen/master/configuration-schema.json
+package: jrtc
+output: client.gen.go
+generate:
+  models: true
+  client: true

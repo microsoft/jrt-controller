@@ -1,0 +1,183 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/CLIConfig",
+  "$defs": {
+    "App": {
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "deadline": {
+          "type": "string",
+          "default": "0s"
+        },
+        "ioq_size": {
+          "type": "integer",
+          "default": 1000
+        },
+        "ip": {
+          "type": "string",
+          "format": "ipv4",
+          "default": "127.0.0.1"
+        },
+        "period": {
+          "type": "string",
+          "default": "0s"
+        },
+        "runtime": {
+          "type": "string",
+          "default": "0s"
+        },
+        "port": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "app": {
+          "type": "string"
+        },
+        "app_params": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "description": "when omitted, the AppParams will be an empty array e.g. []",
+          "default": [
+            "[]"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name",
+        "port",
+        "app"
+      ],
+      "description": "App represents an application"
+    },
+    "CLIConfig": {
+      "properties": {
+        "app": {
+          "items": {
+            "$ref": "#/$defs/App"
+          },
+          "type": "array"
+        },
+        "decoder": {
+          "items": {
+            "$ref": "#/$defs/Decoder"
+          },
+          "type": "array"
+        },
+        "jbpf": {
+          "$ref": "#/$defs/JBPFConfig"
+        },
+        "name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "description": "CLIConfig represents a configuration"
+    },
+    "Decoder": {
+      "properties": {
+        "http_relative_path": {
+          "type": "string",
+          "default": ""
+        },
+        "ip": {
+          "type": "string",
+          "format": "ipv4",
+          "default": "127.0.0.1"
+        },
+        "port": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 0
+        },
+        "type": {
+          "type": "string",
+          "enum": [
+            "decodergrpc",
+            "decoderhttp"
+          ],
+          "default": "decodergrpc"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "port",
+        "type"
+      ],
+      "description": "Decoder receives output from jrt-controller and decodes it, the type of decoder can be set to: (1) decodergrpc for a local debugger using \"jrtc-ctl decoder\" command, or (2) decoderhttp for a debugger using \"jrtc-ctl decoder\" command with http gateway"
+    },
+    "JBPFCodelet": {
+      "properties": {
+        "config": {
+          "type": "string"
+        },
+        "device": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "config",
+        "device"
+      ],
+      "description": "JBPFCodelet represents a JBPF codelet"
+    },
+    "JBPFConfig": {
+      "properties": {
+        "device": {
+          "items": {
+            "$ref": "#/$defs/JBPFDevice"
+          },
+          "type": "array"
+        },
+        "codelet_set": {
+          "items": {
+            "$ref": "#/$defs/JBPFCodelet"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "description": "JBPFConfig is the configuration for JBPF"
+    },
+    "JBPFDevice": {
+      "properties": {
+        "id": {
+          "type": "integer",
+          "maximum": 127,
+          "minimum": 0
+        },
+        "ip": {
+          "type": "string",
+          "format": "ipv4",
+          "default": "127.0.0.1"
+        },
+        "port": {
+          "type": "integer",
+          "maximum": 65535,
+          "minimum": 0
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "id",
+        "port"
+      ],
+      "description": "JBPFDevice is an agent that can run JBPF Codelets"
+    }
+  }
+}

@@ -1,0 +1,264 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "jrt-controller REST API",
+    "description": "jrt-controller control plane REST API",
+    "license": {
+      "name": ""
+    },
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/app": {
+      "get": {
+        "tags": [
+          "app"
+        ],
+        "operationId": "get_apps",
+        "responses": {
+          "200": {
+            "description": "Successfully fetched jrt-controller application states",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/JrtcAppState"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "app"
+        ],
+        "operationId": "load_app",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JrtcAppLoadRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successfully loaded jrt-controller application",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JrtcAppState"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JrtcAppError"
+                },
+                "example": {
+                  "Details": "Bad request"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JrtcAppError"
+                },
+                "example": {
+                  "Details": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/app/{id}": {
+      "get": {
+        "tags": [
+          "app"
+        ],
+        "operationId": "get_app",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "jrt-controller application id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successfully fetched jrt-controller application state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JrtcAppState"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "jrt-controller application not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JrtcAppError"
+                },
+                "example": {
+                  "Details": "id = 1"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "app"
+        ],
+        "operationId": "unload_app",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "jrt-controller application id",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully deleted jrt-controller application if it existed"
+          },
+          "500": {
+            "description": "Internal error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JrtcAppError"
+                },
+                "example": {
+                  "Details": "Internal server error"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "JrtcAppError": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": [
+              "Details"
+            ],
+            "properties": {
+              "Details": {
+                "type": "string",
+                "description": "jrt-controller app not found by id."
+              }
+            },
+            "example": "error message"
+          }
+        ]
+      },
+      "JrtcAppLoadRequest": {
+        "type": "object",
+        "required": [
+          "app",
+          "app_name",
+          "runtime_us",
+          "deadline_us",
+          "period_us",
+          "ioq_size"
+        ],
+        "properties": {
+          "app": {
+            "type": "string",
+            "format": "binary"
+          },
+          "app_name": {
+            "type": "string"
+          },
+          "deadline_us": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "ioq_size": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "period_us": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "runtime_us": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "app_params": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "JrtcAppState": {
+        "type": "object",
+        "required": [
+          "id",
+          "request",
+          "start_time"
+        ],
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "request": {
+            "$ref": "#/components/schemas/JrtcAppLoadRequest"
+          },
+          "start_time": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "app",
+      "description": "jrt-controller application API"
+    }
+  ]
+}
