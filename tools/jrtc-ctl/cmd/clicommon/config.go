@@ -86,12 +86,19 @@ func (c *JBPFConfig) GetDeviceMap() map[string]uint8 {
 	return out
 }
 
+// Key value pairs for env
+type EnvKeyValue struct {
+	Key   string `json:"key" jsonschema:"required"`
+	Value string `json:"value" jsonschema:"required"`
+}
+
 // CLIConfig represents a configuration
 type CLIConfig struct {
-	Apps     []*App      `json:"app,omitempty"`
-	Decoders []*Decoder  `json:"decoder,omitempty"`
-	JBPF     *JBPFConfig `json:"jbpf,omitempty"`
-	Name     string      `json:"name" jsonschema:"required"`
+	Apps     []*App        `json:"app,omitempty"`
+	Decoders []*Decoder    `json:"decoder,omitempty"`
+	JBPF     *JBPFConfig   `json:"jbpf,omitempty"`
+	Name     string        `json:"name" jsonschema:"required"`
+	Env      []EnvKeyValue `json:"env,omitempty"`
 }
 
 // FromYamls reads multiple YAML files and merges them into a single CLIConfig
@@ -174,6 +181,21 @@ func mergeConfigs(c1 *CLIConfig, c2 *CLIConfig) (*CLIConfig, error) {
 		devices = c2.JBPF.Devices
 		codeletsets = c2.JBPF.JBPFCodelets
 	}
+	env1 := make(map[string]string)
+	for _, e := range c1.Env {
+		env1[e.Key] = e.Value
+	}
+	env2 := make(map[string]string)
+	for _, e := range c2.Env {
+		env2[e.Key] = e.Value
+	}
+	env := make([]EnvKeyValue, 0)
+	for k, v := range env1 {
+		env = append(env, EnvKeyValue{Key: k, Value: v})
+	}
+	for k, v := range env2 {
+		env = append(env, EnvKeyValue{Key: k, Value: v})
+	}
 	return &CLIConfig{
 		Apps:     apps,
 		Decoders: decoders,
@@ -182,6 +204,7 @@ func mergeConfigs(c1 *CLIConfig, c2 *CLIConfig) (*CLIConfig, error) {
 			JBPFCodelets: codeletsets,
 		},
 		Name: c1.Name,
+		Env:  env,
 	}, nil
 }
 
@@ -247,6 +270,9 @@ func (c *CLIConfig) expandEnvVars() {
 
 	for _, c := range c.JBPF.JBPFCodelets {
 		c.ConfigFile = os.ExpandEnv(c.ConfigFile)
+	}
+	for _, e := range c.Env {
+		e.Value = os.ExpandEnv(e.Value)
 	}
 }
 
