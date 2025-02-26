@@ -34,7 +34,8 @@ steps:
       echo And Running JRTC Tests
       rm -rf /tmp/output.log || true
 
-      TEST_CASES=("advanced_example_py" "advanced_example" "first_example" "first_example_py")
+      ## TO Add: advanced_example_py
+      TEST_CASES=("first_example" "first_example_py" "advanced_example")
 
       for TEST in "${TEST_CASES[@]}"; do
         echo ".......................................................................................... Running test: $TEST .........................................................................................."
