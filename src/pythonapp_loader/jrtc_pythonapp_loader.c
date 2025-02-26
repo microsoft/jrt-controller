@@ -83,10 +83,12 @@ char* get_file_name_without_py(const char* file_path) {
     return result;
 }
 
-void do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* ts1, void* args) {
+void do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp, void* args) {
     printf("do_stuff_in_thread: Running Python app in subinterpreter...\n");
     fflush(stdout);
-    PyThreadState* ts = PyThreadState_New(ts1);
+    PyThreadState* ts = PyThreadState_New(interp);
+    printf("do_stuff_in_thread: Created new thread state.\n");
+    fflush(stdout);    
     PyEval_RestoreThread(ts);
     printf("do_stuff_in_thread: Restored thread state.\n");
     fflush(stdout);
