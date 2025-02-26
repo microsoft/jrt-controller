@@ -1,6 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
-
+# Copyright (c) Microsoft Corporation. All rights reserved.
 
 import time
 import os
@@ -188,7 +188,6 @@ class JrtcPythonApp():
                 si.chan_ctx = chan_ctx
                     
             # if is_rx, register the stream
-            # if not is_rx, wait for channel to be created
             req_id = stream_id.convert_to_struct_jrtc_router_stream_id()
             if s.is_rx:
                 # it is a channel which this app will be read from, so register
@@ -198,16 +197,26 @@ class JrtcPythonApp():
                     si.req_id = req_id
                 else:
                     assert False, f"{self.app_cfg.context}::  ERROR: Stream id could not be registered for '{s.sid}'"
-            else:
+            
+            self.stream_items[idx] = si
+
+        # wait for channels
+        # if not is_rx, wait for channel to be created
+        for idx, s in enumerate(self.app_cfg.streams):
+            si = self.stream_items[idx]
+            if (s.is_rx is False) and (si is not None):
                 # it is a channel which this app will be send to, so wait for it be created
+                req_id = si.stream_id.convert_to_struct_jrtc_router_stream_id()
                 write_notif = True
+                print(f"Waiting for {s.sid} to be created...")
                 while not jrtc_router_input_channel_exists(req_id):
+                    
+                    time.sleep(0.1)
+                    
                     if write_notif:
                         print(f"Waiting for {s.sid} to be created...")
                         write_notif = False
-                    time.sleep(0.1)
-                si.req_id = req_id
-            self.stream_items[idx] = si
+                si.req_id = req_id            
 
     ############################################
     def CleanUp(self) -> None:
@@ -252,7 +261,7 @@ class JrtcPythonApp():
                 data_entry = data_entries_array_ptr[i]
 
                 # get stream of received data    
-                rx_stream_id =data_entry.stream_id
+                rx_stream_id = data_entry.stream_id
 
                 # does this match a stream
                 stream_idx = next((i for i, item in enumerate(self.stream_items) if ((item is not None) and (jrtc_router_stream_id_matches_req(rx_stream_id, item.req_id)))), -1)

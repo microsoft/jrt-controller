@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
-
 parameters:
   - name: dockerType
     type: string
@@ -35,7 +34,7 @@ steps:
       echo And Running JRTC Tests
       rm -rf /tmp/output.log || true
 
-      TEST_CASES=("advanced_example" "first_example" "first_example_py")
+      TEST_CASES=("advanced_example_py" "advanced_example" "first_example" "first_example_py")
 
       for TEST in "${TEST_CASES[@]}"; do
         echo ".......................................................................................... Running test: $TEST .........................................................................................."
@@ -66,15 +65,28 @@ steps:
         ## Copy to artifacts
         cp /tmp/output.log $(Build.ArtifactStagingDirectory)/output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}_${TEST}.log
         
-        count=$(grep "Aggregate counter so far is" /tmp/output.log | wc -l)
-        echo "The result count for $TEST is $count"
-        
-        if [[ $count -eq 0 ]]; then
-          echo ".......................................................................................... Test $TEST failed..........................................................................................."
+        if ! docker run --init --privileged \
+          --ulimit memlock=-1 \
+          --network host \
+          --cap-add=SYS_ADMIN \
+          --shm-size=1g \
+          --mount type=tmpfs,destination=/dev/shm \
+          -e VERBOSE=1 \
+          -e JRTC_PATH=/jrtc \
+          -v `pwd`:/jrtc_out_lib \
+          -v /tmp/output.log:/tmp/output.log \
+          -v `pwd`/sample_apps:/jrtc/sample_apps \
+          -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out \
+          -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
+          ${{parameters.testCase['sanitizerBuildParam']}} \
+          --entrypoint=/jrtc/sample_apps/$TEST/assert.sh \
+          jrtc \
+          /tmp/output.log; then
+            echo "Test Assertion failed for $TEST"
           exit 1
         else
-          echo "..........................................................................................Test $TEST passed..........................................................................................."
-        fi
+          echo "Test Assertion passed for $TEST"
+        fi        
       done
     
     displayName: Integration Tests sample apps

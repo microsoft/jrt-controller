@@ -7,11 +7,21 @@
 #include <unistd.h>
 #include <limits.h>
 #include <stdio.h>
+#include <assert.h>
 #include "jrtc_router_app_api.h"
 #include "jrtc.h"
 
+// #include "pthread.h"
+struct python_state
+{
+    char* module_name;
+    PyInterpreterState* interp;
+    void* args;
+};
+
 /* Compiler magic to make address sanitizer ignore
    memory leaks originating from libpython */
+#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_LEAK__)
 __attribute__((used)) const char*
 __asan_default_options()
 {
@@ -29,6 +39,7 @@ __lsan_default_suppressions()
 {
     return "leak:libpython";
 }
+#endif
 
 char*
 get_folder(const char* file_path)
@@ -96,13 +107,9 @@ get_file_name_without_py(const char* file_path)
     return result; // Caller must free the allocated memory
 }
 
-void*
-jrtc_start_app(void* args)
+void
+do_stuff_in_thread(PyInterpreterState* interp, char* module, void* args)
 {
-    if (args == NULL) {
-        fprintf(stderr, "Error: App context is NULL.\n");
-        return NULL;
-    }
     struct jrtc_app_env* env_ctx = args;
     char* full_path = env_ctx->app_params[0];
     printf("Python Full Path: %s\n", full_path);
@@ -112,12 +119,12 @@ jrtc_start_app(void* args)
     // python_script should be the filename without the .py
     char* python_script = get_file_name_without_py(full_path);
     printf("Python Script: %s\n", python_script);
+    
+    // create a new thread state for the the sub interpreter interp
+    PyThreadState* ts = PyThreadState_New(interp);
 
-    // Initialize the Python interpreter
-    if (!Py_IsInitialized()) {
-        Py_Initialize();
-        printf("Python interpreter initialized.\n");
-    }
+    // make it the current thread state and acquire the GIL
+    PyEval_RestoreThread(ts);
 
     // Create a Python capsule for the `args`
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
@@ -157,9 +164,7 @@ jrtc_start_app(void* args)
         goto exit1;
     }
 
-    PyGILState_STATE gstate = PyGILState_Ensure();
     PyObject* pModule = PyImport_Import(pName);
-    PyGILState_Release(gstate);
 
     PyErr_Print();
 
@@ -199,6 +204,12 @@ jrtc_start_app(void* args)
         Py_DECREF(pResult);
     }
 
+    // clear ts
+    PyThreadState_Clear(ts);
+
+    // delete the current thread state and release the GIL
+    PyThreadState_DeleteCurrent();
+
     // Clean up
 exit0:
     Py_DECREF(pFunc);
@@ -206,13 +217,53 @@ exit0:
 exit1:
     Py_XDECREF(pCapsule);
 exit2:
+    free(folder);
+    free(python_script);
+}
+
+// Function to run Python code in a subinterpreter
+void*
+run_subinterpreter(void* state)
+{
+    struct python_state* pstate = state;
+    do_stuff_in_thread(pstate->interp, pstate->module_name, pstate->args);
+    return NULL;
+}
+
+void*
+jrtc_start_app(void* args)
+{
+    if (args == NULL) {
+        fprintf(stderr, "Error: App context is NULL.\n");
+        return NULL;
+    }
+    // Initialize the Python interpreter
+    if (!Py_IsInitialized()) {
+        Py_Initialize();
+        printf("Python interpreter initialized.\n");
+    }
+
+    PyThreadState* _main = PyThreadState_Get();
+
+    PyThreadState* ts1 = Py_NewInterpreter();
+
+    assert(ts1);
+
+    PyThreadState_Swap(_main);
+    // make ts1 the current thread state
+    PyThreadState_Swap(ts1);
+    // destroy the interpreter
+    Py_EndInterpreter(ts1);
+
+    struct python_state p1 = {"module1", ts1->interp, args};
+    run_subinterpreter(&p1);
+    PyEval_ReleaseThread(_main);
+    // restore the main interpreter thread state
+    PyThreadState_Swap(_main);
+
     // Finalize the Python interpreter
     if (Py_IsInitialized()) {
         Py_Finalize();
     }
-
-    // Free the allocated memory
-    free(folder);
-    free(python_script);
     return NULL;
 }
