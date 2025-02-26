@@ -21,9 +21,9 @@ if JRTC_PATH is None:
 
 sys.path.append(f"{JRTC_PATH}/sample_apps/first_example_py/jbpf_codelets/data_generator/")
 sys.path.append(f"{JRTC_PATH}/sample_apps/first_example_py/jbpf_codelets/simple_input/")
-from generated_data import example_msg
 from simple_input import simple_input
 
+from jrtc_router_lib import jrtc_router_input_channel_exists
 
 ########################################################
 # state variables
@@ -38,6 +38,8 @@ class AppStateVars:
 # ######################################################
 # # Main function called from JRTC core
 def jrtc_start_app(capsule):
+    print("Starting FirstExample app..")
+
 
     jrtc_device_id = 1
 
@@ -76,6 +78,7 @@ def jrtc_start_app(capsule):
     # message handler
     ########################################################
     def app_handler(timeout: bool, stream_idx: int, data_entry: struct_jrtc_router_data_entry, state: AppStateVars) -> None:
+        print("App 1: Received message")
 
         if timeout:
 
@@ -108,8 +111,10 @@ def jrtc_start_app(capsule):
             assert (simple_input_stream is not None), "Failed to get SIMPLE_INPUT_IN_STREAM_IDX stream"
 
             # send the data
-            res = jrtc_router_channel_send_input_msg(simple_input_stream, data_to_send, len(data_to_send))
-            assert res == 0, "Failed to send aggregate counter to input map"
+            while jrtc_router_channel_send_input_msg(simple_input_stream, data_to_send, len(data_to_send)) != 0:
+                print("Failed to send aggregate counter to input map")
+                time.sleep(0.1)
+            # assert res == 0, "Failed to send aggregate counter to input map"
 
         else:
             pass
