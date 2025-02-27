@@ -1,6 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 #include <Python.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -85,35 +86,13 @@ char* get_file_name_without_py(const char* file_path) {
 }
 
 void do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp, void* args) {
-    printf("do_stuff_in_thread: Running Python app in subinterpreter...\n");
-    fflush(stdout);
-    fflush(stderr);
     PyThreadState* ts = PyThreadState_New(interp);
-    printf("do_stuff_in_thread: Created new thread state.\n");
-    fflush(stdout);
-    fflush(stderr);    
-    if (!ts) {
-        printf("do_stuff_in_thread: Error - PyThreadState_New returned NULL!\n");
-        fflush(stdout);
-        fflush(stderr);
-        return;
-    }
-    printf("do_stuff_in_thread: Swapping thread state...\n");
-    fflush(stdout);
-    fflush(stderr);
     PyEval_RestoreThread(ts);
-    printf("do_stuff_in_thread: Restored thread state.\n");
-    fflush(stdout);
-    fflush(stderr);
-
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
     if (!pCapsule) {
         fprintf(stderr, "Error: Failed to create Python capsule.\n");
         goto cleanup;
     }
-
-    printf("Adding folder to sys.path: %s\n", folder);
-    fflush(stdout);
 
     PyObject* sysPath = PySys_GetObject("path");
     if (sysPath) {
@@ -126,8 +105,6 @@ void do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* i
         goto cleanup;
     }
 
-    printf("Importing module: %s\n", python_script);
-    fflush(stdout);
     PyObject* pModule = PyImport_Import(pName);
     Py_DECREF(pName);
 
@@ -137,8 +114,6 @@ void do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* i
         goto cleanup;
     }
 
-    printf("Calling function 'jrtc_start_app'...\n");
-    fflush(stdout);
     PyObject* pFunc = PyObject_GetAttrString(pModule, "jrtc_start_app");
     if (!pFunc || !PyCallable_Check(pFunc)) {
         fprintf(stderr, "Error: Function 'jrtc_start_app' is not callable.\n");
@@ -153,8 +128,6 @@ void do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* i
         goto cleanup_func;
     }
 
-    printf("Calling function...\n");
-    fflush(stdout);
     PyObject* pResult = PyObject_CallObject(pFunc, pArgs);
     Py_DECREF(pArgs);
     if (!pResult) {
@@ -181,15 +154,8 @@ void* run_subinterpreter(void* state) {
 }
 
 void* jrtc_start_app(void* args) {
-    printf("Starting Python app...\n");
-    fflush(stdout);
-
     struct jrtc_app_env* env_ctx = (struct jrtc_app_env*)args;
     char* full_path = env_ctx->app_params[0];
-
-    printf("Python Full Path: %s\n", full_path);
-    fflush(stdout);
-
     char* folder = get_folder(full_path);
     char* python_script = get_file_name_without_py(full_path);
     printf("Python Script: %s\n", python_script);
@@ -210,6 +176,9 @@ void* jrtc_start_app(void* args) {
         Py_Initialize();
     }
 
+    // 'PyEval_InitThreads' is deprecated [-Werror=deprecated-declarations]
+    // PyEval_InitThreads();    
+
     PyThreadState* main_ts = PyThreadState_Get();
     PyThreadState* ts1 = Py_NewInterpreter();
     if (!ts1) {
@@ -219,14 +188,18 @@ void* jrtc_start_app(void* args) {
 
     struct python_state p1 = { folder, python_script, ts1->interp, args };
 
-    printf("Running Python app in subinterpreter...\n");
-    fflush(stdout);
-    run_subinterpreter(&p1);
+    PyThreadState_Swap(main_ts);    
+    
+    pthread_t thread1;
+    pthread_create(&thread1, NULL, run_subinterpreter, (void*)&p1);
+    PyEval_ReleaseThread(main_ts);
 
-    PyThreadState_Swap(main_ts);
+    pthread_join(thread1, NULL);
+
+    PyThreadState_Swap(ts1);
     Py_EndInterpreter(ts1);
 
-    PyEval_ReleaseThread(main_ts);
+    PyThreadState_Swap(main_ts);
 
 exit1:
     if (Py_IsInitialized()) {
