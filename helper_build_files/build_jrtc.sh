@@ -71,7 +71,6 @@ fi
 
 if [[ "$RUN_TESTS" == "1" ]]; then
     export JRTC_PATH=/jrtc
-    export PYTHONMALLOC=malloc
     ## TODO: ODR (Linkage problem) isn't a big issue, but we should fix it at some point
     export ASAN_OPTIONS="detect_leaks=1:strict_memcmp=1:log_path=/tmp/asan.log:detect_odr_violation=0:verbosity=2:strict_init_order=true"
     export LSAN_OPTIONS="suppressions=/jrtc/lsan_agent.supp:verbosity=2"
