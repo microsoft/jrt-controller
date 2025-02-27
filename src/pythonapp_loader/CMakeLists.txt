@@ -36,9 +36,8 @@ add_library(${PYTHON_LOADER} SHARED ${PYTHON_LOADER_SRC})
 target_link_libraries(${PYTHON_LOADER} ${Python3_LIBRARIES})
 
 # Add dependencies
-add_dependencies(${PYTHON_LOADER} jrtc_router_stream_id jrtc_router Jrtc::router_lib_shared generate)
+add_dependencies(${PYTHON_LOADER} jrtc_router_stream_id jrtc_router jrtc generate)
 
-set_target_properties(${PYTHON_LOADER} PROPERTIES EXCLUDE_FROM_ALL TRUE)
 set_target_properties(${PYTHON_LOADER} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY  "${OUTPUT_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY_DEBUG  "${OUTPUT_DIR}/lib"
@@ -50,8 +49,8 @@ add_custom_command(
     OUTPUT jrtc_bindings.py
     COMMAND ctypesgen
             -l${JRTC_OUT_DIR}/lib/libjrtc_router_stream_id.so
-            ${JRTC_OUT_DIR}/inc/jrtc_router_app_api.h
-            ${JRTC_OUT_DIR}/inc/jrtc.h
+            ${JRTC_PATH}/src/router/jrtc_router_app_api.h
+            ${JRTC_PATH}/src/controller/jrtc.h
             ${JRTC_PATH}/src/router/jrtc_router_int.h
             ${JRTC_PATH}/src/router/jrtc_router.h
             -I${JRTC_OUT_DIR}/inc
@@ -66,8 +65,8 @@ add_custom_command(
             -D__const=const
             -o jrtc_bindings.py
     DEPENDS
-        ${JRTC_PATH}/out/inc/jrtc_router_app_api.h
-        ${JRTC_PATH}/out/inc/jrtc.h
+        ${JRTC_PATH}/src/router/jrtc_router_app_api.h
+        ${JRTC_PATH}/src/controller/jrtc.h
         ${JRTC_PATH}/src/router/jrtc_router_int.h
         ${JRTC_PATH}/src/router/jrtc_router.h
     COMMENT "Generating jrtc_bindings.py"

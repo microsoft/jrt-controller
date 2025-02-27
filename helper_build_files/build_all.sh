@@ -35,12 +35,6 @@ if [[ $rebuild == true || ! -d $JRTC_PATH/out ]]; then
     cd build
     cmake ../
     make -j
-    if [[ ! -f $JRTC_PATH/out/lib/libpython_loader.so || -f $JRTC_PATH/out/lib/jrtc_bindings.py ]]; then
-        echo "...............Building Python Loader..............."
-        make jrtc_pythonapp_loader
-    else
-        echo "...............Skipping Python Loader..............."
-    fi
 else
     echo "...............Skipping jrtc build..............."
 fi
