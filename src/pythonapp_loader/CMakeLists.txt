@@ -45,9 +45,15 @@ set_target_properties(${PYTHON_LOADER} PROPERTIES
 )
 
 # Add custom command for generating jrtc_bindings.py
+if (CMAKE_BUILD_TYPE STREQUAL "AddressSanitizer")
+    set(CTYPESGEN_COMMAND "env ASAN_OPTIONS=detect_leaks=0 LD_PRELOAD= ctypesgen")
+else()
+    set(CTYPESGEN_COMMAND "ctypesgen")
+endif()
+
 add_custom_command(
     OUTPUT jrtc_bindings.py
-    COMMAND ${JRTC_PATH}/helper_build_files/run-ctypesgen.sh 
+    COMMAND ${CTYPESGEN_COMMAND}
             -l${JRTC_OUT_DIR}/lib/libjrtc_router_stream_id.so
             ${JRTC_PATH}/src/router/jrtc_router_app_api.h
             ${JRTC_PATH}/src/controller/jrtc.h
