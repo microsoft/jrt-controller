@@ -47,7 +47,7 @@ set_target_properties(${PYTHON_LOADER} PROPERTIES
 # Add custom command for generating jrtc_bindings.py
 add_custom_command(
     OUTPUT jrtc_bindings.py
-    COMMAND ctypesgen
+    COMMAND env ASAN_OPTIONS=detect_leaks=0 LD_PRELOAD= ctypesgen
             -l${JRTC_OUT_DIR}/lib/libjrtc_router_stream_id.so
             ${JRTC_PATH}/src/router/jrtc_router_app_api.h
             ${JRTC_PATH}/src/controller/jrtc.h
