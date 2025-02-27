@@ -46,9 +46,9 @@ set_target_properties(${PYTHON_LOADER} PROPERTIES
 
 # Add custom command for generating jrtc_bindings.py
 if (CMAKE_BUILD_TYPE STREQUAL "AddressSanitizer")
-    set(CTYPESGEN_COMMAND "env ASAN_OPTIONS=detect_leaks=0 LD_PRELOAD= ctypesgen")
+  set(CTYPESGEN_COMMAND "sh -c 'env ASAN_OPTIONS=detect_leaks=0 LD_PRELOAD= ctypesgen'")
 else()
-    set(CTYPESGEN_COMMAND "ctypesgen")
+  set(CTYPESGEN_COMMAND "ctypesgen")
 endif()
 
 add_custom_command(
