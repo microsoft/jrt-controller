@@ -1,0 +1,23 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
+steps:
+  - template: agentpool/cleanup.yaml@templates
+  - template: print-debug-info.yaml
+  - template: build-lib.yaml
+    parameters:
+      dockerType: ubuntu22_04
+  - bash: |
+      set -x
+      if ! docker run -v `pwd`:/jrtc_out_lib -e DOXYGEN=1 $(containerRegistry)/jrtc-ubuntu22_04:$(imageTag); then
+          echo ERROR make doc
+          exit 1
+      fi
+      cp -R out/docs/html $(Build.ArtifactStagingDirectory)/doxygen
+    displayName: make doc
+    continueOnError: false
+  - task: PublishBuildArtifacts@1
+    condition: always()
+    inputs:
+      ArtifactName: artifacts
+  - template: agentpool/cleanup.yaml@templates

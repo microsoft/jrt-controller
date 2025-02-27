@@ -1,0 +1,6 @@
+[submodule "jbpf-protobuf"]
+	path = jbpf-protobuf
+	url = https://github.com/microsoft/jbpf-protobuf.git
+[submodule "tools/jrtc-ctl/3p/googleapis"]
+	path = tools/jrtc-ctl/3p/googleapis
+	url = https://github.com/googleapis/googleapis.git

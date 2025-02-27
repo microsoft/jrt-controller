@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/JBPFCLIConfig",
+  "$defs": {
+    "IOChannelConfig": {
+      "properties": {
+        "forward_destination": {
+          "type": "string",
+          "enum": [
+            "DestinationAny",
+            "DestinationNone",
+            "DestinationUDP"
+          ],
+          "default": "DestinationNone"
+        },
+        "name": {
+          "type": "string"
+        },
+        "serde": {
+          "$ref": "#/$defs/SerdeConfig"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "description": "IOChannelConfig is an input or output map configuration"
+    },
+    "JBPFCLICodeletConfig": {
+      "properties": {
+        "hook_name": {
+          "type": "string"
+        },
+        "in_io_channel": {
+          "items": {
+            "$ref": "#/$defs/IOChannelConfig"
+          },
+          "type": "array"
+        },
+        "linked_maps": {
+          "items": {
+            "$ref": "#/$defs/LinkedMapConfig"
+          },
+          "type": "array"
+        },
+        "codelet_name": {
+          "type": "string"
+        },
+        "codelet_path": {
+          "type": "string"
+        },
+        "out_io_channel": {
+          "items": {
+            "$ref": "#/$defs/IOChannelConfig"
+          },
+          "type": "array"
+        },
+        "priority": {
+          "type": "integer"
+        },
+        "runtime_threshold": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "hook_name",
+        "codelet_name",
+        "codelet_path"
+      ],
+      "description": "JBPFCLICodeletConfig is a codelet configuration"
+    },
+    "JBPFCLIConfig": {
+      "properties": {
+        "codelet_descriptor": {
+          "items": {
+            "$ref": "#/$defs/JBPFCLICodeletConfig"
+          },
+          "type": "array"
+        },
+        "codeletset_id": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "codelet_descriptor",
+        "codeletset_id"
+      ],
+      "description": "JBPFCLIConfig is a codelet set configuration"
+    },
+    "LinkedMapConfig": {
+      "properties": {
+        "linked_codelet_name": {
+          "type": "string"
+        },
+        "linked_map_name": {
+          "type": "string"
+        },
+        "map_name": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "linked_codelet_name",
+        "linked_map_name",
+        "map_name"
+      ],
+      "description": "LinkedMapConfig is a linked map configuration"
+    },
+    "SerdeConfig": {
+      "properties": {
+        "file_path": {
+          "type": "string"
+        },
+        "protobuf": {
+          "$ref": "#/$defs/SerdeProtobufConfig"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "file_path",
+        "protobuf"
+      ],
+      "description": "SerdeConfig is a serialization/deserialization configuration"
+    },
+    "SerdeProtobufConfig": {
+      "properties": {
+        "msg_name": {
+          "type": "string"
+        },
+        "package_path": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "msg_name",
+        "package_path"
+      ],
+      "description": "SerdeProtobufConfig is a serialization/deserialization protobuf configuration"
+    }
+  }
+}

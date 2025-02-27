@@ -1,0 +1,5 @@
+jrtc-ctl
+*.pb.go
+*.pb.gw.go
+*.gen.go
+/keys
