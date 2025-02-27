@@ -45,38 +45,86 @@ set_target_properties(${PYTHON_LOADER} PROPERTIES
 )
 
 # Add custom command for generating jrtc_bindings.py
-if (CMAKE_BUILD_TYPE STREQUAL "AddressSanitizer")
-  set(CTYPESGEN_COMMAND "sh -c 'env ASAN_OPTIONS=detect_leaks=0 LD_PRELOAD= ctypesgen'")
-else()
-  set(CTYPESGEN_COMMAND "ctypesgen")
+find_program(CTYPESGEN_PATH ctypesgen)
+
+# Check if ctypesgen was found
+if (NOT CTYPESGEN_PATH)
+    message(FATAL_ERROR "ctypesgen not found. Please make sure it is installed and available in your PATH.")
 endif()
 
-add_custom_command(
-    OUTPUT jrtc_bindings.py
-    COMMAND ${CTYPESGEN_COMMAND}
-            -l${JRTC_OUT_DIR}/lib/libjrtc_router_stream_id.so
-            ${JRTC_PATH}/src/router/jrtc_router_app_api.h
-            ${JRTC_PATH}/src/controller/jrtc.h
-            ${JRTC_PATH}/src/router/jrtc_router_int.h
-            ${JRTC_PATH}/src/router/jrtc_router.h
-            -I${JRTC_OUT_DIR}/inc
-            -I${NANO_PB}
-            -I${JRTC_PATH}/src/router
-            -I${JRTC_PATH}/src/logger
-            -I${JRTC_PATH}/jbpf-protobuf/jbpf/src/io
-            -I${JRTC_PATH}/jbpf-protobuf/jbpf/src/mem_mgmt
-            -I${JRTC_PATH}/src/controller
-            -D__GNUC__=1
-            -D__extension__=
-            -D__const=const
-            -o jrtc_bindings.py
-    DEPENDS
-        ${JRTC_PATH}/src/router/jrtc_router_app_api.h
-        ${JRTC_PATH}/src/controller/jrtc.h
-        ${JRTC_PATH}/src/router/jrtc_router_int.h
-        ${JRTC_PATH}/src/router/jrtc_router.h
-    COMMENT "Generating jrtc_bindings.py"
-)
+set(CTYPESGEN_COMMAND "${CTYPESGEN_PATH}")
+
+# Check if the build type is AddressSanitizer
+if(CMAKE_BUILD_TYPE MATCHES AddressSanitizer)
+    # Dynamically find the ASan runtime library
+    execute_process(
+        COMMAND gcc -print-file-name=libasan.so
+        OUTPUT_VARIABLE ASAN_LIBRARY_PATH
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+    )
+    
+    # Set LD_PRELOAD to preload ASan runtime
+    set(ENV{LD_PRELOAD} ${ASAN_LIBRARY_PATH})
+    
+    message(STATUS "AddressSanitizer enabled. Preloading ASan runtime from: ${ASAN_LIBRARY_PATH}")
+    
+    # Correct command for ctypesgen, with LD_PRELOAD
+    add_custom_command(
+      OUTPUT jrtc_bindings.py
+              COMMAND ${CMAKE_COMMAND} -E env LD_PRELOAD=${ASAN_LIBRARY_PATH} ASAN_OPTIONS="detect_leaks=0" ${CTYPESGEN_COMMAND}
+              -l${JRTC_OUT_DIR}/lib/libjrtc_router_stream_id.so
+              ${JRTC_PATH}/src/router/jrtc_router_app_api.h
+              ${JRTC_PATH}/src/controller/jrtc.h
+              ${JRTC_PATH}/src/router/jrtc_router_int.h
+              ${JRTC_PATH}/src/router/jrtc_router.h
+              -I${JRTC_OUT_DIR}/inc
+              -I${NANO_PB}
+              -I${JRTC_PATH}/src/router
+              -I${JRTC_PATH}/src/logger
+              -I${JRTC_PATH}/jbpf-protobuf/jbpf/src/io
+              -I${JRTC_PATH}/jbpf-protobuf/jbpf/src/mem_mgmt
+              -I${JRTC_PATH}/src/controller
+              -D__GNUC__=1
+              -D__extension__=
+              -D__const=const
+              -o jrtc_bindings.py
+      DEPENDS
+          ${JRTC_PATH}/src/router/jrtc_router_app_api.h
+          ${JRTC_PATH}/src/controller/jrtc.h
+          ${JRTC_PATH}/src/router/jrtc_router_int.h
+          ${JRTC_PATH}/src/router/jrtc_router.h
+      COMMENT "Generating jrtc_bindings.py"
+  )    
+else()    
+    add_custom_command(
+      OUTPUT jrtc_bindings.py
+      COMMAND ${CTYPESGEN_COMMAND}
+              -l${JRTC_OUT_DIR}/lib/libjrtc_router_stream_id.so
+              ${JRTC_PATH}/src/router/jrtc_router_app_api.h
+              ${JRTC_PATH}/src/controller/jrtc.h
+              ${JRTC_PATH}/src/router/jrtc_router_int.h
+              ${JRTC_PATH}/src/router/jrtc_router.h
+              -I${JRTC_OUT_DIR}/inc
+              -I${NANO_PB}
+              -I${JRTC_PATH}/src/router
+              -I${JRTC_PATH}/src/logger
+              -I${JRTC_PATH}/jbpf-protobuf/jbpf/src/io
+              -I${JRTC_PATH}/jbpf-protobuf/jbpf/src/mem_mgmt
+              -I${JRTC_PATH}/src/controller
+              -D__GNUC__=1
+              -D__extension__=
+              -D__const=const
+              -o jrtc_bindings.py
+      DEPENDS
+          ${JRTC_PATH}/src/router/jrtc_router_app_api.h
+          ${JRTC_PATH}/src/controller/jrtc.h
+          ${JRTC_PATH}/src/router/jrtc_router_int.h
+          ${JRTC_PATH}/src/router/jrtc_router.h
+      COMMENT "Generating jrtc_bindings.py"
+  )    
+endif()
+
+
 
 # Add custom target for generate
 add_custom_target(generate DEPENDS jrtc_bindings.py)
