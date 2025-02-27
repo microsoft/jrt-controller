@@ -13,6 +13,8 @@ if JRTC_APP_PATH is None:
     print("Warning: JRTC_APP_PATH not set")
     JRTC_APP_PATH = "./"
 sys.path.append(f"{JRTC_APP_PATH}")
+
+sys.path.append(f"{JRTC_APP_PATH}/out/lib")
 from jrtc_bindings import *
 
 # Import necessary JRTC modules

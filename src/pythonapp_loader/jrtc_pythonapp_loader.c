@@ -11,15 +11,14 @@
 #include "jrtc_router_app_api.h"
 #include "jrtc.h"
 
-struct python_state {
+struct python_state
+{
     char* folder;
     char* python_script;
     PyInterpreterState* ts;
     void* args;
 };
 
-/* Compiler magic to make address sanitizer ignore
-memory leaks originating from libpython */
 #if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_LEAK__)
 __attribute__((used)) const char*
 __asan_default_options()
@@ -28,19 +27,23 @@ __asan_default_options()
 }
 
 __attribute__((used)) const char*
-__lsan_default_options() {
+__lsan_default_options()
+{
     return "print_suppressions=0";
 }
 
 __attribute__((used)) const char*
-__lsan_default_suppressions() {
+__lsan_default_suppressions()
+{
     return "leak:libpython";
 }
 #endif
 
-char* get_folder(const char* file_path) {
+char*
+get_folder(const char* file_path)
+{
     if (file_path == NULL) {
-        return strdup("./"); // Return default directory safely
+        return strdup("./");
     }
 
     char* folder = strdup(file_path);
@@ -63,7 +66,9 @@ char* get_folder(const char* file_path) {
     return folder;
 }
 
-char* get_file_name_without_py(const char* file_path) {
+char*
+get_file_name_without_py(const char* file_path)
+{
     if (file_path == NULL) {
         return NULL;
     }
@@ -72,7 +77,8 @@ char* get_file_name_without_py(const char* file_path) {
     file_name = (file_name != NULL) ? file_name + 1 : file_path;
 
     const char* last_dot = strrchr(file_name, '.');
-    size_t name_length = (last_dot && strcmp(last_dot, ".py") == 0) ? (size_t)(last_dot - file_name) : strlen(file_name);
+    size_t name_length =
+        (last_dot && strcmp(last_dot, ".py") == 0) ? (size_t)(last_dot - file_name) : strlen(file_name);
 
     char* result = (char*)malloc(name_length + 1);
     if (result == NULL) {
@@ -85,7 +91,10 @@ char* get_file_name_without_py(const char* file_path) {
     return result;
 }
 
-void do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp, void* args) {
+void
+do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp, void* args)
+{
+    PyGILState_STATE gstate = PyGILState_Ensure();
     PyThreadState* ts = PyThreadState_New(interp);
     PyEval_RestoreThread(ts);
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
@@ -145,39 +154,33 @@ cleanup:
     Py_XDECREF(pCapsule);
     PyThreadState_Clear(ts);
     PyThreadState_DeleteCurrent();
+    PyGILState_Release(gstate);
 }
 
-void* run_subinterpreter(void* state) {
+void*
+run_subinterpreter(void* state)
+{
     struct python_state* pstate = (struct python_state*)state;
     do_stuff_in_thread(pstate->folder, pstate->python_script, pstate->ts, pstate->args);
     return NULL;
 }
 
-void* jrtc_start_app(void* args) {
+void*
+jrtc_start_app(void* args)
+{
     struct jrtc_app_env* env_ctx = (struct jrtc_app_env*)args;
     char* full_path = env_ctx->app_params[0];
     char* folder = get_folder(full_path);
     char* python_script = get_file_name_without_py(full_path);
-    printf("Python Script: %s\n", python_script);
-    printf("Python Folder: %s\n", folder);
-    fflush(stdout);
 
     if (!folder || !python_script) {
         fprintf(stderr, "Error: Memory allocation failed.\n");
-        goto exit0;
-    }    
-
-    if (!args) {
-        fprintf(stderr, "Error: App context is NULL.\n");
         goto exit0;
     }
 
     if (!Py_IsInitialized()) {
         Py_Initialize();
     }
-
-    // 'PyEval_InitThreads' is deprecated [-Werror=deprecated-declarations]
-    // PyEval_InitThreads();    
 
     PyThreadState* main_ts = PyThreadState_Get();
     PyThreadState* ts1 = Py_NewInterpreter();
@@ -186,19 +189,13 @@ void* jrtc_start_app(void* args) {
         goto exit1;
     }
 
-    struct python_state p1 = { folder, python_script, ts1->interp, args };
-
-    PyThreadState_Swap(main_ts);    
-    
+    struct python_state p1 = {folder, python_script, ts1->interp, args};
     pthread_t thread1;
     pthread_create(&thread1, NULL, run_subinterpreter, (void*)&p1);
-    PyEval_ReleaseThread(main_ts);
-
     pthread_join(thread1, NULL);
 
     PyThreadState_Swap(ts1);
     Py_EndInterpreter(ts1);
-
     PyThreadState_Swap(main_ts);
 
 exit1:
@@ -207,6 +204,6 @@ exit1:
     }
 exit0:
     free(folder);
-    free(python_script);    
+    free(python_script);
     return NULL;
 }
