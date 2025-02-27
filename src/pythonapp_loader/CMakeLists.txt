@@ -6,6 +6,16 @@ set(PYTHON_LOADER jrtc_pythonapp_loader)
 # Find Python3 interpreter and libraries
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development)
 
+# ctypesgen is required for generating Python bindings (from C headers)
+find_program(CTYPESGEN_PATH ctypesgen)
+
+# Check if ctypesgen was found
+if (NOT CTYPESGEN_PATH)
+    message(FATAL_ERROR "ctypesgen not found. Please make sure it is installed and available in your PATH.")
+endif()
+
+set(CTYPESGEN_COMMAND "${CTYPESGEN_PATH}")
+
 set(JRTC_PATH $ENV{JRTC_PATH})
 set(JRTC_OUT_DIR $ENV{JRTC_OUT_DIR})
 set(NANO_PB $ENV{NANO_PB})
@@ -44,17 +54,6 @@ set_target_properties(${PYTHON_LOADER} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY_RELEASE  "${OUTPUT_DIR}/lib"
 )
 
-# Add custom command for generating jrtc_bindings.py
-find_program(CTYPESGEN_PATH ctypesgen)
-
-# Check if ctypesgen was found
-if (NOT CTYPESGEN_PATH)
-    message(FATAL_ERROR "ctypesgen not found. Please make sure it is installed and available in your PATH.")
-endif()
-
-set(CTYPESGEN_COMMAND "${CTYPESGEN_PATH}")
-
-# Check if the build type is AddressSanitizer
 if(CMAKE_BUILD_TYPE MATCHES AddressSanitizer)
     # Dynamically find the ASan runtime library
     execute_process(
@@ -68,7 +67,8 @@ if(CMAKE_BUILD_TYPE MATCHES AddressSanitizer)
     
     message(STATUS "AddressSanitizer enabled. Preloading ASan runtime from: ${ASAN_LIBRARY_PATH}")
     
-    # Correct command for ctypesgen, with LD_PRELOAD
+    # This is to fix: ==18935==ASan runtime does not come first in initial library list; you should either link runtime to your application or manually preload it with LD_PRELOAD.
+    # And we don't want to see leaking memory errors from the ctypesgen
     add_custom_command(
       OUTPUT jrtc_bindings.py
               COMMAND ${CMAKE_COMMAND} -E env LD_PRELOAD=${ASAN_LIBRARY_PATH} ASAN_OPTIONS="detect_leaks=0" ${CTYPESGEN_COMMAND}
@@ -123,8 +123,6 @@ else()
       COMMENT "Generating jrtc_bindings.py"
   )    
 endif()
-
-
 
 # Add custom target for generate
 add_custom_target(generate DEPENDS jrtc_bindings.py)
