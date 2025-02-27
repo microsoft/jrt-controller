@@ -36,7 +36,7 @@ add_library(${PYTHON_LOADER} SHARED ${PYTHON_LOADER_SRC})
 target_link_libraries(${PYTHON_LOADER} ${Python3_LIBRARIES})
 
 # Add dependencies
-add_dependencies(${PYTHON_LOADER} jrtc_router_stream_id jrtc_router jrtc generate)
+add_dependencies(${PYTHON_LOADER} jrtc_router_stream_id jrtc_router jrtc jrtc_logger jrtc_agent generate)
 
 set_target_properties(${PYTHON_LOADER} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY  "${OUTPUT_DIR}/lib"
