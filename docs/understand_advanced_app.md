@@ -121,7 +121,7 @@ You will need to open five terminals:
   This is used to run the *jrt-controller*. 
   ```sh
   cd $JRTC_PATH/sample_apps/advanced_example
-  sudo -E ./run_jrtc.sh
+  ./run_jrtc.sh
   ```
 
 * **Terminal 2:**
