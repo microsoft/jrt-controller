@@ -97,7 +97,10 @@ void do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* i
         fflush(stdout);
         fflush(stderr);
         return;
-    }    
+    }
+    printf("do_stuff_in_thread: Swapping thread state...\n");
+    fflush(stdout);
+    fflush(stderr);
     PyEval_RestoreThread(ts);
     printf("do_stuff_in_thread: Restored thread state.\n");
     fflush(stdout);
