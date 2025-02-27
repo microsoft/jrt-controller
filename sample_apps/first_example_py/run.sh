@@ -4,7 +4,6 @@
 ## example: sudo -E script -q -c "./run.sh" output.txt
 ## cat output.txt | grep "Aggregate counter so far is"
 
-export PYTHONMALLOC=malloc
 export PYTHONVERBOSE=0
 
 # Check if JRTC_PATH is set
