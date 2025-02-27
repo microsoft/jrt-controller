@@ -4,12 +4,13 @@
 package run
 
 import (
+	"errors"
+	"fmt"
 	"jrtc-ctl/common"
 	"jrtc-ctl/jrtcbindings"
 	"jrtc-ctl/services/cache"
 	"jrtc-ctl/services/decoder"
-	"errors"
-	"fmt"
+	"jrtc-ctl/services/loganalytics"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -26,6 +27,7 @@ type runOptions struct {
 	cache         *cache.Options
 	decoderServer *decoder.ServerOptions
 	general       *common.GeneralOptions
+	uploader      *loganalytics.UploaderOptions
 }
 
 // Command Run decoder to collect, decode and print jrt-controller output
@@ -34,6 +36,7 @@ func Command(opts *common.GeneralOptions) *cobra.Command {
 		cache:         &cache.Options{},
 		decoderServer: decoder.EmptyServerOptions(),
 		general:       opts,
+		uploader:      &loganalytics.UploaderOptions{},
 	}
 	cmd := &cobra.Command{
 		Use:   "run",
@@ -44,16 +47,18 @@ func Command(opts *common.GeneralOptions) *cobra.Command {
 		},
 		SilenceUsage: true,
 	}
-	decoder.AddServerOptionsToFlags(cmd.PersistentFlags(), runOptions.decoderServer)
 	cache.AddToFlags(cmd.PersistentFlags(), runOptions.cache)
+	decoder.AddServerOptionsToFlags(cmd.PersistentFlags(), runOptions.decoderServer)
+	loganalytics.AddUploaderOptionsToFlags(cmd.PersistentFlags(), runOptions.uploader)
 	return cmd
 }
 
 func run(cmd *cobra.Command, opts *runOptions) error {
 	if err := errors.Join(
-		opts.general.Parse(),
-		opts.decoderServer.Parse(),
 		opts.cache.Parse(),
+		opts.decoderServer.Parse(),
+		opts.general.Parse(),
+		opts.uploader.Parse(),
 	); err != nil {
 		return err
 	}
@@ -66,6 +71,11 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 	}
 
 	dataQ := make(chan *decoder.RecData, 1000)
+
+	uploader, err := loganalytics.NewUploader(cmd.Context(), logger, opts.uploader)
+	if err != nil {
+		return err
+	}
 
 	srv, err := decoder.NewServer(cmd.Context(), logger, opts.decoderServer, cacheClient, dataQ, func(bs []byte) (string, error) {
 		sid, err := jrtcbindings.StreamIDFromBytes(bs)
@@ -88,7 +98,7 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 		for {
 			select {
 			case recData := <-dataQ:
-				if err := attemptDecodeAndPrint(logger, srv, recData); err != nil {
+				if err := attemptDecodeAndPrint(logger, srv, recData, uploader); err != nil {
 					logger.WithError(err).Error("error decoding and printing rec data")
 				}
 			case <-cmd.Context().Done():
@@ -100,7 +110,7 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 	return srv.Serve()
 }
 
-func attemptDecodeAndPrint(logger *logrus.Logger, srv *decoder.Server, data *decoder.RecData) error {
+func attemptDecodeAndPrint(logger *logrus.Logger, srv *decoder.Server, data *decoder.RecData, uploader *loganalytics.Uploader) error {
 	streamUUID, err := jrtcbindings.StreamIDFromBytes(data.StreamUUID[:])
 	if err != nil {
 		return err
@@ -161,6 +171,13 @@ func attemptDecodeAndPrint(logger *logrus.Logger, srv *decoder.Server, data *dec
 	if err != nil {
 		l.WithError(err).Error("error marshalling message to JSON")
 		return err
+	}
+
+	if uploader != nil {
+		if err := uploader.Upload(res); err != nil {
+			l.WithError(err).Error("error uploading message")
+			return err
+		}
 	}
 
 	l.Infof("REC: %s", string(res))
