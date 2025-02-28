@@ -79,6 +79,11 @@ if [[ "$RUN_TESTS" == "1" ]]; then
         echo "Error running C tests!"
         exit 1
     fi
+    ## if there are no tests, fail
+    if [ ! -s $JRTC_OUT_DIR/jrtc_tests.xml ]; then
+        echo "Error: No tests found!"
+        exit 1
+    fi
     cat /tmp/asan.log || true
     cd /jrtc/build
     if ! make jrtc-ctl-test; then

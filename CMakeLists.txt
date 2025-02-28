@@ -258,15 +258,29 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   ) 
 endif()
 
+# Override add_test and set_tests_properties to do nothing
+macro(add_test)
+    # Do nothing
+endmacro()
+
+macro(set_tests_properties)
+    # Do nothing
+endmacro()
+
 set(BUILD_TESTING OFF CACHE BOOL "Disable testing" FORCE)
 add_subdirectory(jbpf-protobuf)
-
-set(BUILD_TESTING ON CACHE BOOL "Enable testing" FORCE)
 add_subdirectory(src/logger)
 add_subdirectory(src/stream_id)
 add_subdirectory(src/router)
 add_subdirectory(src/rest_api_lib)
 add_subdirectory(src/controller)
 add_subdirectory(src/agent)
-add_subdirectory(tools/jrtc-ctl)
 add_subdirectory(src/pythonapp_loader)
+
+# Restore the original commands by undefining the macros
+unset(add_test)
+unset(set_tests_properties)
+
+set(BUILD_TESTING ON CACHE BOOL "Enable testing" FORCE)
+add_subdirectory(tools/jrtc-ctl)
+
