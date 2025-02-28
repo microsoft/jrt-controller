@@ -54,8 +54,6 @@ set_target_properties(${PYTHON_LOADER} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY_RELEASE  "${OUTPUT_DIR}/lib"
 )
 
-add_dependencies(generate jrtc_router_stream_id)
-
 if(CMAKE_BUILD_TYPE MATCHES AddressSanitizer)
     # Dynamically find the ASan runtime library
     execute_process(
