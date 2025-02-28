@@ -34,7 +34,7 @@ if [[ $rebuild == true || ! -d $JRTC_PATH/out ]]; then
     mkdir -p build
     cd build
     cmake ../
-    make
+    make -j
 else
     echo "...............Skipping jrtc build..............."
 fi

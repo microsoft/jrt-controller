@@ -43,7 +43,7 @@ set(PYTHON_LOADER_SRC jrtc_pythonapp_loader.c)
 add_library(${PYTHON_LOADER} SHARED ${PYTHON_LOADER_SRC})
 
 # Link Python3 library
-target_link_libraries(${PYTHON_LOADER} ${Python3_LIBRARIES})
+target_link_libraries(${PYTHON_LOADER} ${Python3_LIBRARIES} jrtc_router_stream_id jrtc_router jrtc jrtc_logger jrtc_agent)
 
 # Add dependencies
 add_dependencies(${PYTHON_LOADER} jrtc_router_stream_id jrtc_router jrtc jrtc_logger jrtc_agent generate)
@@ -53,6 +53,8 @@ set_target_properties(${PYTHON_LOADER} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY_DEBUG  "${OUTPUT_DIR}/lib"
     LIBRARY_OUTPUT_DIRECTORY_RELEASE  "${OUTPUT_DIR}/lib"
 )
+
+add_dependencies(generate jrtc_router_stream_id)
 
 if(CMAKE_BUILD_TYPE MATCHES AddressSanitizer)
     # Dynamically find the ASan runtime library
@@ -73,11 +75,10 @@ if(CMAKE_BUILD_TYPE MATCHES AddressSanitizer)
       OUTPUT jrtc_bindings.py
               COMMAND ${CMAKE_COMMAND} -E env LD_PRELOAD=${ASAN_LIBRARY_PATH} ASAN_OPTIONS="detect_leaks=0" ${CTYPESGEN_COMMAND}
               -l${JRTC_OUT_DIR}/lib/libjrtc_router_stream_id.so
-              ${JRTC_PATH}/src/router/jrtc_router_app_api.h
-              ${JRTC_PATH}/src/controller/jrtc.h
-              ${JRTC_PATH}/src/router/jrtc_router_int.h
-              ${JRTC_PATH}/src/router/jrtc_router.h
-              -I${JRTC_OUT_DIR}/inc
+              jrtc_router_app_api.h
+              jrtc.h
+              jrtc_router_int.h
+              jrtc_router.h
               -I${NANO_PB}
               -I${JRTC_PATH}/src/router
               -I${JRTC_PATH}/src/logger
@@ -89,6 +90,7 @@ if(CMAKE_BUILD_TYPE MATCHES AddressSanitizer)
               -D__const=const
               -o jrtc_bindings.py
       DEPENDS
+        jrtc_router_stream_id
           ${JRTC_PATH}/src/router/jrtc_router_app_api.h
           ${JRTC_PATH}/src/controller/jrtc.h
           ${JRTC_PATH}/src/router/jrtc_router_int.h
@@ -100,11 +102,10 @@ else()
       OUTPUT jrtc_bindings.py
       COMMAND ${CTYPESGEN_COMMAND}
               -l${JRTC_OUT_DIR}/lib/libjrtc_router_stream_id.so
-              ${JRTC_PATH}/src/router/jrtc_router_app_api.h
-              ${JRTC_PATH}/src/controller/jrtc.h
-              ${JRTC_PATH}/src/router/jrtc_router_int.h
-              ${JRTC_PATH}/src/router/jrtc_router.h
-              -I${JRTC_OUT_DIR}/inc
+              jrtc_router_app_api.h
+              jrtc.h
+              jrtc_router_int.h
+              jrtc_router.h
               -I${NANO_PB}
               -I${JRTC_PATH}/src/router
               -I${JRTC_PATH}/src/logger
@@ -116,6 +117,7 @@ else()
               -D__const=const
               -o jrtc_bindings.py
       DEPENDS
+          jrtc_router_stream_id
           ${JRTC_PATH}/src/router/jrtc_router_app_api.h
           ${JRTC_PATH}/src/controller/jrtc.h
           ${JRTC_PATH}/src/router/jrtc_router_int.h
@@ -125,7 +127,7 @@ else()
 endif()
 
 # Add custom target for generate
-add_custom_target(generate DEPENDS jrtc_bindings.py)
+add_custom_target(generate DEPENDS jrtc_bindings.py jrtc_router_stream_id)
 
 # Custom clean target to remove generated files
 set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES "jrtc_bindings.py")
