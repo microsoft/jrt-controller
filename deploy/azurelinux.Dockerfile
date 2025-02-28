@@ -15,7 +15,7 @@ RUN tdnf -y install clang-tools-extra
 RUN tdnf -y install golang ca-certificates jq protobuf python3-pip curl
 ENV PATH="$PATH:/root/go/bin"
 RUN go env -w GOFLAGS=-buildvcs=false
-RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.5
 ENV PATH="/root/go/bin:${PATH}"
 
 RUN echo "Installing protoc-gen-go and protoc-gen-go-grpc" && \
