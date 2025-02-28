@@ -13,19 +13,6 @@ if [ "$2" == "force" ]; then
     rebuild=true
 fi
 
-if [[ $rebuild == true || ! -d $JRTC_PATH/jbpf-protobuf/jbpf/out ]]; then
-    echo "...............Building jbpf..............."
-    cd $JRTC_PATH/jbpf-protobuf/jbpf
-    ./init_and_patch_submodules.sh
-    source setup_jbpf_env.sh
-    mkdir -p build
-    cd build
-    cmake ../
-    make -j
-else
-    echo "...............Skipping jbpf build..............."
-fi
-
 if [[ $rebuild == true || ! -d $JRTC_PATH/out ]]; then
     echo "...............Building jrtc..............."
     cd $JRTC_PATH
@@ -35,12 +22,6 @@ if [[ $rebuild == true || ! -d $JRTC_PATH/out ]]; then
     cd build
     cmake ../
     make -j
-    if [[ ! -f $JRTC_PATH/out/lib/libpython_loader.so || -f $JRTC_PATH/out/lib/jrtc_bindings.py ]]; then
-        echo "...............Building Python Loader..............."
-        make jrtc_pythonapp_loader
-    else
-        echo "...............Skipping Python Loader..............."
-    fi
 else
     echo "...............Skipping jrtc build..............."
 fi
