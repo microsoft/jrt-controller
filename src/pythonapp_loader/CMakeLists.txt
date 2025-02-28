@@ -79,10 +79,10 @@ if(CMAKE_BUILD_TYPE MATCHES AddressSanitizer)
     OUTPUT ${PYTHON_BINDING_OUTPUT_FILE}
     COMMAND ${CMAKE_COMMAND} -E env LD_PRELOAD=${ASAN_LIBRARY_PATH} ASAN_OPTIONS="detect_leaks=0" ${CTYPESGEN_COMMAND}
     -l${JRTC_OUT_DIR}/lib/libjrtc_router_stream_id.so
-    jrtc_router_app_api.h
-    jrtc.h
-    jrtc_router_int.h
-    jrtc_router.h
+    ${JRTC_PATH}/src/router/jrtc_router_app_api.h
+    ${JRTC_PATH}/src/controller/jrtc.h
+    ${JRTC_PATH}/src/router/jrtc_router_int.h
+    ${JRTC_PATH}/src/router/jrtc_router.h
     -I${NANO_PB}
     -I${JRTC_PATH}/src/router
     -I${JRTC_PATH}/src/logger
@@ -106,10 +106,10 @@ else()
     OUTPUT ${PYTHON_BINDING_OUTPUT_FILE}
     COMMAND ${CTYPESGEN_COMMAND}    
     -l${JRTC_OUT_DIR}/lib/libjrtc_router_stream_id.so
-    jrtc_router_app_api.h
-    jrtc.h
-    jrtc_router_int.h
-    jrtc_router.h
+    ${JRTC_PATH}/src/router/jrtc_router_app_api.h
+    ${JRTC_PATH}/src/controller/jrtc.h
+    ${JRTC_PATH}/src/router/jrtc_router_int.h
+    ${JRTC_PATH}/src/router/jrtc_router.h
     -I${NANO_PB}
     -I${JRTC_PATH}/src/router
     -I${JRTC_PATH}/src/logger
