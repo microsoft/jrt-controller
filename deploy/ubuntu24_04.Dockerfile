@@ -22,7 +22,7 @@ RUN apt install -y libasan6
 RUN apt -y install protobuf-compiler python3-pip curl
 RUN apt -y install golang-1.23
 ENV PATH="$PATH:/root/go/bin:/usr/local/go/bin:/usr/lib/go-1.23/bin"
-RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3
+RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.5
 ENV PATH="/root/go/bin:${PATH}"
 
 RUN apt install -y golang-goprotobuf-dev
