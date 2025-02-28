@@ -10,6 +10,7 @@ option(JRTC_USE_NATIVE "Do use -march=native compiler flag (disable to increase 
 
 option(CLANG_FORMAT_CHECK "Enable clang-format check" OFF)
 option(CPP_CHECK "Enable cppcheck" OFF)
+option(BUILD_TESTING "Enable testing" ON)
 
 # Treat all warnings as errors except those explicitly called out in CPP using #warning
 SET(CMAKE_C_WARNINGS "-Wall -Werror")
@@ -257,22 +258,10 @@ if(CMAKE_BUILD_TYPE MATCHES Debug)
   ) 
 endif()
 
-# Override add_test and set_tests_properties to do nothing
-macro(add_test)
-    # Do nothing
-endmacro()
-
-macro(set_tests_properties)
-    # Do nothing
-endmacro()
-
 set(BUILD_TESTING OFF CACHE BOOL "Disable testing" FORCE)
 add_subdirectory(jbpf-protobuf)
 
-# Restore the original commands by undefining the macros
-unset(add_test)
-unset(set_tests_properties)
-
+set(BUILD_TESTING ON CACHE BOOL "Enable testing" FORCE)
 add_subdirectory(src/logger)
 add_subdirectory(src/stream_id)
 add_subdirectory(src/router)
