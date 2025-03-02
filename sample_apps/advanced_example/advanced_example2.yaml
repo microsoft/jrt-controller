@@ -11,8 +11,11 @@ decoder:
 app:
   - name: app2
     app: ${JRTC_PATH}/sample_apps/advanced_example/app2.so
+    type: c
     port: 3001
-    app_params: []
+    params:
+      - name: param1
+        value: 1
 
 jbpf:
   device:

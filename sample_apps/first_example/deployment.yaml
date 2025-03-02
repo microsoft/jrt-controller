@@ -8,7 +8,10 @@ app:
   - name: app1
     app: ${JRTC_PATH}/sample_apps/first_example/app1.so
     port: 3001
-    app_params: []
+    type: c
+    params:
+      - name: param1
+        value: 1
 
 jbpf:
   device:
