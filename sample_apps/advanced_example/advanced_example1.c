@@ -70,8 +70,8 @@ jrtc_start_app(void* args)
 
     assert(res == 1);
 
-    dapp_channel_ctx_t ctx_input =
-        jrtc_router_channel_create(env_ctx->dapp_ctx, false, 100, sizeof(simple_input_pb), stream_id_app_input, NULL, 0);
+    dapp_channel_ctx_t ctx_input = jrtc_router_channel_create(
+        env_ctx->dapp_ctx, false, 100, sizeof(simple_input_pb), stream_id_app_input, NULL, 0);
 
     assert(ctx_input);
 

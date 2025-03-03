@@ -6,13 +6,12 @@
 #include "generated_data.h" // relevant header for generated data
 #include "simple_input.h"   // relevant header for simple input
 
-
-#include "jrtc_app.h"   // Include the header for JrtcCppApp
-
+#include "jrtc_app.h" // Include the header for JrtcCppApp
 
 // ##########################################################################
 // Define the state variables for the application
-typedef struct {
+typedef struct
+{
     JrtcApp* app;
 
     // add custom fields below
@@ -20,18 +19,19 @@ typedef struct {
     int received_counter;
 } AppStateVars_t;
 
-
 // ############################
 // enum for stream indexes
-enum StreamIndex {
+enum StreamIndex
+{
     GENERATOR_OUT_SIDX = 0,
     SIMPLE_INPUT_IN_SIDX
 };
 
-
 // ##########################################################################
 // Handler callback function (this function gets called by the C library)
-void app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, void* s) {
+void
+app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, void* s)
+{
 
     AppStateVars_t* state = (AppStateVars_t*)s;
 
@@ -59,55 +59,51 @@ void app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_en
             assert(res == 0 && "Failure returned from jrtc_router_channel_send_input_msg");
 
             printf("FirstExample: Aggregate counter so far is: %u \n", state->agg_cnt);
-         }
+        }
     }
 }
 
 // ##########################################################################
 // Main function to start the app (converted from jrtc_start_app)
-void jrtc_start_app(void* args) {
+void
+jrtc_start_app(void* args)
+{
 
     struct jrtc_app_env* env_ctx = (struct jrtc_app_env*)args;
 
     int jbpf_agent_device_id = 1;
-    
+
     // Configuration for the application
-    const JrtcStreamCfg_t streams[] = {
-        // GENERATOR_OUT_SIDX
-        { 
-            { 
-                JRTC_ROUTER_REQ_DEST_ANY, 
-                JRTC_ROUTER_REQ_DEVICE_ID_ANY, 
-                "FirstExample://jbpf_agent/data_generator_codeletset/codelet", 
-                "ringbuf"
-            },
-            true,  // is_rx
-            NULL   // No AppChannelCfg 
-        },
-        // SIMPLE_INPUT_IN_SIDX
-        {
-            { 
-                JRTC_ROUTER_REQ_DEST_NONE, 
-                jbpf_agent_device_id, 
-                "FirstExample://jbpf_agent/simple_input_codeletset/codelet", 
-                "input_map"
-            },
-            false, // is_rx
-            NULL   // No AppChannelCfg
-        }
-    };
-    
+    const JrtcStreamCfg_t streams[] = {// GENERATOR_OUT_SIDX
+                                       {
+                                           {JRTC_ROUTER_REQ_DEST_ANY,
+                                            JRTC_ROUTER_REQ_DEVICE_ID_ANY,
+                                            "FirstExample://jbpf_agent/data_generator_codeletset/codelet",
+                                            "ringbuf"},
+                                           true, // is_rx
+                                           NULL  // No AppChannelCfg
+                                       },
+                                       // SIMPLE_INPUT_IN_SIDX
+                                       {
+                                           {JRTC_ROUTER_REQ_DEST_NONE,
+                                            jbpf_agent_device_id,
+                                            "FirstExample://jbpf_agent/simple_input_codeletset/codelet",
+                                            "input_map"},
+                                           false, // is_rx
+                                           NULL   // No AppChannelCfg
+                                       }};
+
     const JrtcAppCfg_t app_cfg = {
-        "FirstExample",                            // context
-        100,                                       // q_size
-        sizeof(streams) / sizeof(streams[0]),      // num_streams
-        (JrtcStreamCfg_t*)streams,                 // Pointer to the streams array
-        0.1f,                                      // sleep_timeout_secs
-        1.0f                                       // inactivity_timeout_secs
+        "FirstExample",                       // context
+        100,                                  // q_size
+        sizeof(streams) / sizeof(streams[0]), // num_streams
+        (JrtcStreamCfg_t*)streams,            // Pointer to the streams array
+        0.1f,                                 // sleep_timeout_secs
+        1.0f                                  // inactivity_timeout_secs
     };
 
     // Initialize the app
-    AppStateVars_t state = { NULL, 0, 0 };
+    AppStateVars_t state = {NULL, 0, 0};
     state.app = jrtc_app_create(env_ctx, (JrtcAppCfg_t*)&app_cfg, app_handler, &state);
 
     // start app - This is blocking until the app exists
