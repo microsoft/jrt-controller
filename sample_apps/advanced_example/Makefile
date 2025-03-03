@@ -1,3 +1,6 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 SRC1 = advanced_example1.c
 SRC2 = advanced_example2.c
 LIBRARY1 = app1

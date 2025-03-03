@@ -1,3 +1,6 @@
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
+
 This example demonstrates a simple jrt-controller application that loads two codelets to a simple jbpf agent.
 The data_generator codelet increments a counter and sends the data to the jrt-controller app via an output map.
 The application aggregates the counter, prints a message about the aggregate value and sends this
@@ -38,8 +41,8 @@ Before running the sample apps build the project, see [README.md](../../README.m
   ```sh
   cd $JRTC_PATH/sample_apps/first_example_c
   source ../../setup_jrtc_env.sh
-  make -C jbpf_codelets/data_generator
-  make -C jbpf_codelets/simple_input
+  make -C ../jbpf_codelets/data_generator
+  make -C ../jbpf_codelets/simple_input
   ```
 
 ## 4. Build the Jbpf IPC agent

@@ -1,3 +1,6 @@
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
+
 This example demonstrates a simple jrt-controller application that loads two codelets to a simple jbpf agent.
 The data_generator codelet increments a counter and sends the data to the jrt-controller app via an output map.
 The application aggregates the counter, prints a message about the aggregate value and sends this
@@ -34,35 +37,20 @@ Before running the sample apps build the project, see [README.md](../../README.m
   make
   ```
 
-## 3. Build the Jbpf codelets
+## 3. Build all test entities
   ```sh
-  cd $JRTC_PATH/sample_apps/first_example
-  source ../../setup_jrtc_env.sh
-  make -C jbpf_codelets/data_generator
-  make -C jbpf_codelets/simple_input
-  ```
-
-## 4. Build the Jbpf IPC agent
-  ```sh
-  cd $JRTC_PATH/sample_apps/first_example
-  source ../../setup_jrtc_env.sh
-  make -C simple_agent_ipc
-  ```
-
-## 5. Build the app
-  ```sh
-  cd $JRTC_PATH/sample_apps/first_example
+  cd $JRTC_PATH/sample_apps/advanced_example
   make
-  ```  
+  ```
 
-## 6. Open a terminal and run the controller ..
+## 4. Open a terminal and run the controller ..
   ```sh
   cd $JRTC_PATH/sample_apps/first_example
   source ../../setup_jrtc_env.sh
   sudo -E ./run_jrtc.sh
   ```
 
-## 7. Open a separate terminal and run the Jbpf IPC agent
+## 5. Open a separate terminal and run the Jbpf IPC agent
   ```sh
   cd $JRTC_PATH/sample_apps/first_example
   source ../../setup_jrtc_env.sh
@@ -71,21 +59,21 @@ Before running the sample apps build the project, see [README.md](../../README.m
 
 If successful, one of the log messages at the agent side should report `Registration succeeded:`.
 
-## 8. Open a separate terminal and run reverse proxy
+## 6. Open a separate terminal and run reverse proxy
   ```sh
   cd $JRTC_PATH/sample_apps/first_example
   source ../../setup_jrtc_env.sh
   sudo -E ./run_reverse_proxy.sh
   ```
 
-## 9. Open a separate terminal and run decoder
+## 6. Open a separate terminal and run decoder
   ```sh
   cd $JRTC_PATH/sample_apps/first_example
   source ../../setup_jrtc_env.sh
   sudo -E ./run_decoder.sh
   ```  
 
-## 10. Open a separate terminal and load the yaml
+## 7. Open a separate terminal and load the yaml
   ```sh
   cd $JRTC_PATH/sample_apps/first_example
   source ../../setup_jrtc_env.sh

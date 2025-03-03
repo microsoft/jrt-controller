@@ -1,3 +1,6 @@
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
+
 
 - [1. Intructions](#1-intructions)
 - [2. Steps](#2-steps)
@@ -52,8 +55,8 @@ Steps to run the example.   The followinf examples use "ubuntu2204" as the OS, b
   ```sh
   cd $JRTC_PATH/sample_apps/first_example_py
   source ../../setup_jrtc_env.sh
-  make -C jbpf_codelets/data_generator
-  make -C jbpf_codelets/simple_input
+  make -C ../jbpf_codelets/data_generator
+  make -C ../jbpf_codelets/simple_input
   ```
 
 ## 2.4. Build the Jbpf IPC agent

@@ -1,4 +1,6 @@
-# Copyright (c) Microsoft Corporation. All rights reserved.
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
 SRC = first_example.c
 LIBRARY_NAME = app1
 

@@ -1,3 +1,5 @@
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
 
 - [1. Intructions](#1-intructions)
 - [2. Steps](#2-steps)
