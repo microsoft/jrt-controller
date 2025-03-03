@@ -68,9 +68,8 @@ app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, 
         } break;
 
         default:
-            printf("App1: Got some unexpected message\n");
+            printf("App1: Got some unexpected message (stream_index=%d)\n", stream_idx);
             fflush(stdout);
-            assert(false);
         }
 
         if (state->received_counter % 5 == 0 && state->received_counter > 0) {
