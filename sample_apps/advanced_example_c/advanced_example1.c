@@ -47,6 +47,7 @@ app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, 
             example_msg* data = (example_msg*)data_entry->data;
             state->agg_cnt += data->cnt;
             printf("App1: Aggregate counter from codelet is %d\n", state->agg_cnt);
+            fflush(stdout);
 
             // Send the aggregate counter back to the input codelet
             simple_input_pb aggregate_counter = {};
@@ -59,17 +60,20 @@ app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, 
             // Data received from App2 output channel
             simple_input_pb* appdata = (simple_input_pb*)data_entry->data;
             printf("App1: Received aggregate counter %d from output channel of App2\n", appdata->aggregate_counter);
+            fflush(stdout);
         } break;
 
         case APP1_IN_SIDX: {
             // Data received from App1 input channel (by App2)
             simple_input_pb* appdata = (simple_input_pb*)data_entry->data;
             printf("App1: Received aggregate counter %d from input channel of App1\n", appdata->aggregate_counter);
+            fflush(stdout);
 
         } break;
 
         default:
             printf("App1: Got some unexpected message\n");
+            fflush(stdout);
             assert(false);
         }
     }

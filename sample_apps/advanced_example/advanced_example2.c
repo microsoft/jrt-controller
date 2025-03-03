@@ -81,6 +81,7 @@ jrtc_start_app(void* args)
                     agg_cnt += data->cnt;
 
                     printf("App2: Aggregate counter from codelet is %d\n", agg_cnt);
+                    fflush(stdout);
 
                     // Get a buffer to write the output data
                     simple_input_pb* counter = jrtc_router_channel_reserve_buf(output_channel_ctx);
@@ -97,6 +98,7 @@ jrtc_start_app(void* args)
                     sent_counter++;
                 } else {
                     printf("App2: Got some unexpected message\n");
+                    fflush(stdout);
                 }
                 jrtc_router_channel_release_buf(data);
             }

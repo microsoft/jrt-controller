@@ -59,6 +59,7 @@ app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, 
             assert(res == 0 && "Failure returned from jrtc_router_channel_send_input_msg");
 
             printf("FirstExample: Aggregate counter so far is: %u \n", state->agg_cnt);
+            fflush(stdout);
         }
     }
 }

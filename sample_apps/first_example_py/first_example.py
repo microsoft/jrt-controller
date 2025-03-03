@@ -83,7 +83,7 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
             res = jrtc_router_channel_send_input_msg(sid, data_to_send, len(data_to_send))
             assert res == 0, "Failed to send aggregate counter to input map"
 
-            print(f"FirstExample: Aggregate counter so far is: {state.agg_cnt}")
+            print(f"FirstExample: Aggregate counter so far is: {state.agg_cnt}", flush=True)
 
 
 ##########################################################################

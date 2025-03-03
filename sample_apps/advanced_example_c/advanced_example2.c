@@ -47,6 +47,7 @@ app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, 
             state->agg_cnt += data->cnt;
 
             printf("App2: Aggregate counter from codelet is %d\n", state->agg_cnt);
+            fflush(stdout);
 
             // Get a buffer to write the output data
             dapp_channel_ctx_t chan_ctx = jrtc_app_get_channel_context(state->app, APP2_OUT_SIDX);
@@ -68,6 +69,7 @@ app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, 
 
         default:
             printf("App1: Got some unexpected message\n");
+            fflush(stdout);
             assert(false);
         }
 

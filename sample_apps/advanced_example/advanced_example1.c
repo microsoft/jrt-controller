@@ -91,6 +91,7 @@ jrtc_start_app(void* args)
                     data = data_entries[i].data;
                     agg_cnt += data->cnt;
                     printf("App1: Aggregate counter from codelet is %d\n", agg_cnt);
+                    fflush(stdout);
 
                     // Send the aggregate counter back to the input codelet
                     res = jrtc_router_channel_send_input_msg(input_codelet_sid, &agg_cnt, sizeof(aggregate_counter));
@@ -101,13 +102,16 @@ jrtc_start_app(void* args)
                     printf(
                         "App1: Received aggregate counter %d from output channel of App2\n",
                         appdata->aggregate_counter);
+                    fflush(stdout);
                 } else if (jrtc_router_stream_id_matches_req(&data_entries[i].stream_id, &stream_id_app_input)) {
                     // Data received from App1 input channel (by App2)
                     simple_input_pb* appdata = data_entries[i].data;
                     printf(
                         "App1: Received aggregate counter %d from input channel of App1\n", appdata->aggregate_counter);
+                    fflush(stdout);
                 } else {
                     printf("App1: Got some unexpected message\n");
+                    fflush(stdout);
                     assert(false);
                 }
                 jrtc_router_channel_release_buf(data);
