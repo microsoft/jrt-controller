@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../tools/schemas/jrtc-ctl.schema.json
+# Copyright (c) Microsoft Corporation. All rights reserved.
+
+name: FirstExample
+
+app:
+  - name: app1
+    app: ${JRTC_PATH}/sample_apps/first_example_c/app1.so
+    port: 3001
+    app_params: []
+
+jbpf:
+  device:
+    - id: 1
+      port: 8080
+
+  codelet_set:
+    - device: 1
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/codeletset.yaml
+
+    - device: 1
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/simple_input/codeletset.yaml

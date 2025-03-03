@@ -1,6 +1,5 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT license.
 # yaml-language-server: $schema=../../tools/schemas/jrtcctl.schema.json
+# Copyright (c) Microsoft Corporation. All rights reserved.
 
 name: FirstExample
 
@@ -22,7 +21,7 @@ jbpf:
 
   codelet_set:
     - device: 1
-      config: ${JRTC_PATH}/sample_apps/first_example_py/jbpf_codelets/data_generator/data_generator_codelet.yaml
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/codeletset.yaml
 
     - device: 1
-      config: ${JRTC_PATH}/sample_apps/first_example_py/jbpf_codelets/simple_input/codeletset.yaml
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/simple_input/codeletset.yaml

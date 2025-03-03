@@ -1,5 +1,4 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT license.
+# Copyright (c) Microsoft Corporation. All rights reserved.
 
 CC = cc
 INC = -I${JRTC_OUT_DIR}/inc

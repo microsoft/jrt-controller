@@ -1,0 +1,5 @@
+syntax = "proto2";
+
+message example_msg_pb {
+    required uint32 cnt = 1;
+}

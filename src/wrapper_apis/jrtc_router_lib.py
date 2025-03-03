@@ -5,19 +5,17 @@ import os
 import ctypes
 import sys
 
-JRTC_PATH = os.environ.get("JRTC_PATH")
-if JRTC_PATH is None:
-    print("Warning: JRTC_PATH not set")
-    JRTC_PATH = "./"
+JRTC_APP_PATH = os.environ.get("JRTC_APP_PATH")
+if JRTC_APP_PATH is None:
+    print("Warning: JRTC_APP_PATH not set")
+    JRTC_APP_PATH = "./"
+sys.path.append(f"{JRTC_APP_PATH}")
 
-sys.path.append(f"{JRTC_PATH}/src/wrapper_apis/")
 from jrtc_wrapper_utils import register_dll
 from jrtc_router_stream_id import JrtcRouterStreamId
-
-sys.path.append(f"{JRTC_PATH}/out/lib/")
 import jrtc_bindings
 
-jrtc_router_lib_path = os.path.join(JRTC_PATH, "out/lib/liblibjrtc_router.so")
+jrtc_router_lib_path = os.path.join(JRTC_APP_PATH, "liblibjrtc_router.so")
 jrtc_router_lib = register_dll(jrtc_router_lib_path)
 
 JRTC_ROUTER_REQ_DEST_ANY = 0x7F

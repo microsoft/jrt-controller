@@ -1,5 +1,4 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 #include <unistd.h>
 #include <stdatomic.h>
 #include <assert.h>
@@ -35,7 +34,7 @@ jrtc_start_app(void* args)
         &codelet_sid,
         JRTC_ROUTER_REQ_DEST_ANY,
         JRTC_ROUTER_REQ_DEVICE_ID_ANY,
-        "FirstExample://jbpf_agent/data_generator_codeletset/codelet1",
+        "FirstExample://jbpf_agent/data_generator_codeletset/codelet",
         "ringbuf");
 
     assert(res == 1);
@@ -49,7 +48,7 @@ jrtc_start_app(void* args)
         &control_input_sid,
         JRTC_ROUTER_REQ_DEST_NONE,
         jbpf_agent_device_id,
-        "FirstExample://jbpf_agent/unique_id_for_codelet_simple_input/codelet1",
+        "FirstExample://jbpf_agent/simple_input_codeletset/codelet",
         "input_map");
 
     received_counter = 0;

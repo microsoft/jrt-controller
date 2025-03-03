@@ -1,5 +1,4 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 
 #include <string.h>
 
@@ -8,12 +7,12 @@
 
 #include "generated_data.pb.h"
 
-jbpf_ringbuf_map(ringbuf, example_msg, 10)
+jbpf_ringbuf_map(ringbuf, example_msg_pb, 10)
 
     struct jbpf_load_map_def SEC("maps") ringbuf_msg = {
         .type = JBPF_MAP_TYPE_ARRAY,
         .key_size = sizeof(int),
-        .value_size = sizeof(example_msg),
+        .value_size = sizeof(example_msg_pb),
         .max_entries = 1,
 };
 
@@ -41,16 +40,16 @@ jbpf_main(void* state)
     cnt = (cnt + 1) % 1024;
     *(uint32_t*)c = cnt;
 
-    /* build a dummy example_msg response */
-    example_msg* out;
+    /* build a dummy example_msg_pb response */
+    example_msg_pb* out;
     c = jbpf_map_lookup_reset_elem(&ringbuf_msg, &index);
     if (!c)
         return 0;
-    out = (example_msg*)c;
+    out = (example_msg_pb*)c;
     out->cnt = cnt;
 
-    // send example_msg response
-    jbpf_ringbuf_output(&ringbuf, out, sizeof(example_msg));
+    // send example_msg_pb response
+    jbpf_ringbuf_output(&ringbuf, out, sizeof(example_msg_pb));
 
     return 0;
 }

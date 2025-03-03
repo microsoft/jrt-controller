@@ -1,6 +1,4 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-
+// Copyright (c) Microsoft Corporation. All rights reserved.
 #include <unistd.h>
 #include <assert.h>
 
@@ -23,8 +21,8 @@ jrtc_start_app(void* args)
     int jrtc_device_id = 0;
 
     int num_rcv, res = 0;
-    example_msg_simple* data;
-    simple_input aggregate_counter = {};
+    example_msg* data;
+    simple_input_pb aggregate_counter = {};
 
     jrtc_router_data_entry_t data_entries[100] = {0};
 
@@ -59,7 +57,7 @@ jrtc_start_app(void* args)
         &input_codelet_sid,
         JRTC_ROUTER_REQ_DEST_NONE,
         jbpf_agent_device_id,
-        "AdvancedExample1://jbpf_agent/unique_id_for_codelet_simple_input/codelet",
+        "AdvancedExample1://jbpf_agent/simple_input_pb_codeletset/codelet",
         "input_map");
 
     assert(res == 1);
@@ -71,7 +69,7 @@ jrtc_start_app(void* args)
     assert(res == 1);
 
     dapp_channel_ctx_t ctx_input =
-        jrtc_router_channel_create(env_ctx->dapp_ctx, false, 100, sizeof(simple_input), stream_id_app_input, NULL, 0);
+        jrtc_router_channel_create(env_ctx->dapp_ctx, false, 100, sizeof(simple_input_pb), stream_id_app_input, NULL, 0);
 
     assert(ctx_input);
 
@@ -97,13 +95,13 @@ jrtc_start_app(void* args)
                     assert(res == 0);
                 } else if (jrtc_router_stream_id_matches_req(&data_entries[i].stream_id, &app2_output_sid)) {
                     // Data received from App2 output channel
-                    simple_input* appdata = data_entries[i].data;
+                    simple_input_pb* appdata = data_entries[i].data;
                     printf(
                         "App1: Received aggregate counter %d from output channel of App2\n",
                         appdata->aggregate_counter);
                 } else if (jrtc_router_stream_id_matches_req(&data_entries[i].stream_id, &stream_id_app_input)) {
                     // Data received from App1 input channel (by App2)
-                    simple_input* appdata = data_entries[i].data;
+                    simple_input_pb* appdata = data_entries[i].data;
                     printf(
                         "App1: Received aggregate counter %d from input channel of App1\n", appdata->aggregate_counter);
                 } else {

@@ -5,13 +5,14 @@ import ctypes
 import os
 import sys
 
-JRTC_PATH = os.environ.get("JRTC_PATH")
-if JRTC_PATH is None:
-    print("Warning: JRTC_PATH not set")
-    JRTC_PATH = "./"
 
-sys.path.append(f"{JRTC_PATH}/out/lib/")
+JRTC_APP_PATH = os.environ.get("JRTC_APP_PATH")
+if JRTC_APP_PATH is None:
+    print("Warning: JRTC_APP_PATH not set")
+    JRTC_APP_PATH = "./"
+sys.path.append(f"{JRTC_APP_PATH}")
 import jrtc_bindings
+
 
 def register_dll(path):
     try:
@@ -32,6 +33,7 @@ class JrtcAppEnv(ctypes.Structure):
         ("io_queue_size", ctypes.c_uint),
         ("app_exit", ctypes.c_int),
         ("sched_config", jrtc_bindings.struct_jrtc_sched_config),
+        ("app_params",ctypes.c_char_p * 255),
     ]
 
 def get_ctx_from_capsule(capsule):

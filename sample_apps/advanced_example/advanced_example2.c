@@ -1,5 +1,4 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
+// Copyright (c) Microsoft Corporation. All rights reserved.
 #include <unistd.h>
 #include <assert.h>
 
@@ -21,8 +20,8 @@ jrtc_start_app(void* args)
 
     int num_rcv, res = 0;
     int received_counter, sent_counter;
-    example_msg* data;
-    simple_input aggregate_counter = {};
+    example_msg_pb* data;
+    simple_input_pb aggregate_counter = {};
 
     jrtc_router_data_entry_t data_entries[100] = {0};
 
@@ -82,7 +81,7 @@ jrtc_start_app(void* args)
                     printf("App2: Aggregate counter from codelet is %d\n", agg_cnt);
 
                     // Get a buffer to write the output data
-                    simple_input* counter = jrtc_router_channel_reserve_buf(output_channel_ctx);
+                    simple_input_pb* counter = jrtc_router_channel_reserve_buf(output_channel_ctx);
                     assert(counter);
                     counter->aggregate_counter = agg_cnt;
                     // Send the data to the output channel

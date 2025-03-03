@@ -3,8 +3,18 @@
 #ifndef JRTC_H
 #define JRTC_H
 
+// For atomic types
+#ifdef __cplusplus
+// C++ atomic type alias
+#include <atomic>  // C++: std::atomic
+// Alias atomic_bool to std::atomic<bool> in C++
+using atomic_bool = std::atomic<bool>;
+#else
+// C atomic type alias
+#include <stdatomic.h>  // C: atomic_bool
+#endif
+
 #include <stdbool.h>
-#include <stdatomic.h>
 #include "jrtc_sched.h"
 #include "jrtc_router_app_api.h"
 

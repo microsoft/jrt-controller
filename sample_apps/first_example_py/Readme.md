@@ -100,19 +100,6 @@ If successful, one of the log messages at the agent side should report `Registra
   sudo -E ./load_app.sh
   ```
 
- If the codelets and the app were loaded successfully, you should see the following output at the JRTC controller:
-  ```
-  App 1: Aggregate counter so far is 15
-  App 1: Aggregate counter so far is 55
-  ...
-  ```
-
-  Similarly, you should see the following printed messages on the agent side:
-  ```
-  [JBPF_DEBUG]: Got aggregate value 15
-  [JBPF_DEBUG]: Got aggregate value 55
-  ...
-  ```
 ## 2.10. To unload the codelets and the application, use the following command:
   ```sh
   cd $JRTC_PATH/sample_apps/first_example_py

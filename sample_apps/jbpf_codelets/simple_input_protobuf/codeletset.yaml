@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=../../../../tools/schemas/jbpf.schema.json
+# Copyright (c) Microsoft Corporation. All rights reserved.
+codeletset_id: simple_input_pb_codeletset
+codelet_descriptor:
+  - codelet_name: codelet
+    codelet_path: ${JRTC_PATH}/sample_apps/jbpf_codelets/simple_input_protobuf/simple_input_program.o
+    hook_name: test1
+    priority: 2
+    in_io_channel:
+      - name: input_map
+        serde:
+          file_path: ${JRTC_PATH}/sample_apps/jbpf_codelets/simple_input_protobuf/simple_input:simple_input_pb_serializer.so
+          protobuf:
+            package_path: ${JRTC_PATH}/sample_apps/jbpf_codelets/simple_input_protobuf/simple_input.pb
+            msg_name: simple_input_pb

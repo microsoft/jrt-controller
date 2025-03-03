@@ -1,0 +1,7 @@
+// Copyright (c) Microsoft Corporation. All rights reserved.
+
+syntax = "proto2";
+
+message simple_input_pb {
+    required int32 aggregate_counter = 1;
+}
