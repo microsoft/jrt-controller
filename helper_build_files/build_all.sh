@@ -45,14 +45,12 @@ else
     echo "...............Skipping jrtc build..............."
 fi
 
-if [[ $rebuild == true ]]; then
-    echo "...............Building jbpf codelets..............."
-    cd $JRTC_PATH/sample_apps/$1
-    source ../../setup_jrtc_env.sh
-    ## Check if Makefile exists
-    if [ -f "Makefile" ]; then
-        make
-    fi
+echo "...............Building jbpf codelets..............."
+cd $JRTC_PATH/sample_apps/$1
+source ../../setup_jrtc_env.sh
+## Check if Makefile exists
+if [ -f "Makefile" ]; then
+    make
 fi
 
 if [[ $rebuild == true || ! -f $JRTC_PATH/sample_apps/$1/simple_agent_ipc/simple_agent_ipc ]]; then
