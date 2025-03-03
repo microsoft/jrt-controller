@@ -32,7 +32,7 @@ Here are the details given for the first_example.
 
 ### 1.1.1. Application state variables
 
-The following shows the __AppStateVars_t__ which just b defined for an app .
+The following shows the __AppStateVars_t__ which are the state variables for an app .
 
 All apps must have the  __"JrtcApp* app;"__ field in the struct.   Individual applications may have additions fields as necessary.  In the case of the first_example, it has additional fields __"agg_cnt"__ and __"received_counter"__.
 
@@ -84,14 +84,14 @@ const JrtcStreamCfg_t streams[] = {
 The application config is detailed below.
 
 ```C
-    const JrtcAppCfg_t app_cfg = {
-        "FirstExample",                            // context
-        100,                                       // q_size
-        sizeof(streams) / sizeof(streams[0]),      // num_streams
-        (JrtcStreamCfg_t*)streams,                 // Pointer to the streams array
-        0.1f,                                      // sleep_timeout_secs
-        1.0f                                       // inactivity_timeout_secs
-    };
+const JrtcAppCfg_t app_cfg = {
+    "FirstExample",                            // context
+    100,                                       // q_size
+    sizeof(streams) / sizeof(streams[0]),      // num_streams
+    (JrtcStreamCfg_t*)streams,                 // Pointer to the streams array
+    0.1f,                                      // sleep_timeout_secs
+    1.0f                                       // inactivity_timeout_secs
+};
 ```
 
 where
@@ -153,7 +153,7 @@ s: an opaque pointer to the AppStateVars_t.  This would ba cast to "state"
 
 It can be seen that in this simple handler, "agg_cnt" is incremented by 1 for every message received from "FirstExample://jbpf_agent/data_generator_codeletset/codelet"/"ringbuf".
 
-If the number of received messages is divisible by 5, the handler creates an "aggregate_counter" struct, populates it with agg_cnt, and sends it to "FirstExample://jbpf_agent/simple_input_codeletset/codelet"/"input_map".  However to do that, it first calls helper funciton __"jrtc_app_get_stream"__.  This is a helper function provided by the JrtcApp class, which returns a Jrtc stream structure for a given stream index.  This stream structure is then used when calling the core Jrtc function "jrtc_router_channel_send_input_msg".
+If the number of received messages is divisible by 5, the handler creates an "aggregate_counter" struct, populates it with agg_cnt, and sends it to "FirstExample://jbpf_agent/simple_input_codeletset/codelet"/"input_map".  However to do that, it first calls helper function __"jrtc_app_get_stream"__.  This is a helper function provided by the JrtcApp class, which returns a Jrtc stream structure for a given stream index.  This stream structure is then used when calling the core Jrtc function "jrtc_router_channel_send_input_msg".
 
 ## 1.2. Run the application
 
