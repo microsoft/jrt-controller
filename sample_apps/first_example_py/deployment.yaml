@@ -10,11 +10,10 @@ decoder:
     
 app:
   - name: app1
-    path: ${JRTC_PATH}/sample_apps/first_example_py/first_example
+    path: ${JRTC_PATH}/sample_apps/first_example_py/first_example.py
     type: python
     params:
-      - name: param1
-        value: 1
+      key: value
     port: 3001
 
 jbpf:
