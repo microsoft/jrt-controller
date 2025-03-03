@@ -11,6 +11,7 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
+// AppParamKeyValuePair represents a key-value pair for application parameters
 type AppParamKeyValuePair struct {
 	Key string
 	Val string

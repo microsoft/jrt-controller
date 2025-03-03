@@ -17,7 +17,8 @@
 
 typedef pthread_t app_id_t;
 
-typedef struct _app_param_key_value_pair {
+typedef struct _app_param_key_value_pair
+{
     char* key;
     char* val;
 } app_param_key_value_pair_t;
