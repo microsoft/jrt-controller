@@ -121,7 +121,7 @@ This will build the two sample codelets (`data_generator` and `simple_input`), t
 
 ### 1.3.3. Run the components
 
-You will need to open four terminals.
+You will need to open five terminals.
 
 * **Terminal 1:** 
   
@@ -150,6 +150,15 @@ You will need to open four terminals.
   ```
 
 * **Terminal 4:**
+
+  This is used to run the *jrt-contoller" decoder.
+  
+  ```sh
+  cd $JRTC_PATH/sample_apps/first_example
+  ./run_decoder.sh
+  ```
+
+* **Terminal 5:**
 
   This is used to load and unload the example application.
   ```sh
