@@ -30,8 +30,7 @@ $(GENERATED_HEADERS): %.pb.h : %.proto
 
 # Ensure Python bindings are generated after headers
 $(PY_HEADERS): %_pb.py : %.proto
-	-include $(basename $<).options
-	ctypesgen -I${NANO_PB} $(basename $<).pb.h -o $@   # Only runs if .oproto changes, but uses .pb.h as the input
+	ctypesgen -I${NANO_PB} $(basename $<).pb.h -o $@   # Only runs if .proto changes, but uses .pb.h as the input
 
 generate:
 	$(JBPF_PROTOBUF_CLI_BIN) serde -s simple_input:simple_input_pb; \

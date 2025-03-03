@@ -29,8 +29,7 @@ $(GENERATED_HEADERS): %.pb.h : %.proto
 	protoc --proto_path=. --cpp_out=. $<
 
 $(PY_HEADERS): %_pb.py : %.proto
-	-include $(basename $<).options
-	ctypesgen -I${NANO_PB} $(basename $<).pb.h -o $@   # Only runs if .oproto changes, but uses .pb.h as the input
+	ctypesgen -I${NANO_PB} $(basename $<).pb.h -o $@   # Only runs if .proto changes, but uses .pb.h as the input
 
 generate:
 	$(JBPF_PROTOBUF_CLI_BIN) serde -s generated_data:example_msg_pb; \
