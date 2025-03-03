@@ -8,74 +8,84 @@
 #include "jrtc_router_app_api.h"
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-// Forward declaration of the JrtcApp C++ class as an opaque pointer
-typedef struct JrtcApp JrtcApp;
+    // Forward declaration of the JrtcApp C++ class as an opaque pointer
+    typedef struct JrtcApp JrtcApp;
 
-// Structure representing configuration for a Stream ID
-typedef struct {
-    int destination;         // Destination identifier
-    int device_id;           // Device identifier
-    const char* stream_source; // Source of the stream
-    const char* io_map;      // I/O mapping information
-} JrtcStreamIdCfg_t;
+    // Structure representing configuration for a Stream ID
+    typedef struct
+    {
+        int destination;           // Destination identifier
+        int device_id;             // Device identifier
+        const char* stream_source; // Source of the stream
+        const char* io_map;        // I/O mapping information
+    } JrtcStreamIdCfg_t;
 
-// Structure representing the configuration of an application channel
-typedef struct  {
-    bool is_output;  // Indicates if the channel is for output
-    int num_elems;   // Number of elements in the channel
-    int elem_size;   // Size of each element in bytes
-} JrtcAppChannelCfg_t;
+    // Structure representing the configuration of an application channel
+    typedef struct
+    {
+        bool is_output; // Indicates if the channel is for output
+        int num_elems;  // Number of elements in the channel
+        int elem_size;  // Size of each element in bytes
+    } JrtcAppChannelCfg_t;
 
-// Structure representing the configuration of a stream
-typedef struct {
-    JrtcStreamIdCfg_t sid;       // Stream ID configuration
-    bool is_rx;                  // Indicates if the stream is for receiving
-    JrtcAppChannelCfg_t* appChannel; // Pointer to application channel configuration
-} JrtcStreamCfg_t;
+    // Structure representing the configuration of a stream
+    typedef struct
+    {
+        JrtcStreamIdCfg_t sid;           // Stream ID configuration
+        bool is_rx;                      // Indicates if the stream is for receiving
+        JrtcAppChannelCfg_t* appChannel; // Pointer to application channel configuration
+    } JrtcStreamCfg_t;
 
-// Structure representing the overall application configuration
-typedef struct {
-    char* context;                // Application context (string)
-    int q_size;                   // Queue size for processing
-    int num_streams;              // Number of streams
-    JrtcStreamCfg_t* streams;     // Pointer to an array of stream configurations
-    float sleep_timeout_secs;     // Sleep timeout in seconds
-    float inactivity_timeout_secs;// Inactivity timeout in seconds
-} JrtcAppCfg_t;
+    // Structure representing the overall application configuration
+    typedef struct
+    {
+        char* context;                 // Application context (string)
+        int q_size;                    // Queue size for processing
+        int num_streams;               // Number of streams
+        JrtcStreamCfg_t* streams;      // Pointer to an array of stream configurations
+        float sleep_timeout_secs;      // Sleep timeout in seconds
+        float inactivity_timeout_secs; // Inactivity timeout in seconds
+    } JrtcAppCfg_t;
 
-// Callback function type for handling application events
-typedef void (*JrtcAppHandler)(bool success, int stream_idx, jrtc_router_data_entry_t* data, void* app_state);
+    // Callback function type for handling application events
+    typedef void (*JrtcAppHandler)(bool success, int stream_idx, jrtc_router_data_entry_t* data, void* app_state);
 
-// Function to create a new JrtcApp instance
-// @param env_ctx - Environment context
-// @param app_cfg - Pointer to application configuration structure
-// @param app_handler - Event handler function pointer
-// @param app_state - Pointer to application state data
-// @return Pointer to the created JrtcApp instance
-JrtcApp* jrtc_app_create(struct jrtc_app_env* env_ctx, JrtcAppCfg_t* app_cfg, JrtcAppHandler app_handler, void* app_state);
+    // Function to create a new JrtcApp instance
+    // @param env_ctx - Environment context
+    // @param app_cfg - Pointer to application configuration structure
+    // @param app_handler - Event handler function pointer
+    // @param app_state - Pointer to application state data
+    // @return Pointer to the created JrtcApp instance
+    JrtcApp*
+    jrtc_app_create(struct jrtc_app_env* env_ctx, JrtcAppCfg_t* app_cfg, JrtcAppHandler app_handler, void* app_state);
 
-// Function to run the JrtcApp instance
-// @param app - Pointer to the JrtcApp instance
-void jrtc_app_run(JrtcApp* app);
+    // Function to run the JrtcApp instance
+    // @param app - Pointer to the JrtcApp instance
+    void
+    jrtc_app_run(JrtcApp* app);
 
-// Function to destroy a JrtcApp instance and free resources
-// @param app - Pointer to the JrtcApp instance to be destroyed
-void jrtc_app_destroy(JrtcApp* app);
+    // Function to destroy a JrtcApp instance and free resources
+    // @param app - Pointer to the JrtcApp instance to be destroyed
+    void
+    jrtc_app_destroy(JrtcApp* app);
 
-// Function to retrieve a stream identifier from the application instance
-// @param app - Pointer to the JrtcApp instance
-// @param stream_idx - Index of the stream
-// @return Stream ID associated with the given index
-jrtc_router_stream_id_t jrtc_app_get_stream(JrtcApp* app, int stream_idx);
+    // Function to retrieve a stream identifier from the application instance
+    // @param app - Pointer to the JrtcApp instance
+    // @param stream_idx - Index of the stream
+    // @return Stream ID associated with the given index
+    jrtc_router_stream_id_t
+    jrtc_app_get_stream(JrtcApp* app, int stream_idx);
 
-// Function to retrieve the channel context for a given stream index
-// @param app - Pointer to the JrtcApp instance
-// @param stream_idx - Index of the stream
-// @return Channel context associated with the given index
-dapp_channel_ctx_t jrtc_app_get_channel_context(JrtcApp* app, int stream_idx);
+    // Function to retrieve the channel context for a given stream index
+    // @param app - Pointer to the JrtcApp instance
+    // @param stream_idx - Index of the stream
+    // @return Channel context associated with the given index
+    dapp_channel_ctx_t
+    jrtc_app_get_channel_context(JrtcApp* app, int stream_idx);
 
 #ifdef __cplusplus
 }
