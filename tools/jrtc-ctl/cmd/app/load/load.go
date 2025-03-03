@@ -4,10 +4,10 @@
 package load
 
 import (
-	"jrtc-ctl/common"
-	"jrtc-ctl/services/jrt-controller"
 	"errors"
 	"fmt"
+	"jrtc-ctl/common"
+	jrtc "jrtc-ctl/services/jrt-controller"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -36,7 +36,8 @@ type runOptions struct {
 	period            time.Duration
 	runtime           time.Duration
 	sharedLibraryPath string
-	appParams         []string
+	appType           string
+	appParams         map[string]interface{}
 }
 
 func addToFlags(flags *pflag.FlagSet, opts *runOptions) {
@@ -46,7 +47,7 @@ func addToFlags(flags *pflag.FlagSet, opts *runOptions) {
 	flags.StringVar(&opts._runtime, "runtime", fmt.Sprint(defaultRuntime), "the runtime quota of the thread")
 	flags.StringVar(&opts.appName, "app-name", "", "app name inside jrt-controller")
 	flags.StringVar(&opts.sharedLibraryPath, "app", "", "the shared library of the jrt-controller app")
-	flags.StringArrayVar(&opts.appParams, "app-params", []string{}, "parameters to pass to the jrt-controller app")
+	flags.StringVar(&opts.appType, "app-type", "", "the type of the app")
 }
 
 func (o *runOptions) parse() error {
@@ -114,7 +115,7 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 			return err
 		}
 
-		req, err := jrtc.NewJrtcAppLoadRequest(opts.sharedLibraryPath, opts.appName, opts.ioqSize, opts.deadline, opts.period, opts.runtime, opts.appParams)
+		req, err := jrtc.NewJrtcAppLoadRequest(opts.sharedLibraryPath, opts.appName, opts.ioqSize, opts.deadline, opts.period, opts.runtime, &opts.appParams)
 		if err != nil {
 			return err
 		}

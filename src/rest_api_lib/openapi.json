@@ -227,8 +227,11 @@
           },
           "app_path": {
             "type": "string"
-          },          
-          "params": {
+          },
+          "app_type": {
+            "type": "string"
+          },
+          "app_params": {
             "type": "object"
           }
         }

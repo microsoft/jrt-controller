@@ -40,7 +40,8 @@ pub struct LoadAppRequest {
     pub period_us: u32,
     pub ioq_size: u32,
     pub app_path: *mut c_char,
-    pub params: [*mut AppParamKeyValuePair; 255], // Fixed-size array
+    pub app_type: *mut c_char,
+    pub app_params: [*mut AppParamKeyValuePair; 255], // Fixed-size array
 }
 
 type LoadAppCallback = unsafe extern "C" fn(load_req: LoadAppRequest) -> c_int;
@@ -219,7 +220,8 @@ async fn load_app(
     let payload_cloned = payload.clone();
     let app_name = payload_cloned.app_name;
     let app_path = payload_cloned.app_path;
-    let params = payload_cloned.params;
+    let app_type = payload_cloned.app_type;
+    let app_params = payload_cloned.app_params;
 
     let c_app_name = match CString::new(app_name.clone()) {
         Ok(c) => c,
@@ -249,7 +251,21 @@ async fn load_app(
         }
     };
 
-    let mut c_params: [*mut AppParamKeyValuePair; 255] = [std::ptr::null_mut(); 255]; // Initialize with NULLs
+    let c_app_type = match CString::new(app_type.clone()) {
+        Ok(c) => c,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(JrtcAppError::Details(format!(
+                    "app_type cannot be converted into c string = {}",
+                    app_type.clone()
+                ))),
+            )
+            .into_response();
+        }
+    };
+
+    let mut c_app_params: [*mut AppParamKeyValuePair; 255] = [std::ptr::null_mut(); 255]; // Initialize with NULLs
 
     let c_strings: Vec<AppParamKeyValuePair> = params
     .iter()
@@ -267,7 +283,7 @@ async fn load_app(
         if i >= 255 {
             break; // Prevent overflow
         }
-        c_params[i] = cstr as *const AppParamKeyValuePair as *mut AppParamKeyValuePair;
+        c_app_params[i] = cstr as *const AppParamKeyValuePair as *mut AppParamKeyValuePair;
     }
 
     let app_req = LoadAppRequest {
@@ -279,12 +295,14 @@ async fn load_app(
         period_us: payload.period_us,
         ioq_size: payload.ioq_size,
         app_path: c_app_path.into_raw(),
-        params: c_params,
+        app_type: c_app_type.into_raw(),
+        app_params: c_params,
     };
 
     let response: i32;
     let app_name_ptr = app_req.app_name;
     let app_path_ptr = app_req.app_path;
+    let app_type_ptr = app_req.app_type;
     unsafe {
         response = match state.callbacks.load_app {
             Some(load_app_cbk) => load_app_cbk(app_req),
@@ -304,6 +322,7 @@ async fn load_app(
         unsafe {
             let _ = CString::from_raw(app_name_ptr);
             let _ = CString::from_raw(app_path_ptr);
+            let _ = CString::from_raw(app_type_ptr);
         }
     }
 

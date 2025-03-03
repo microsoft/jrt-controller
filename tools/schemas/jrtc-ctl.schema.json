@@ -33,16 +33,12 @@
           "maximum": 65535,
           "minimum": 0
         },
-        "app": {
+        "path": {
           "type": "string"
         },
         "type": {
           "type": "string",
           "description": "type is a string e.g. \"c\" or \"python\""
-        },
-        "path": {
-          "type": "string",
-          "description": "path is a string e.g. /path/to/file"
         },
         "params": {
           "type": "object",
@@ -54,7 +50,7 @@
       "required": [
         "name",
         "port",
-        "app",
+        "path",
         "type"
       ],
       "description": "App represents an application"
