@@ -6,12 +6,12 @@
 // For atomic types
 #ifdef __cplusplus
 // C++ atomic type alias
-#include <atomic>  // C++: std::atomic
+#include <atomic> // C++: std::atomic
 // Alias atomic_bool to std::atomic<bool> in C++
 using atomic_bool = std::atomic<bool>;
 #else
 // C atomic type alias
-#include <stdatomic.h>  // C: atomic_bool
+#include <stdatomic.h> // C: atomic_bool
 #endif
 
 #include <stdbool.h>
