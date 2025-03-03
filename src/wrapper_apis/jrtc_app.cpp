@@ -157,7 +157,22 @@ JrtcApp::run()
 
         auto num_rcv = jrtc_router_receive(env_ctx->dapp_ctx, data_entries.data(), app_cfg->q_size);
         for (int i = 0; i < num_rcv; ++i) {
-            app_handler(false, i, &data_entries[i], app_state);
+
+            // find index which matches stream, if any
+            bool found = false;
+            int sidx = 0;
+            for (; sidx < app_cfg->num_streams; sidx++) {
+                auto& s = app_cfg->streams[sidx];
+                auto& si = stream_items[sidx];
+                if ((s.is_rx) && (jrtc_router_stream_id_matches_req(&data_entries[i].stream_id, &si.sid))) {
+                    found = true;
+                    break;
+                }
+            }
+            // if stream found, call handler
+            if (found) {
+                app_handler(false, sidx, &data_entries[i], app_state);
+            }
             jrtc_router_channel_release_buf(data_entries[i].data);
             last_received_time = std::chrono::steady_clock::now();
         }
