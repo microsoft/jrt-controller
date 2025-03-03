@@ -62,7 +62,10 @@ For more details about the capabilities of *jrt-controller* you can explore the 
 
 * [High-level overview ](./docs/overview.md)
 * [Simple example](./docs/understand_simple_app.md)
+* [Simple example - using JrtcApp abstraction class with C interface](./docs/understand_simple_app_c.md)
+* [Simple example - using JrtcApp abstraction class with Python interface](./docs/understand_simple_app_py.md)
 * [Advanced example](./docs/understand_advanced_app.md)
+* [Advanced example -using JrtcApp abstraction class with C interface](./docs/understand_advanced_app_c.md)
 * [Streams and messages](./docs/streams.md)
 * [Building with containers](./docs/containers.md)
 * [jrtc-ctl management tool](./docs/jrtctl.md)
