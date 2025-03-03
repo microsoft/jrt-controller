@@ -71,7 +71,7 @@ struct JrtcAppLoadRequest {
     ioq_size: u32,
     app_path: String,
     app_type: String,
-    params: Vec<AppParamKeyValuePair>,
+    app_params: Vec<AppParamKeyValuePair>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
@@ -267,7 +267,7 @@ async fn load_app(
 
     let mut c_app_params: [*mut AppParamKeyValuePair; 255] = [std::ptr::null_mut(); 255]; // Initialize with NULLs
 
-    let c_strings: Vec<AppParamKeyValuePair> = params
+    let c_strings: Vec<AppParamKeyValuePair> = app_params
     .iter()
     .map(|param| {
         let key = expand_env_vars(&param.key);
@@ -296,7 +296,7 @@ async fn load_app(
         ioq_size: payload.ioq_size,
         app_path: c_app_path.into_raw(),
         app_type: c_app_type.into_raw(),
-        app_params: c_params,
+        app_params: c_app_params,
     };
 
     let response: i32;
