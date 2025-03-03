@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+use std::ffi::CString;
 use axum::{
     extract,
     extract::{Path, State},
@@ -11,7 +12,6 @@ use axum::{
 use axum_server::Handle;
 use chrono::prelude::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::ffi::CString;
 use std::net::SocketAddr;
 use std::os::raw::{c_char, c_int, c_void};
 use std::sync::mpsc::channel;
@@ -24,10 +24,10 @@ use utoipa::{OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
 use std::env;
 
-#[repr(C)]
-pub struct app_param_key_value_pair {
-    pub key: *mut c_char,
-    pub val: *mut c_char,
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
+struct AppParamKeyValuePair {
+    key: String,
+    val: String,
 }
 
 #[repr(C)]
@@ -40,7 +40,7 @@ pub struct LoadAppRequest {
     pub period_us: u32,
     pub ioq_size: u32,
     pub app_path: *mut c_char,
-    pub params: [*mut app_param_key_value_pair; 255], // Fixed-size array
+    pub params: [*mut AppParamKeyValuePair; 255], // Fixed-size array
 }
 
 type LoadAppCallback = unsafe extern "C" fn(load_req: LoadAppRequest) -> c_int;
@@ -70,7 +70,7 @@ struct JrtcAppLoadRequest {
     ioq_size: u32,
     app_path: String,
     app_type: String,
-    params: Vec<app_param_key_value_pair>,
+    params: Vec<AppParamKeyValuePair>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
@@ -249,34 +249,16 @@ async fn load_app(
         }
     };
 
-    let mut c_params: [*mut app_param_key_value_pair; 255] = [std::ptr::null_mut(); 255]; // Initialize with NULLs
+    let mut c_params: [*mut AppParamKeyValuePair; 255] = [std::ptr::null_mut(); 255]; // Initialize with NULLs
 
-    let c_strings: Vec<app_param_key_value_pair> = params
+    let c_strings: Vec<AppParamKeyValuePair> = params
     .iter()
     .map(|param| {
-        let key = match CString::new(param.key) {
-            Ok(c) => c,
-            Err(_) => {
-                return app_param_key_value_pair {
-                    key: std::ptr::null_mut(),
-                    value: std::ptr::null_mut(),
-                };
-            }
-        };
-
-        let value = match CString::new(param.val) {
-            Ok(c) => c,
-            Err(_) => {
-                return app_param_key_value_pair {
-                    key: std::ptr::null_mut(),
-                    value: std::ptr::null_mut(),
-                };
-            }
-        };
-
-        app_param_key_value_pair {
-            key: key.into_raw(),
-            val: value.into_raw(),
+        let key = expand_env_vars(&param.key);
+        let value = expand_env_vars(&param.val);
+        AppParamKeyValuePair {
+            key: key,
+            val: value,
         }
     })
     .collect();
@@ -285,7 +267,7 @@ async fn load_app(
         if i >= 255 {
             break; // Prevent overflow
         }
-        c_params[i] = cstr as *const app_param_key_value_pair as *mut app_param_key_value_pair;
+        c_params[i] = cstr as *const AppParamKeyValuePair as *mut AppParamKeyValuePair;
     }
 
     let app_req = LoadAppRequest {
