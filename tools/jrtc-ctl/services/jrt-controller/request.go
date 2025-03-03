@@ -39,7 +39,8 @@ func NewJrtcAppLoadRequest(
 		IoqSize:    ioqSize,
 		PeriodUs:   int32(period.Microseconds()),
 		RuntimeUs:  int32(runtime.Microseconds()),
-		AppParams:  &appParams,
+		
+		Params:  &params,
 	}, nil
 }
 

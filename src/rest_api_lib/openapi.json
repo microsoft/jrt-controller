@@ -225,11 +225,11 @@
             "format": "int32",
             "minimum": 0
           },
-          "app_params": {
-            "type": "array",
-            "items": {
-              "type": "string"
-            }
+          "app_path": {
+            "type": "string"
+          },          
+          "params": {
+            "type": "object"
           }
         }
       },

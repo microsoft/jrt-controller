@@ -25,6 +25,12 @@ use utoipa_swagger_ui::SwaggerUi;
 use std::env;
 
 #[repr(C)]
+pub struct app_param_key_value_pair {
+    pub key: *mut c_char,
+    pub value: *mut c_char,
+}
+
+#[repr(C)]
 pub struct LoadAppRequest {
     pub app: *mut i8,
     pub app_size: usize,
@@ -33,7 +39,8 @@ pub struct LoadAppRequest {
     pub deadline_us: u32,
     pub period_us: u32,
     pub ioq_size: u32,
-    pub app_params: [*mut c_char; 255], // Fixed-size array
+    pub app_path: *mut c_char,
+    pub params: [*mut app_param_key_value_pair; 255], // Fixed-size array
 }
 
 type LoadAppCallback = unsafe extern "C" fn(load_req: LoadAppRequest) -> c_int;
@@ -61,7 +68,8 @@ struct JrtcAppLoadRequest {
     deadline_us: u32,
     period_us: u32,
     ioq_size: u32,
-    app_params: Vec<String>,
+    app_path: String,
+    params: Vec<app_param_key_value_pair>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
@@ -209,7 +217,8 @@ async fn load_app(
 ) -> impl IntoResponse {
     let payload_cloned = payload.clone();
     let app_name = payload_cloned.app_name;
-    let app_params = payload_cloned.app_params;
+    let app_path = payload_cloned.app_path;
+    let params = payload_cloned.params;
 
     let c_app_name = match CString::new(app_name.clone()) {
         Ok(c) => c,
@@ -225,13 +234,49 @@ async fn load_app(
         }
     };
 
-    let mut c_app_params: [*mut c_char; 255] = [std::ptr::null_mut(); 255]; // Initialize with NULLs
+    let c_app_path = match CString::new(app_path.clone()) {
+        Ok(c) => c,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(JrtcAppError::Details(format!(
+                    "app_path cannot be converted into c string = {}",
+                    app_path.clone()
+                ))),
+            )
+            .into_response();
+        }
+    };
 
-    let c_strings: Vec<CString> = app_params
+    let mut c_params: [*mut app_param_key_value_pair; 255] = [std::ptr::null_mut(); 255]; // Initialize with NULLs
+
+    let c_strings: Vec<app_param_key_value_pair> = params
     .iter()
-    .map(|s| {
-        let expanded_str = expand_env_vars(s.as_str()); // Expand environment variables in the string
-        CString::new(expanded_str).unwrap() // Convert the expanded string to CString
+    .map(|param| {
+        let key = match CString::new(param.key.clone()) {
+            Ok(c) => c,
+            Err(_) => {
+                return app_param_key_value_pair {
+                    key: std::ptr::null_mut(),
+                    value: std::ptr::null_mut(),
+                };
+            }
+        };
+
+        let value = match CString::new(param.value.clone()) {
+            Ok(c) => c,
+            Err(_) => {
+                return app_param_key_value_pair {
+                    key: std::ptr::null_mut(),
+                    value: std::ptr::null_mut(),
+                };
+            }
+        };
+
+        app_param_key_value_pair {
+            key: key.into_raw(),
+            value: value.into_raw(),
+        }
     })
     .collect();
 
@@ -239,7 +284,7 @@ async fn load_app(
         if i >= 255 {
             break; // Prevent overflow
         }
-        c_app_params[i] = cstr.as_ptr() as *mut i8; // Cast to *mut i8
+        c_params[i] = cstr as *const app_param_key_value_pair as *mut app_param_key_value_pair;
     }
 
     let app_req = LoadAppRequest {
@@ -250,11 +295,13 @@ async fn load_app(
         deadline_us: payload.deadline_us,
         period_us: payload.period_us,
         ioq_size: payload.ioq_size,
-        app_params: c_app_params,
+        app_path: c_app_path.into_raw(),
+        params: c_params,
     };
 
     let response: i32;
     let app_name_ptr = app_req.app_name;
+    let app_path_ptr = app_req.app_path;
     unsafe {
         response = match state.callbacks.load_app {
             Some(load_app_cbk) => load_app_cbk(app_req),
@@ -273,6 +320,7 @@ async fn load_app(
         // Free app_name memory after callback
         unsafe {
             let _ = CString::from_raw(app_name_ptr);
+            let _ = CString::from_raw(app_path_ptr);
         }
     }
 

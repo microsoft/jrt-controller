@@ -36,15 +36,17 @@
         "app": {
           "type": "string"
         },
-        "app_params": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array",
-          "description": "when omitted, the AppParams will be an empty array e.g. []",
-          "default": [
-            "[]"
-          ]
+        "type": {
+          "type": "string",
+          "description": "type is a string e.g. \"c\" or \"python\""
+        },
+        "path": {
+          "type": "string",
+          "description": "path is a string e.g. /path/to/file"
+        },
+        "params": {
+          "type": "object",
+          "description": "params is a dictionary e.g. key value pairs"
         }
       },
       "additionalProperties": false,
@@ -52,7 +54,8 @@
       "required": [
         "name",
         "port",
-        "app"
+        "app",
+        "type"
       ],
       "description": "App represents an application"
     },

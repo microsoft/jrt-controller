@@ -61,8 +61,10 @@ type App struct {
 	Runtime           time.Duration `json:"-"`
 	SharedLibraryCode []byte        `json:"-"`
 	SharedLibraryPath string        `json:"app" jsonschema:"required"`
-	// when omitted, the AppParams will be an empty array e.g. []
-	AppParams []string `json:"app_params,omitempty" jsonschema:"default=[]"`
+	Type 			string        `json:"type" jsonschema:"required"` // type is a string e.g. "c" or "python"
+	Path 			string        `json:"path,omitempty"` // path is a string e.g. /path/to/file
+	// params is a dictionary e.g. key value pairs
+	Params map[string]interface{} `json:"params,omitempty"`	
 }
 
 // JBPFCodelet represents a JBPF codelet

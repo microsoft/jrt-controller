@@ -17,6 +17,11 @@
 
 typedef pthread_t app_id_t;
 
+typedef struct _app_param_key_value_pair {
+    char* key;
+    char* val;
+} app_param_key_value_pair_t;
+
 /**
  * @brief The jrtc_app_env struct
  * @ingroup controller
@@ -29,6 +34,8 @@ typedef pthread_t app_id_t;
  * io_queue_size: The io queue size
  * app_exit: The application exit flag
  * sched_config: The scheduling configuration
+ * app_path: The application path
+ * params: The application parameters
  */
 struct jrtc_app_env
 {
@@ -40,7 +47,8 @@ struct jrtc_app_env
     uint32_t io_queue_size;
     atomic_bool app_exit;
     jrtc_sched_config_t sched_config;
-    char* app_params[MAX_APP_PARAMS];
+    char* app_path;
+    app_param_key_value_pair_t params[MAX_APP_PARAMS];
 };
 
 #endif
