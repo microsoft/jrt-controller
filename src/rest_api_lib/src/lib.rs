@@ -27,7 +27,7 @@ use std::env;
 #[repr(C)]
 pub struct app_param_key_value_pair {
     pub key: *mut c_char,
-    pub value: *mut c_char,
+    pub val: *mut c_char,
 }
 
 #[repr(C)]
@@ -69,6 +69,7 @@ struct JrtcAppLoadRequest {
     period_us: u32,
     ioq_size: u32,
     app_path: String,
+    app_type: String,
     params: Vec<app_param_key_value_pair>,
 }
 
@@ -253,7 +254,7 @@ async fn load_app(
     let c_strings: Vec<app_param_key_value_pair> = params
     .iter()
     .map(|param| {
-        let key = match CString::new(param.key.clone()) {
+        let key = match CString::new(param.key) {
             Ok(c) => c,
             Err(_) => {
                 return app_param_key_value_pair {
@@ -263,7 +264,7 @@ async fn load_app(
             }
         };
 
-        let value = match CString::new(param.value.clone()) {
+        let value = match CString::new(param.val) {
             Ok(c) => c,
             Err(_) => {
                 return app_param_key_value_pair {
@@ -275,7 +276,7 @@ async fn load_app(
 
         app_param_key_value_pair {
             key: key.into_raw(),
-            value: value.into_raw(),
+            val: value.into_raw(),
         }
     })
     .collect();

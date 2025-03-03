@@ -10,7 +10,7 @@ decoder:
     
 app:
   - name: app1
-    app: ${JRTC_PATH}/sample_apps/first_example_py/first_example
+    path: ${JRTC_PATH}/sample_apps/first_example_py/first_example
     type: python
     params:
       - name: param1
