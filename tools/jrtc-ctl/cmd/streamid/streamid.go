@@ -4,9 +4,9 @@
 package streamid
 
 import (
+	"fmt"
 	"jrtc-ctl/common"
 	"jrtc-ctl/jrtcbindings"
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -61,6 +61,6 @@ func run(_ *cobra.Command, opts *runOptions) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(streamID.String())
+	fmt.Println(streamID)
 	return nil
 }

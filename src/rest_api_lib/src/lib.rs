@@ -23,11 +23,12 @@ use tokio::sync::Mutex;
 use utoipa::{OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
 use std::env;
+use std::collections::HashMap;
 
-#[derive(Serialize, Deserialize, ToSchema, Clone)]
-struct AppParamKeyValuePair {
-    key: String,
-    val: String,
+#[repr(C)]
+pub struct AppParamKeyValuePair {
+    pub key: *mut i8,
+    pub val: *mut i8,
 }
 
 #[repr(C)]
@@ -41,7 +42,7 @@ pub struct LoadAppRequest {
     pub ioq_size: u32,
     pub app_path: *mut c_char,
     pub app_type: *mut c_char,
-    pub app_params: [*mut AppParamKeyValuePair; 255], // Fixed-size array
+    pub app_params: [AppParamKeyValuePair; 255], // Fixed-size array
 }
 
 type LoadAppCallback = unsafe extern "C" fn(load_req: LoadAppRequest) -> c_int;
@@ -71,7 +72,7 @@ struct JrtcAppLoadRequest {
     ioq_size: u32,
     app_path: String,
     app_type: String,
-    app_params: Vec<AppParamKeyValuePair>,
+    app_params: HashMap<String, String>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
@@ -265,25 +266,16 @@ async fn load_app(
         }
     };
 
-    let mut c_app_params: [*mut AppParamKeyValuePair; 255] = [std::ptr::null_mut(); 255]; // Initialize with NULLs
+    let mut c_app_params: [AppParamKeyValuePair; 255] = unsafe { std::mem::zeroed() }; // Initialize
 
-    let c_strings: Vec<AppParamKeyValuePair> = app_params
-    .iter()
-    .map(|param| {
-        let key = expand_env_vars(&param.key);
-        let value = expand_env_vars(&param.val);
-        AppParamKeyValuePair {
-            key: key,
-            val: value,
-        }
-    })
-    .collect();
-
-    for (i, cstr) in c_strings.iter().enumerate() {
+    for (i, (key, value)) in app_params.iter().enumerate() {
         if i >= 255 {
             break; // Prevent overflow
         }
-        c_app_params[i] = cstr as *const AppParamKeyValuePair as *mut AppParamKeyValuePair;
+        let c_key = CString::new(key.clone()).unwrap().into_raw();
+        let c_val = CString::new(value.clone()).unwrap().into_raw();
+
+        c_app_params[i] = AppParamKeyValuePair { key: c_key, val: c_val };
     }
 
     let app_req = LoadAppRequest {
@@ -303,6 +295,7 @@ async fn load_app(
     let app_name_ptr = app_req.app_name;
     let app_path_ptr = app_req.app_path;
     let app_type_ptr = app_req.app_type;
+
     unsafe {
         response = match state.callbacks.load_app {
             Some(load_app_cbk) => load_app_cbk(app_req),
@@ -320,6 +313,7 @@ async fn load_app(
 
         // Free app_name memory after callback
         unsafe {
+            // Free app_name memory after callback
             let _ = CString::from_raw(app_name_ptr);
             let _ = CString::from_raw(app_path_ptr);
             let _ = CString::from_raw(app_type_ptr);

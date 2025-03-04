@@ -11,17 +11,12 @@ import (
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
-// AppParamKeyValuePair represents a key-value pair for application parameters
-type AppParamKeyValuePair struct {
-	Key string
-	Val string
-}
-
 // NewJrtcAppLoadRequest creates a new JrtcAppLoadRequest
 func NewJrtcAppLoadRequest(
 	sharedLibraryPath, appName string,
 	ioqSize int32,
 	deadline, period, runtime time.Duration,
+	appType string,
 	appParams *map[string]interface{},
 ) (*JrtcAppLoadRequest, error) {
 	fi, err := os.Stat(sharedLibraryPath)
@@ -45,6 +40,8 @@ func NewJrtcAppLoadRequest(
 		IoqSize:    ioqSize,
 		PeriodUs:   int32(period.Microseconds()),
 		RuntimeUs:  int32(runtime.Microseconds()),
+		AppPath:    &sharedLibraryPath,
+		AppType:    &appType,
 		AppParams:  appParams,
 	}, nil
 }
@@ -54,6 +51,7 @@ func NewJrtcAppLoadRequestFromBytes(
 	sharedLibraryCode []byte, sharedLibraryPath, appName string,
 	ioqSize int32,
 	deadline, period, runtime time.Duration,
+	appType string,
 	appParams *map[string]interface{},
 ) (*JrtcAppLoadRequest, error) {
 	var f openapi_types.File
@@ -66,6 +64,8 @@ func NewJrtcAppLoadRequestFromBytes(
 		IoqSize:    ioqSize,
 		PeriodUs:   int32(period.Microseconds()),
 		RuntimeUs:  int32(runtime.Microseconds()),
+		AppPath:    &sharedLibraryPath,
+		AppType:    &appType,
 		AppParams:  appParams,
 	}, nil
 }

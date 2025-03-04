@@ -10,7 +10,8 @@ app:
     port: 3001
     type: c
     params:
-      key: value
+      key1: value1
+      key2: value2
 
 jbpf:
   device:
