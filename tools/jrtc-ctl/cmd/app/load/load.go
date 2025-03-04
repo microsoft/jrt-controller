@@ -48,7 +48,6 @@ func addToFlags(flags *pflag.FlagSet, opts *runOptions) {
 	flags.StringVar(&opts.appName, "app-name", "", "app name inside jrt-controller")
 	flags.StringVar(&opts.sharedLibraryPath, "app-path", "", "the shared library of the jrt-controller app")
 	flags.StringVar(&opts.appType, "app-type", "", "the type of the app")
-	// TODO: params?
 }
 
 func (o *runOptions) parse() error {
