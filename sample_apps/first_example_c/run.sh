@@ -6,7 +6,6 @@
 # Licensed under the MIT license.
 
 
-export PYTHONMALLOC=malloc
 export PYTHONVERBOSE=0
 
 # Check if JRTC_PATH is set
