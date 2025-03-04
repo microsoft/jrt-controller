@@ -61,6 +61,6 @@ func run(_ *cobra.Command, opts *runOptions) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println(streamID)
+	fmt.Println(streamID.String())
 	return nil
 }
