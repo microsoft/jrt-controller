@@ -75,7 +75,12 @@ For more information, you can also check the following resources:
 # Related projects
 
 - [jbpf](https://github.com/microsoft/jbpf): the userspace eBPF instrumentation and control framework used to instrument network functions that communicate with *jrt-controller*. 
-- [jbpf-protobuf](https://github.com/microsoft/jbpf-protobuf): An extension of jbpf, that introduces protobuf serialization capabilities for sending and receiving data from codelets loaded in jbpf applications.
+
+- Sample integration with [srsRAN](https://github.com/srsran/srsRAN_Project), which consists of two parts: 
+  * A [version of srsRAN](https://github.com/xfoukas/srsRAN_Project_jbpf) integrated with *jbpf*.
+  * A number of [sample applications](https://github.com/microsoft/jrtc-apps) for *jbpf* and *jrt-controller* on top of *srsRAN*.
+
+- [jbpf-protobuf](https://github.com/microsoft/jbpf-protobuf): The *jbpf* extension, used in *jrt-controller*, that demonstrates how to utilize protobuf serialization for sending and receiving data from codelets loaded in jbpf applications.
 
 # License
 
