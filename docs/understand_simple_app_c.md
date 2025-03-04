@@ -17,7 +17,7 @@ The logic of first [first example c](../sample_apps/first_example_c/) is identic
 
 To see the details of this logic and expected behaviour, refer to [./understand_simple_app.md](./understand_simple_app.md)
 
-The difference between the two is that first_example_c uses the JrtcApp abstraction class.  [See the API here](../src/wrapper_apis/jrtc_app.h).
+The difference between the two is that first_example_c uses the JrtcApp abstraction class.  [See the API here](../src/wrapper_apis/c/jrtc_app.h).
 
 Using this abstraction class, the user just needs to define the following ...
 - a structure detailing the app state variables.

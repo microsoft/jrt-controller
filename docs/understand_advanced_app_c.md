@@ -21,7 +21,7 @@ The logic of [advanced example c](../sample_apps/advanced_example_c/) is identic
 
 To see the details of this logic and expected behaviour, refer to [./understand_advanced_app.md](./understand_advanced_app.md)
 
-The difference between the two is that advanced_example_c uses the JrtcApp abstraction class.  [See the API here](../src/wrapper_apis/jrtc_app.h).  To see details of the JrtApp API, refer to [./understand_simple_app_c.md](./understand_simple_app_c.md)
+The difference between the two is that advanced_example_c uses the JrtcApp abstraction class.  [See the API here](../src/wrapper_apis/c/jrtc_app.h).  To see details of the JrtApp API, refer to [./understand_simple_app_c.md](./understand_simple_app_c.md)
 
 ## 1.1. Implementation details - AdvancedExample1
 

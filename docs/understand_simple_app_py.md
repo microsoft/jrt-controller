@@ -19,7 +19,7 @@ To see the details of this logic and expected behaviour, refer to [./understand_
 
 Both versions use the JrtcApp abstraction class.
 
-For the python version, see [jrtc_app.py](../src/wrapper_apis/jrtc_app.py).  This file is a python wrapper used to interface to the JrtcApp c++ class.
+For the python version, see [jrtc_app.py](../src/wrapper_apis/python/jrtc_app.py).  This file is a python wrapper used to interface to the JrtcApp c++ class.
 
 The details of first_example_py is almost identical to first_example_c, in that that developer just has to define the state variables, the application configuration, amd the callback handler.  
 The only difference is that it has a python API interface, as opposed to C.  
