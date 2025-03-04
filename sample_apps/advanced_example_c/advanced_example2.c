@@ -121,7 +121,7 @@ jrtc_start_app(void* args)
     };
 
     // Initialize the app
-    AppStateVars_t state = {NULL, 0};
+    AppStateVars_t state = {NULL, 0, 0};
     state.app = jrtc_app_create(env_ctx, (JrtcAppCfg_t*)&app_cfg, app_handler, &state);
 
     // start app - This is blocking until the app exists

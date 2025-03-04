@@ -23,7 +23,7 @@ jrtc_start_app(void* args)
     int num_rcv, res = 0;
     int received_counter, sent_counter;
     example_msg_pb* data;
-    simple_input_pb aggregate_counter = {};
+    simple_input_pb aggregate_counter = {0};
 
     jrtc_router_data_entry_t data_entries[100] = {0};
 

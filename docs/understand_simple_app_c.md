@@ -125,7 +125,7 @@ void app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_en
 
         if (state->received_counter % 5 == 0 && state->received_counter > 0) {
 
-            simple_input aggregate_counter = {};
+            simple_input aggregate_counter = {0};
 
             aggregate_counter.aggregate_counter = state->agg_cnt;
 

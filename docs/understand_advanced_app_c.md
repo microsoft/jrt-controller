@@ -136,7 +136,7 @@ void app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_en
                 printf("App1: Aggregate counter from codelet is %d\n", state->agg_cnt);
 
                 // Send the aggregate counter back to the input codelet
-                simple_input_pb aggregate_counter = {};
+                simple_input_pb aggregate_counter = {0};
                 jrtc_router_stream_id_t sid = jrtc_app_get_stream(state->app, SIMPLE_INPUT_CODELET_IN_SIDX);
                 int res = jrtc_router_channel_send_input_msg(sid, &state->agg_cnt, sizeof(aggregate_counter));
                 assert(res == 0 && "Failure in jrtc_router_channel_send_input_msg");
@@ -285,7 +285,7 @@ void app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_en
                 assert(res == 0 && "Error returned from jrtc_router_channel_send_output");
 
                 // Send the data to the App1 input channel
-                simple_input_pb aggregate_counter = {};
+                simple_input_pb aggregate_counter = {0};
                 aggregate_counter.aggregate_counter = state->agg_cnt;
 
                 jrtc_router_stream_id_t stream = jrtc_app_get_stream(state->app, APP1_IN_SIDX);
