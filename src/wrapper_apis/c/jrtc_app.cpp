@@ -176,7 +176,9 @@ JrtcApp::run()
             jrtc_router_channel_release_buf(data_entries[i].data);
             last_received_time = std::chrono::steady_clock::now();
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int>(app_cfg->sleep_timeout_secs * 1000)));
+        if (app_cfg->sleep_timeout_secs> 0) {
+            std::this_thread::sleep_for(std::chrono::nanoseconds(static_cast<long long>(app_cfg->sleep_timeout_secs * 1'000'000'000)));
+        }
     }
     CleanUp();
 }
