@@ -19,10 +19,10 @@ RUN go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.60.3
 ENV PATH="/root/go/bin:${PATH}"
 
 RUN echo "Installing specific versions of protoc-gen-go and protoc-gen-go-grpc" && \
-    go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v1.16.0 && \
-    go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@v1.16.0 && \
-    go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.34.1 && \
-    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.5.1    
+    go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.26.1 && \
+    go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@v2.26.1 && \
+    go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.36.5 && \
+    go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.70.0
 
 WORKDIR /jrtc
 COPY . /jrtc
