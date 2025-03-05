@@ -47,7 +47,7 @@ class JrtcApp
     // Retrieves the stream ID associated with a given index
     // @param stream_idx - Index of the stream
     // @return Stream ID
-    jrtc_router_stream_id_t
+    jrtc_router_stream_id_t*
     get_stream(int stream_idx);
 
     // Retrieves the channel context for a given stream index

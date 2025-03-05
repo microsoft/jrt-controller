@@ -53,9 +53,8 @@ app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, 
 
             aggregate_counter.aggregate_counter = state->agg_cnt;
 
-            jrtc_router_stream_id_t sid = jrtc_app_get_stream(state->app, SIMPLE_INPUT_IN_SIDX);
-
-            int res = jrtc_router_channel_send_input_msg(sid, &aggregate_counter, sizeof(aggregate_counter));
+            int res = jrtc_app_router_channel_send_input_msg(
+                state->app, SIMPLE_INPUT_IN_SIDX, &aggregate_counter, sizeof(aggregate_counter));
             assert(res == 0 && "Failure returned from jrtc_router_channel_send_input_msg");
 
             printf("FirstExample: Aggregate counter so far is: %u \n", state->agg_cnt);

@@ -50,20 +50,19 @@ app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, 
             fflush(stdout);
 
             // Get a buffer to write the output data
-            dapp_channel_ctx_t chan_ctx = jrtc_app_get_channel_context(state->app, APP2_OUT_SIDX);
-            simple_input_pb* counter = (simple_input_pb*)jrtc_router_channel_reserve_buf(chan_ctx);
+            simple_input_pb* counter = (simple_input_pb*)jrtc_app_router_channel_reserve_buf(state->app, APP2_OUT_SIDX);
             assert(counter);
             counter->aggregate_counter = state->agg_cnt;
             // Send the data to the App2 output channel
-            int res = jrtc_router_channel_send_output(chan_ctx);
+            int res = jrtc_app_router_channel_send_output(state->app, APP2_OUT_SIDX);
             assert(res == 0 && "Error returned from jrtc_router_channel_send_output");
 
             // Send the data to the App1 input channel
             simple_input_pb aggregate_counter = {};
             aggregate_counter.aggregate_counter = state->agg_cnt;
 
-            jrtc_router_stream_id_t stream = jrtc_app_get_stream(state->app, APP1_IN_SIDX);
-            res = jrtc_router_channel_send_input_msg(stream, &aggregate_counter, sizeof(aggregate_counter));
+            res = jrtc_app_router_channel_send_input_msg(
+                state->app, APP1_IN_SIDX, &aggregate_counter, sizeof(aggregate_counter));
             assert(res == 0 && "Failure in jrtc_router_channel_send_input_msg");
         } break;
 

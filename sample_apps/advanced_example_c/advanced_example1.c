@@ -51,8 +51,8 @@ app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, 
 
             // Send the aggregate counter back to the input codelet
             simple_input_pb aggregate_counter = {};
-            jrtc_router_stream_id_t sid = jrtc_app_get_stream(state->app, SIMPLE_INPUT_CODELET_IN_SIDX);
-            int res = jrtc_router_channel_send_input_msg(sid, &state->agg_cnt, sizeof(aggregate_counter));
+            int res = jrtc_app_router_channel_send_input_msg(
+                state->app, SIMPLE_INPUT_CODELET_IN_SIDX, &state->agg_cnt, sizeof(aggregate_counter));
             assert(res == 0 && "Failure in jrtc_router_channel_send_input_msg");
         } break;
 
