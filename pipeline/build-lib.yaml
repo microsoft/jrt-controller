@@ -12,15 +12,16 @@ steps:
       IMAGE_TAG="$(imageTag)"
       if docker image inspect $IMAGE_NAME:$IMAGE_TAG > /dev/null 2>&1; then
         echo "Image $IMAGE_NAME:$IMAGE_TAG already exists locally. Skipping build."
-        echo "##vso[task.setvariable variable=skipBuild;isOutput=true]"
+        echo "##vso[task.setvariable variable=skipBuild;isOutput=false]"
       else
         echo "Image $IMAGE_NAME:$IMAGE_TAG does not exist locally. Proceeding with build."
-        echo "##vso[task.setvariable variable=skipBuild;isOutput=false]"
+        echo "##vso[task.setvariable variable=skipBuild;isOutput=true]"
       fi
     displayName: 'Check if Image Exists Locally'
+    bash: true  # Ensure this is executed in a bash shell
 
-  # Only proceed with build if skipBuild is false
-  - ${{ if eq(variables['skipBuild'], 'false') }}:
+  # Only proceed with build if skipBuild is true (because 'skipBuild' variable was set in previous step)
+  - ${{ if eq(variables['skipBuild'], 'true') }}:
     - template: images/build.v2.yaml@templates
       parameters:
         arguments: ""
