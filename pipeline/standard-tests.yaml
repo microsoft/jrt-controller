@@ -7,31 +7,29 @@ parameters:
   - name: testCase
     type: object
 
-steps:
-  - bash: |
-      docker tag $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) jrtc
-    displayName: Prepare images
-    failOnStderr: true
-    continueOnError: false
-
-  - bash: |
-      echo ${{ parameters.testCase.description }}
-      echo sanitizerBuildParam: ${{ parameters.testCase.sanitizerBuildParam }}
-    displayName: Display build parameters
-    failOnStderr: true
-    continueOnError: false
-
-  - bash: |
-      if ! docker run --init --privileged --ulimit memlock=-1 --network host --cap-add=SYS_ADMIN --shm-size=1g --mount type=tmpfs,destination=/dev/shm -e VERBOSE=1 -e JRTC_PATH=/jrtc -e RUN_TESTS=1 -v `pwd`:/jrtc_out_lib -v `pwd`/sample_apps:/jrtc/sample_apps -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out ${{parameters.testCase['sanitizerBuildParam']}} jrtc; then
-        echo Error code is $?
-        exit 1
-      fi
-    displayName: Build and Test
-    continueOnError: false
-
 stages:
+- stage: PrepareEnvironment
+  displayName: Prepare Docker Image
+  jobs:
+  - job: PrepareDocker
+    displayName: Prepare Docker Image
+    steps:
+    - bash: |
+        docker tag $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) jrtc
+      displayName: Prepare images
+      failOnStderr: true
+      continueOnError: false
+
+    - bash: |
+        echo "Test Case Description: ${{ parameters.testCase.description }}"
+        echo "Sanitizer Build Param: ${{ parameters.testCase.sanitizerBuildParam }}"
+      displayName: Display build parameters
+      failOnStderr: true
+      continueOnError: false
+
 - stage: IntegrationTests
   displayName: Run Integration Tests in Parallel
+  dependsOn: PrepareEnvironment
   jobs:
   - job: RunTests
     displayName: Run JRTC Tests
@@ -64,7 +62,7 @@ stages:
           -v `pwd`/sample_apps:/jrtc/sample_apps \
           -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out \
           -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
-          ${{parameters.testCase['sanitizerBuildParam']}} \
+          ${{ parameters.testCase.sanitizerBuildParam }} \
           --entrypoint=/jrtc/helper_build_files/integration_tests.sh \
           jrtc \
           $(TEST_NAME) |& tee /tmp/output.log; then
@@ -96,4 +94,3 @@ stages:
       inputs:
         pathToPublish: "$(Build.ArtifactStagingDirectory)"
         artifactName: "TestLogs"
-
