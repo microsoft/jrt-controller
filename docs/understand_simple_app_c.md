@@ -100,8 +100,11 @@ context : A string passed to the abstraction class.  This is prepended to log me
 q_size :  The number of elements in the data entry array which is used when the application class receives messages.
 num_streams :  Number of streams.
 streams : The streams defined above.
-sleep_timeout_secs :  How long the abstraction class receiver loop should sleep each iteration.
+sleep_timeout_secs :  How long the abstraction class receiver loop should sleep each iteration.  
+                      This can be set to a nanosecond precision. 
+                      If set to zero, no sleep will be done.
 inactivity_timeout_secs : Inactivity duration to wait before callback the handler is called with "timeout=True".
+                      If set to zero, no inactivity timer will be run.
 ```
 
 ### 1.1.3. Callback handler

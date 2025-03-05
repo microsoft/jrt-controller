@@ -163,7 +163,7 @@ JrtcApp::run()
         std::vector<jrtc_router_data_entry_t> data_entries(app_cfg->q_size, {0});
         while (!atomic_load(&env_ctx->app_exit)) {
             auto now = std::chrono::steady_clock::now();
-            if (std::chrono::duration<double>(now - last_received_time).count() > app_cfg->inactivity_timeout_secs) {
+            if ((app_cfg->inactivity_timeout_secs > 0) && (std::chrono::duration<double>(now - last_received_time).count() > app_cfg->inactivity_timeout_secs)) {
                 app_handler(true, -1, nullptr, app_state);
                 last_received_time = now;
             }
