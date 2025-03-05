@@ -6,91 +6,82 @@ parameters:
     type: string
   - name: testCase
     type: object
+  - name: testName
+    type: string
 
-stages:
-- stage: PrepareEnvironment
-  displayName: Prepare Docker Image
-  jobs:
-  - job: PrepareDocker
-    displayName: Prepare Docker Image
-    steps:
-    - bash: |
-        docker tag $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) jrtc
-      displayName: Prepare images
-      failOnStderr: true
-      continueOnError: false
+steps:
+  - bash: |
+      docker tag $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) jrtc
+    displayName: Prepare images
+    failOnStderr: true
+    continueOnError: false
 
-    - bash: |
-        echo "Test Case Description: ${{ parameters.testCase.description }}"
-        echo "Sanitizer Build Param: ${{ parameters.testCase.sanitizerBuildParam }}"
-      displayName: Display build parameters
-      failOnStderr: true
-      continueOnError: false
+  - bash: |
+      echo ${{ parameters.testCase.description }}
+      echo sanitizerBuildParam: ${{ parameters.testCase.sanitizerBuildParam }}
+    displayName: Display build parameters
+    failOnStderr: true
+    continueOnError: false
 
-- stage: IntegrationTests
-  displayName: Run Integration Tests in Parallel
-  dependsOn: PrepareEnvironment
-  jobs:
-  - job: RunTests
-    displayName: Run JRTC Tests
-    strategy:
-      matrix:
-        first_example:
-          TEST_NAME: "first_example"
-        first_example_c:
-          TEST_NAME: "first_example_c"
-        first_example_py:
-          TEST_NAME: "first_example_py"
-        advanced_example:
-          TEST_NAME: "advanced_example"
-        advanced_example_c:
-          TEST_NAME: "advanced_example_c"
-    steps:
-    - script: |
-        set -e
-        echo "Running test: $(TEST_NAME)"
-        
-        if ! docker run --init --privileged \
-          --ulimit memlock=-1 \
-          --network host \
-          --cap-add=SYS_ADMIN \
-          --shm-size=1g \
-          --mount type=tmpfs,destination=/dev/shm \
-          -e VERBOSE=1 \
-          -e JRTC_PATH=/jrtc \
-          -v `pwd`:/jrtc_out_lib \
-          -v `pwd`/sample_apps:/jrtc/sample_apps \
-          -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out \
-          -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
-          ${{ parameters.testCase.sanitizerBuildParam }} \
-          --entrypoint=/jrtc/helper_build_files/integration_tests.sh \
-          jrtc \
-          $(TEST_NAME) |& tee /tmp/output.log; then
-            echo "Error Running JRTC Tests for $(TEST_NAME)"
-          exit 1
-        fi
+  - bash: |
+      if ! docker run --init --privileged --ulimit memlock=-1 --network host --cap-add=SYS_ADMIN --shm-size=1g --mount type=tmpfs,destination=/dev/shm -e VERBOSE=1 -e JRTC_PATH=/jrtc -e RUN_TESTS=1 -v `pwd`:/jrtc_out_lib -v `pwd`/sample_apps:/jrtc/sample_apps -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out ${{parameters.testCase['sanitizerBuildParam']}} jrtc; then
+        echo Error code is $?
+        exit 1
+      fi
+    displayName: Build and Test
+    continueOnError: false
 
-        echo "Test output log: $(TEST_NAME)"
-        cat /tmp/output.log
+  - bash: |
+      set -e
+      echo Building: jbpf, jrtc, jbpf codelets, jbpf IPC agent, and JRTC app
+      echo And Running JRTC Tests
+      rm -rf /tmp/output.log || true
 
-        # Copy logs to artifacts
-        mkdir -p $(Build.ArtifactStagingDirectory)
-        cp /tmp/output.log $(Build.ArtifactStagingDirectory)/output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}_$(TEST_NAME).log
-        
-        count=$(grep "Aggregate counter so far is" /tmp/output.log | wc -l)
-        echo "Result count for $(TEST_NAME): $count"
-        
-        if [[ $count -eq 0 ]]; then
-          echo "Test $(TEST_NAME) failed"
-          exit 1
-        else
-          echo "Test $(TEST_NAME) passed"
-        fi
-      displayName: "Run Test $(TEST_NAME)"
+      echo ".......................................................................................... Running test: ${{ parameters.testName }} .........................................................................................."
+      
+      if ! docker run --init --privileged \
+        --ulimit memlock=-1 \
+        --network host \
+        --cap-add=SYS_ADMIN \
+        --shm-size=1g \
+        --mount type=tmpfs,destination=/dev/shm \
+        -e VERBOSE=1 \
+        -e JRTC_PATH=/jrtc \
+        -v `pwd`:/jrtc_out_lib \
+        -v `pwd`/sample_apps:/jrtc/sample_apps \
+        -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out \
+        -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
+        ${{ parameters.testCase['sanitizerBuildParam'] }} \
+        --entrypoint=/jrtc/helper_build_files/integration_tests.sh \
+        jrtc \
+        ${{ parameters.testName }} |& tee /tmp/output.log; then
+          echo "Error Running JRTC Tests for ${{ parameters.testName }}"
+        exit 1
+      fi
+      
+      echo ".............................................Output.log: ${{ parameters.testName }} ............................................."
+      cat /tmp/output.log
+      
+      ## Copy to artifacts
+      cp /tmp/output.log $(Build.ArtifactStagingDirectory)/output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}_${{ parameters.testName }}.log
+      
+      count=$(grep "Aggregate counter so far is" /tmp/output.log | wc -l)
+      echo "The result count for ${{ parameters.testName }} is $count"
+      
+      if [[ $count -eq 0 ]]; then
+        echo ".......................................................................................... Test ${{ parameters.testName }} failed..........................................................................................."
+        exit 1
+      else
+        echo "..........................................................................................Test ${{ parameters.testName }} passed..........................................................................................."
+      fi
     
-    # Publish logs as artifacts
-    - task: PublishBuildArtifacts@1
-      displayName: "Publish Logs"
-      inputs:
-        pathToPublish: "$(Build.ArtifactStagingDirectory)"
-        artifactName: "TestLogs"
+    displayName: Integration Tests sample apps
+    continueOnError: false
+
+  # Publish logs as artifacts
+  - task: PublishBuildArtifacts@1
+    displayName: "Publish Logs"
+    inputs:
+      pathToPublish: "$(Build.ArtifactStagingDirectory)"
+      artifactName: "TestLogs"
+
