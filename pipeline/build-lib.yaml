@@ -10,7 +10,7 @@ steps:
   - script: |
       IMAGE_NAME="jrtc-${{ parameters.dockerType }}"
       IMAGE_TAG="$(imageTag)"
-      if docker images -q $IMAGE_NAME:$IMAGE_TAG; then
+      if docker image inspect $IMAGE_NAME:$IMAGE_TAG > /dev/null 2>&1; then
         echo "Image $IMAGE_NAME:$IMAGE_TAG already exists locally. Skipping build."
         echo "##vso[task.setvariable variable=skipBuild;isOutput=true]"
       else
