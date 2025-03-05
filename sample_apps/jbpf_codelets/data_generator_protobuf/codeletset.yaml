@@ -1,0 +1,18 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
+codeletset_id: data_generator_pb_codeletset
+codelet_descriptor:
+  - codelet_name: codelet
+    codelet_path: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator_protobuf/data_generator_pb_codelet.o
+    hook_name: test1
+    priority: 2
+    runtime_threshold: 50000
+    out_io_channel:
+      - name: ringbuf
+        forward_destination: DestinationUDP
+        serde:
+          file_path: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator_protobuf/generated_data:example_msg_pb_serializer.so
+          protobuf:
+            package_path: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator_protobuf/generated_data.pb
+            msg_name: example_msg_pb

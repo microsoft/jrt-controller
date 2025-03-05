@@ -290,3 +290,4 @@ unset(set_tests_properties)
 
 set(BUILD_TESTING ON CACHE BOOL "Enable testing" FORCE)
 add_subdirectory(tools/jrtc-ctl)
+add_subdirectory(src/wrapper_apis)

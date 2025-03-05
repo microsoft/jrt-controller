@@ -1,8 +1,0 @@
-// Copyright (c) Microsoft Corporation.
-// Licensed under the MIT license.
-
-syntax = "proto2";
-
-message example_msg {
-    required uint32 cnt = 1;
-}
