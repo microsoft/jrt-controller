@@ -103,7 +103,7 @@ stages:
                 workspace:
                   clean: all
                 steps:
-                  - template: agentpool/cleanup.yaml@templates
+                  - template: cleanup.yaml
                   - template: setup-on-vm.yaml
                   - template: print-debug-info.yaml
                   - template: build-lib.yaml
@@ -113,7 +113,7 @@ stages:
                     parameters:
                       dockerType: ${{ dockerType.value }}
                       testCase: ${{ testCase }}
-                  - template: agentpool/cleanup.yaml@templates
+                  - template: cleanup.yaml
 
               - ${{ each testName in parameters.testNames }}:
                   - job: ${{ testCase.id }}_${{ dockerType.id }}_${{ testName }}
@@ -122,9 +122,9 @@ stages:
                     workspace:
                       clean: all
                     steps:
-                      - template: agentpool/cleanup.yaml@templates
+                      - template: cleanup.yaml
                       - template: setup-on-vm.yaml
-                      - template: print-debug-info.yaml
+                      - template: print-debug-info.yaml                      
                       - template: build-lib.yaml
                         parameters:
                           dockerType: ${{ dockerType.value }}
@@ -133,4 +133,4 @@ stages:
                           dockerType: ${{ dockerType.value }}
                           testCase: ${{ testCase }}
                           testName: ${{ testName }}
-                      - template: agentpool/cleanup.yaml@templates
+                      - template: cleanup.yaml

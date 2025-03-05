@@ -1,0 +1,21 @@
+steps:
+  - bash: |
+      # Remove images that are at least 1 day old
+      docker images --format "{{.ID}} {{.CreatedAt}}" | while read -r image_id created_at; do
+        if [[ $(date -d "$created_at" +%s) -lt $(date -d "1 day ago" +%s) ]]; then
+          echo "Removing image: $image_id (Created: $created_at)"
+          docker rmi -f "$image_id"
+        fi
+      done
+
+      # Clean up unused Docker data
+      docker system prune -f
+    condition: always()
+    continueOnError: true
+    displayName: Cleanup Docker
+
+  - bash: |
+      sudo chown -R $(id -u):$(id -g) .
+    condition: always()
+    continueOnError: true
+    displayName: Set workspace permissions
