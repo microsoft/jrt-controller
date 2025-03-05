@@ -63,12 +63,11 @@ JrtcApp::JrtcApp(struct jrtc_app_env* env_ctx, JrtcAppCfg_t* app_cfg, JrtcAppHan
     : env_ctx(env_ctx), app_cfg(app_cfg), app_handler(app_handler), app_state(app_state), stream_items(),
       last_received_time(std::chrono::steady_clock::now())
 {
-    Init();
 }
 
 // ###########################################################
 // Initializes streams and channels based on configuration
-void
+int
 JrtcApp::Init()
 {
     last_received_time = std::chrono::steady_clock::now();
@@ -83,7 +82,10 @@ JrtcApp::Init()
         // Generate stream ID
         res =
             jrtc_router_generate_stream_id(&sid, s.sid.destination, s.sid.device_id, s.sid.stream_source, s.sid.io_map);
-        assert(res == 1);
+        if (res != 1) {
+            std::cout << app_cfg->context << "::  Failure generating stream id for " << s.sid << std::endl;
+            return -1;
+        }
         si.sid = sid;
 
         // Create channel if needed
@@ -96,13 +98,19 @@ JrtcApp::Init()
                 si.sid,
                 0,
                 0);
-            assert(si.chan_ctx);
+            if (si.chan_ctx == NULL) {
+                std::cout << app_cfg->context << "::  Failure generating channel context for " << s.sid << std::endl;
+                return -1;
+            }
         }
 
         // Register stream if it is for reception
         if (s.is_rx) {
             res = jrtc_router_channel_register_stream_id_req(env_ctx->dapp_ctx, si.sid);
-            assert(res == 1);
+            if (res != 1) {
+                std::cout << app_cfg->context << "::  Failure registering stream id for " << s.sid << std::endl;
+                return -1;
+            }
             si.registered = true;
         }
 
@@ -125,6 +133,8 @@ JrtcApp::Init()
             }
         }
     }
+
+    return 0;
 }
 
 // ###########################################################
@@ -147,40 +157,44 @@ JrtcApp::CleanUp()
 void
 JrtcApp::run()
 {
-    std::vector<jrtc_router_data_entry_t> data_entries(app_cfg->q_size, {0});
-    while (!atomic_load(&env_ctx->app_exit)) {
-        auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration<double>(now - last_received_time).count() > app_cfg->inactivity_timeout_secs) {
-            app_handler(true, -1, nullptr, app_state);
-            last_received_time = now;
-        }
+    // init the streams
+    if (Init() == 0) {
 
-        auto num_rcv = jrtc_router_receive(env_ctx->dapp_ctx, data_entries.data(), app_cfg->q_size);
-        for (int i = 0; i < num_rcv; ++i) {
+        std::vector<jrtc_router_data_entry_t> data_entries(app_cfg->q_size, {0});
+        while (!atomic_load(&env_ctx->app_exit)) {
+            auto now = std::chrono::steady_clock::now();
+            if (std::chrono::duration<double>(now - last_received_time).count() > app_cfg->inactivity_timeout_secs) {
+                app_handler(true, -1, nullptr, app_state);
+                last_received_time = now;
+            }
 
-            // find index which matches stream, if any
-            bool found = false;
-            int sidx = 0;
-            for (; sidx < app_cfg->num_streams; sidx++) {
-                auto& s = app_cfg->streams[sidx];
-                auto& si = stream_items[sidx];
-                if ((s.is_rx) && (jrtc_router_stream_id_matches_req(&data_entries[i].stream_id, &si.sid))) {
-                    found = true;
-                    break;
+            auto num_rcv = jrtc_router_receive(env_ctx->dapp_ctx, data_entries.data(), app_cfg->q_size);
+            for (int i = 0; i < num_rcv; ++i) {
+
+                // find index which matches stream, if any
+                bool found = false;
+                int sidx = 0;
+                for (; sidx < app_cfg->num_streams; sidx++) {
+                    auto& s = app_cfg->streams[sidx];
+                    auto& si = stream_items[sidx];
+                    if ((s.is_rx) && (jrtc_router_stream_id_matches_req(&data_entries[i].stream_id, &si.sid))) {
+                        found = true;
+                        break;
+                    }
                 }
+                // if stream found, call handler
+                if (found) {
+                    app_handler(false, sidx, &data_entries[i], app_state);
+                }
+                jrtc_router_channel_release_buf(data_entries[i].data);
+                last_received_time = std::chrono::steady_clock::now();
             }
-            // if stream found, call handler
-            if (found) {
-                app_handler(false, sidx, &data_entries[i], app_state);
-            }
-            jrtc_router_channel_release_buf(data_entries[i].data);
-            last_received_time = std::chrono::steady_clock::now();
-        }
 
-        if (app_cfg->sleep_timeout_secs > 0) {
-            // Ensure the timeout is at least 1 nanosecond (1e-9 seconds)
-            float dur = std::max(app_cfg->sleep_timeout_secs, 1e-9f);
-            std::this_thread::sleep_for(std::chrono::nanoseconds(static_cast<long long>(dur * 1'000'000'000)));
+            if (app_cfg->sleep_timeout_secs > 0) {
+                // Ensure the timeout is at least 1 nanosecond (1e-9 seconds)
+                float dur = std::max(app_cfg->sleep_timeout_secs, 1e-9f);
+                std::this_thread::sleep_for(std::chrono::nanoseconds(static_cast<long long>(dur * 1'000'000'000)));
+            }
         }
     }
     CleanUp();

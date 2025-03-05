@@ -33,7 +33,7 @@ class JrtcApp
     JrtcApp(struct jrtc_app_env* env_ctx, JrtcAppCfg_t* app_cfg, JrtcAppHandler app_handler, void* app_state);
 
     // Initializes the application instance
-    void
+    int
     Init();
 
     // Cleans up and releases resources associated with the application
