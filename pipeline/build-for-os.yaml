@@ -30,7 +30,7 @@ parameters:
 
   - name: testNames
     displayName: Test Names
-    type: array
+    type: object
     default:
       - "first_example"
       - "first_example_c"
