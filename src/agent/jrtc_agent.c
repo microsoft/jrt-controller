@@ -20,7 +20,8 @@ agent_init(char* channel_name, size_t memory_size, int device_id, char* stream_p
     io_config.type = JBPF_IO_IPC_SECONDARY;
     io_config.ipc_config.mem_cfg.memory_size = memory_size;
 
-    strncpy(io_config.ipc_config.addr.jbpf_io_ipc_name, channel_name, sizeof(channel_name) - 1);
+    strncpy(io_config.ipc_config.addr.jbpf_io_ipc_name, channel_name, sizeof(io_config.ipc_config.addr.jbpf_io_ipc_name) - 1);
+    io_config.ipc_config.addr.jbpf_io_ipc_name[sizeof(io_config.ipc_config.addr.jbpf_io_ipc_name) - 1] = '\0';  // Ensure null termination
 
     strncpy(io_config.jbpf_path, JBPF_DEFAULT_RUN_PATH, JBPF_RUN_PATH_LEN - 1);
     io_config.jbpf_path[JBPF_RUN_PATH_LEN - 1] = '\0';
