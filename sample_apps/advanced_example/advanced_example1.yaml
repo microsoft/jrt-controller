@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
-# yaml-language-server: $schema=../../tools/schemas/jrtc-ctl.schema.json
 
 name: AdvancedExample1
 
@@ -21,7 +20,7 @@ jbpf:
 
   codelet_set:
     - device: 1
-      config: ${JRTC_PATH}/sample_apps/advanced_example/jbpf_codelets/data_generator/data_generator_codelet.yaml
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/codeletset.yaml
 
     - device: 1
-      config: ${JRTC_PATH}/sample_apps/advanced_example/jbpf_codelets/simple_input/codeletset.yaml
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/simple_input_protobuf/codeletset.yaml

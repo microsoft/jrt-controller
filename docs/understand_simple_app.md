@@ -1,4 +1,17 @@
-# Understanding the simple example application
+
+- [1. Understanding the simple example application](#1-understanding-the-simple-example-application)
+  - [1.1. Application description](#11-application-description)
+  - [1.2. Implementation details](#12-implementation-details)
+    - [1.2.1. Receiving data from *jbpf* codelets](#121-receiving-data-from-jbpf-codelets)
+    - [1.2.2. Sending input data to *jbpf* codelets](#122-sending-input-data-to-jbpf-codelets)
+  - [1.3. Run the application](#13-run-the-application)
+    - [1.3.1. Prerequisites](#131-prerequisites)
+    - [1.3.2. Build the application](#132-build-the-application)
+    - [1.3.3. Run the components](#133-run-the-components)
+    - [1.3.4. Expected output](#134-expected-output)
+
+
+# 1. Understanding the simple example application
 
 The [first example](../sample_apps/first_example/) demonstrates the loading of a simple *jrt-controller* deployment.
 A deployment in the *jrt-controller* terminology is a collection of modules that are loaded to the *jrt-controller* and the network functions as a set and operate as a single logical unit (i.e., as a single applicaction). 
@@ -6,7 +19,7 @@ A deployment in the *jrt-controller* terminology is a collection of modules that
 A deployment can contain one or more application modules that are loaded to the *jrt-controller* and a set of codeletsets (collection of codelets) that are loaded to network functions instrumented with the jbpf framework. 
 For details about the APIs and functionalities of the *jbpf* framework, please consult the *jbpf* [documentation](https://github.com/microsoft/jbpf/blob/main/README.md).
 
-## Application description
+## 1.1. Application description
 
 This example demonstrates a simple deployment that is composed of a single *jrt-controller* application and two codelets, which are loaded to a sample agent.
 In this example, an agent corresponds to an instrumented network function. 
@@ -17,9 +30,9 @@ and sends this value to a [simple_input codelet](../sample_apps/first_example/jb
 via a control_input channel called [input_map](../sample_apps/first_example/jbpf_codelets/simple_input/codeletset.yaml). 
 The simple_input codelet prints the received values everytime it is called by the agent.
 
-## Implementation details
+## 1.2. Implementation details
 
-### Receiving data from *jbpf* codelets
+### 1.2.1. Receiving data from *jbpf* codelets
 
 To receive the data from the data_generator codelet, the application must first subscribe to the codelet's output stream. This is done though the following API calls:
 ```C
@@ -27,7 +40,7 @@ jrtc_router_generate_stream_id(
   &codelet_sid,
   JRTC_ROUTER_REQ_DEST_ANY,
   JRTC_ROUTER_REQ_DEVICE_ID_ANY,
-  "FirstExample://jbpf_agent/data_generator_codeletset/codelet1",
+  "FirstExample://jbpf_agent/data_generator_codeletset/codelet",
 "ringbuf");
 
 jrtc_router_channel_register_stream_id_req(env_ctx->dapp_ctx, codelet_sid);
@@ -40,7 +53,7 @@ The application also identifies the stream path, i.e., the creator of the stream
 This information is defined in the application deployment descriptor file found [here](../sample_apps/first_example/jbpf_codelets/data_generator/data_generator_codelet.yaml).
 The stream path is a string in the format `<deployment_name>://<source_path>`.
 The name of the deployment in this example, as defined in the deployment descriptor file, is `FirstExample`.
-Given that the stream of this example is created by a *jbpf* codelet, the source path name starts with the string `jbpf_agent` and is followed by the codeletset and codelet name, i.e., `jbpf_agent/data_generator_codeletset/codelet1`.
+Given that the stream of this example is created by a *jbpf* codelet, the source path name starts with the string `jbpf_agent` and is followed by the codeletset and codelet name, i.e., `jbpf_agent/data_generator_codeletset/codelet`.
 Finally, the stream name is the name of the output map that the *jbpf* codelet uses to send the data out, i.e., `ringbuf` in this example.
 
 Using the generated stream_id, the application can subscribe to the codelet's stream using the `jrtc_router_channel_register_stream_id_req()` API call.
@@ -66,7 +79,7 @@ The application then checks the origin of the received entry `jrtc_router_stream
 To minimize the communication latency, the data entries are distributed to the applications in a zero copy manner.
 As such, the application must also make sure to release the received data buffer, after it no longer requires it, by calling `jrtc_router_channel_release_buf()`.
 
-### Sending input data to *jbpf* codelets
+### 1.2.2. Sending input data to *jbpf* codelets
 
 Similarly to receiving data, the application must generate a stream id handler `control_input_sid` for sending control input data to the `simple_input` codelet:
 ```C
@@ -74,12 +87,12 @@ jrtc_router_generate_stream_id(
   &control_input_sid,
   JRTC_ROUTER_REQ_DEST_NONE,
   jbpf_agent_device_id,
-  "FirstExample://jbpf_agent/unique_id_for_codelet_simple_input/codelet1",
+  "FirstExample://jbpf_agent/simple_input_codeletset/codelet",
   "input_map");
 ```
 For this, it specifies that the stream id will not be used to route the sent messages to any external entities (`JRTC_ROUTER_REQ_DEST_NONE`), as well as the unique id of the jbpf_agent where the destination simple_input codelet is loaded (`jbpf_agent_device_id`).
-The stream is destined to a *jbpf* codelet `codelet1` that is part of the codeletset `unique_id_for_codelet_simple_input`.
-As such, the stream path becomes `FirstExample://jbpf_agent/unique_id_for_codelet_simple_input/codelet1`.
+The stream is destined to a *jbpf* codelet `codelet` that is part of the codeletset `simple_input_codeletset`.
+As such, the stream path becomes `FirstExample://jbpf_agent/simple_input_codeletset/codelet`.
 Finally, the stream name of the input map, where the codelet expects the input data is `input_map`.
 
 To send to the input map of the codelet, the application uses the generated stream id and calls:
@@ -88,14 +101,14 @@ jrtc_router_channel_send_input_msg(control_input_sid, &aggregate_counter, sizeof
 ```
 where `aggregate_counter` is the structure that is expected as input by the simple_input codelet. 
 
-## Run the application
+## 1.3. Run the application
 
-### Prerequisites
+### 1.3.1. Prerequisites
 
 Before running the sample apps, the *jrt-controller* must be built (see [README.md](../../README.md) for instructions).
 
 
-### Build the application
+### 1.3.2. Build the application
 
 The application can be built using the following commands:
   ```sh
@@ -106,9 +119,9 @@ The application can be built using the following commands:
 This will build the two sample codelets (`data_generator` and `simple_input`), the sample agent (`simple_agent_ipc`) and the *jrt-controller* application (`app1.so`).
 
 
-### Run the components
+### 1.3.3. Run the components
 
-You will need to open four terminals.
+You will need to open five terminals.
 
 * **Terminal 1:** 
   
@@ -138,6 +151,15 @@ You will need to open four terminals.
 
 * **Terminal 4:**
 
+  This is used to run the *jrt-contoller" decoder.
+  
+  ```sh
+  cd $JRTC_PATH/sample_apps/first_example
+  ./run_decoder.sh
+  ```
+
+* **Terminal 5:**
+
   This is used to load and unload the example application.
   ```sh
   cd $JRTC_PATH/sample_apps/first_example
@@ -145,7 +167,7 @@ You will need to open four terminals.
   ```
 
 
-### Expected output
+### 1.3.4. Expected output
 
 If the codelets and the app were loaded successfully, you should see the following output at the jrt-controller:
 ```
