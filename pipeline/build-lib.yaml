@@ -1,6 +1,3 @@
-# Copyright (c) Microsoft Corporation.
-# Licensed under the MIT license.
-
 parameters:
   - name: dockerType
     type: string
@@ -18,16 +15,17 @@ steps:
         echo "##vso[task.setvariable variable=skipBuild;isOutput=true]"
       else
         echo "Image $IMAGE_NAME:$IMAGE_TAG does not exist locally. Proceeding with build."
+        echo "##vso[task.setvariable variable=skipBuild;isOutput=false]"
       fi
     displayName: 'Check if Image Exists Locally'
 
-  # Conditionally skip build step based on previous check
-  - template: images/build.v2.yaml@templates
-    parameters:
-      arguments: ""
-      dockerfile: deploy/${{ parameters.dockerType }}.Dockerfile
-      registry: $(containerRegistry)
-      repository: jrtc-${{ parameters.dockerType }}
-      tags: |
-        $(imageTag)
-    condition: and(succeeded(), eq(variables['skipBuild'], 'false'))
+  # Only proceed with build if skipBuild is false
+  - ${{ if eq(variables['skipBuild'], 'false') }}:
+    - template: images/build.v2.yaml@templates
+      parameters:
+        arguments: ""
+        dockerfile: deploy/${{ parameters.dockerType }}.Dockerfile
+        registry: $(containerRegistry)
+        repository: jrtc-${{ parameters.dockerType }}
+        tags: |
+          $(imageTag)
