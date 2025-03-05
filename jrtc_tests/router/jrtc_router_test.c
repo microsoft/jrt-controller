@@ -334,7 +334,8 @@ main(int argc, char* argv[])
 
     if (child_pid == 0) {
         // secondary
-        assert(agent_test() == 0);
+        int res = agent_test();
+        assert(res == 0);
     } else {
         // primary
         cpid = child_pid;
