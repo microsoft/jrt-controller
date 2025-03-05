@@ -84,4 +84,3 @@ steps:
     inputs:
       pathToPublish: "$(Build.ArtifactStagingDirectory)"
       artifactName: "TestLogs"
-

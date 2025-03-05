@@ -28,6 +28,16 @@ parameters:
         id: test2
         sanitizerBuildParam: "-e SANITIZER=0"
 
+  - name: testNames
+    displayName: Test Names
+    type: array
+    default:
+      - "first_example"
+      - "first_example_c"
+      - "first_example_py"
+      - "advanced_example"
+      - "advanced_example_c"
+
 stages:
   - stage: CoverageTests
     displayName: CoverageTests
