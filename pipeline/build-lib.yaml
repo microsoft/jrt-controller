@@ -12,21 +12,28 @@ steps:
       IMAGE_TAG="$(imageTag)"
       if docker image inspect $IMAGE_NAME:$IMAGE_TAG > /dev/null 2>&1; then
         echo "Image $IMAGE_NAME:$IMAGE_TAG already exists locally. Skipping build."
-        exit 0  # Exiting successfully prevents the next step from failing
+        echo "##vso[task.setvariable variable=skipBuild;isOutput=true]true"
       else
         echo "Image $IMAGE_NAME:$IMAGE_TAG does not exist locally. Proceeding with build."
-        exit 1  # This will fail, but we'll use continueOnError to prevent the pipeline from stopping
+        echo "##vso[task.setvariable variable=skipBuild;isOutput=true]false"
       fi
     displayName: 'Check if Image Exists Locally'
     name: checkImage
-    continueOnError: true  # Allow the pipeline to continue even if the image exists
 
-  # Only run the build if the previous step failed (i.e., the image was NOT found)
+  # Use inline Bash to decide whether to trigger the build
   - bash: |
-      echo "Proceeding with the build since the image was not found."
-    displayName: 'Trigger Build'
-    condition: failed(steps.checkImage)
+      if [[ "$(skipBuild)" == "false" ]]; then
+        echo "Proceeding with build."
+        exit 1  # This will cause the next step to run
+      else
+        echo "Skipping build."
+        exit 0
+      fi
+    displayName: 'Determine if Build Should Run'
+    name: determineBuild
+    continueOnError: true  # Allow pipeline to continue execution
 
+  # Execute the build step only if the previous step fails (meaning the image was NOT found)
   - template: images/build.v2.yaml@templates
     parameters:
       arguments: ""
@@ -35,4 +42,5 @@ steps:
       repository: jrtc-${{ parameters.dockerType }}
       tags: |
         $(imageTag)
-    condition: failed(steps.checkImage)  # Only build if the image check step failed
+    dependsOn: determineBuild  # Ensures this step only runs after the check
+    condition: failed()  # Runs only if the image does not exist
