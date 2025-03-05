@@ -11,12 +11,6 @@ parameters:
 
 steps:
   - bash: |
-      docker tag $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) jrtc
-    displayName: Prepare images
-    failOnStderr: true
-    continueOnError: false
-
-  - bash: |
       echo ${{ parameters.testCase.description }}
       echo sanitizerBuildParam: ${{ parameters.testCase.sanitizerBuildParam }}
     displayName: Display build parameters
@@ -45,7 +39,7 @@ steps:
         -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
         ${{ parameters.testCase['sanitizerBuildParam'] }} \
         --entrypoint=/jrtc/helper_build_files/integration_tests.sh \
-        jrtc \
+        (containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) \
         ${{ parameters.testName }} |& tee /tmp/output.log; then
           echo "Error Running JRTC Tests for ${{ parameters.testName }}"
         exit 1
