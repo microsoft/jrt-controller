@@ -39,7 +39,7 @@ steps:
         -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
         ${{ parameters.testCase['sanitizerBuildParam'] }} \
         --entrypoint=/jrtc/helper_build_files/integration_tests.sh \
-        (containerRegistry)/jrtc-${{ parameters.dockerType }}:$imageTag \
+        $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$imageTag \
         ${{ parameters.testName }} |& tee /tmp/output.log; then
           echo "Error Running JRTC Tests for ${{ parameters.testName }}"
         exit 1
