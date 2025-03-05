@@ -97,6 +97,24 @@ stages:
         dependsOn: []
         jobs:
           - ${{ each testCase in parameters.testCases }}:
+              - job: ${{ testCase.id }}_${{ dockerType.id }}
+                dependsOn: []
+                displayName: "Test - ${{ testCase.description }}"
+                workspace:
+                  clean: all
+                steps:
+                  - template: agentpool/cleanup.yaml@templates
+                  - template: setup-on-vm.yaml
+                  - template: print-debug-info.yaml
+                  - template: build-lib.yaml
+                    parameters:
+                      dockerType: ${{ dockerType.value }}
+                  - template: standard-tests.yaml
+                    parameters:
+                      dockerType: ${{ dockerType.value }}
+                      testCase: ${{ testCase }}
+                  - template: agentpool/cleanup.yaml@templates
+
               - ${{ each testName in parameters.testNames }}:
                   - job: ${{ testCase.id }}_${{ dockerType.id }}_${{ testName }}
                     dependsOn: []
@@ -110,10 +128,9 @@ stages:
                       - template: build-lib.yaml
                         parameters:
                           dockerType: ${{ dockerType.value }}
-                      - template: standard-tests.yaml
+                      - template: integration-tests.yaml
                         parameters:
                           dockerType: ${{ dockerType.value }}
                           testCase: ${{ testCase }}
                           testName: ${{ testName }}
                       - template: agentpool/cleanup.yaml@templates
-

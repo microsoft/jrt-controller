@@ -6,8 +6,6 @@ parameters:
     type: string
   - name: testCase
     type: object
-  - name: testName
-    type: string
 
 steps:
   - bash: |
@@ -31,56 +29,12 @@ steps:
     displayName: Build and Test
     continueOnError: false
 
-  - bash: |
-      set -e
-      echo Building: jbpf, jrtc, jbpf codelets, jbpf IPC agent, and JRTC app
-      echo And Running JRTC Tests
-      rm -rf /tmp/output.log || true
-
-      echo ".......................................................................................... Running test: ${{ parameters.testName }} .........................................................................................."
-      
-      if ! docker run --init --privileged \
-        --ulimit memlock=-1 \
-        --network host \
-        --cap-add=SYS_ADMIN \
-        --shm-size=1g \
-        --mount type=tmpfs,destination=/dev/shm \
-        -e VERBOSE=1 \
-        -e JRTC_PATH=/jrtc \
-        -v `pwd`:/jrtc_out_lib \
-        -v `pwd`/sample_apps:/jrtc/sample_apps \
-        -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out \
-        -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
-        ${{ parameters.testCase['sanitizerBuildParam'] }} \
-        --entrypoint=/jrtc/helper_build_files/integration_tests.sh \
-        jrtc \
-        ${{ parameters.testName }} |& tee /tmp/output.log; then
-          echo "Error Running JRTC Tests for ${{ parameters.testName }}"
-        exit 1
-      fi
-      
-      echo ".............................................Output.log: ${{ parameters.testName }} ............................................."
-      cat /tmp/output.log
-      
-      ## Copy to artifacts
-      cp /tmp/output.log $(Build.ArtifactStagingDirectory)/output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}_${{ parameters.testName }}.log
-      
-      count=$(grep "Aggregate counter so far is" /tmp/output.log | wc -l)
-      echo "The result count for ${{ parameters.testName }} is $count"
-      
-      if [[ $count -eq 0 ]]; then
-        echo ".......................................................................................... Test ${{ parameters.testName }} failed..........................................................................................."
-        exit 1
-      else
-        echo "..........................................................................................Test ${{ parameters.testName }} passed..........................................................................................."
-      fi
-    
-    displayName: Integration Tests sample apps
-    continueOnError: false
-
-  # Publish logs as artifacts
-  - task: PublishBuildArtifacts@1
+  - task: PublishTestResults@2
     displayName: "Publish Logs"
     inputs:
-      pathToPublish: "$(Build.ArtifactStagingDirectory)"
-      artifactName: "TestLogs"
+      testResultsFormat: "JUnit" # Options: JUnit, NUnit, VSTest, xUnit, cTest
+      testResultsFiles: "**/**/*.tests.xml"
+      #searchFolder: '$(System.DefaultWorkingDirectory)' # Opastional
+      mergeTestResults: true # Optional
+      failTaskOnFailedTests: true
+    continueOnError: false
