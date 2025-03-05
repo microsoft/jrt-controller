@@ -29,16 +29,28 @@ steps:
     displayName: Build and Test
     continueOnError: false
 
-  - bash: |
-      set -e
-      echo Building: jbpf, jrtc, jbpf codelets, jbpf IPC agent, and JRTC app
-      echo And Running JRTC Tests
-      rm -rf /tmp/output.log || true
-
-      TEST_CASES=("first_example" "first_example_c" "first_example_py" "advanced_example" "advanced_example_c")
-
-      for TEST in "${TEST_CASES[@]}"; do
-        echo ".......................................................................................... Running test: $TEST .........................................................................................."
+stages:
+- stage: IntegrationTests
+  displayName: Run Integration Tests in Parallel
+  jobs:
+  - job: RunTests
+    displayName: Run JRTC Tests
+    strategy:
+      matrix:
+        first_example:
+          TEST_NAME: "first_example"
+        first_example_c:
+          TEST_NAME: "first_example_c"
+        first_example_py:
+          TEST_NAME: "first_example_py"
+        advanced_example:
+          TEST_NAME: "advanced_example"
+        advanced_example_c:
+          TEST_NAME: "advanced_example_c"
+    steps:
+    - script: |
+        set -e
+        echo "Running test: $(TEST_NAME)"
         
         if ! docker run --init --privileged \
           --ulimit memlock=-1 \
@@ -55,37 +67,33 @@ steps:
           ${{parameters.testCase['sanitizerBuildParam']}} \
           --entrypoint=/jrtc/helper_build_files/integration_tests.sh \
           jrtc \
-          $TEST |& tee /tmp/output.log; then
-            echo "Error Running JRTC Tests for $TEST"
+          $(TEST_NAME) |& tee /tmp/output.log; then
+            echo "Error Running JRTC Tests for $(TEST_NAME)"
           exit 1
         fi
-        
-        echo ".............................................Output.log: $TEST ............................................."
+
+        echo "Test output log: $(TEST_NAME)"
         cat /tmp/output.log
-        
-        ## Copy to artifacts
-        cp /tmp/output.log $(Build.ArtifactStagingDirectory)/output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}_${TEST}.log
+
+        # Copy logs to artifacts
+        mkdir -p $(Build.ArtifactStagingDirectory)
+        cp /tmp/output.log $(Build.ArtifactStagingDirectory)/output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}_$(TEST_NAME).log
         
         count=$(grep "Aggregate counter so far is" /tmp/output.log | wc -l)
-        echo "The result count for $TEST is $count"
+        echo "Result count for $(TEST_NAME): $count"
         
         if [[ $count -eq 0 ]]; then
-          echo ".......................................................................................... Test $TEST failed..........................................................................................."
+          echo "Test $(TEST_NAME) failed"
           exit 1
         else
-          echo "..........................................................................................Test $TEST passed..........................................................................................."
+          echo "Test $(TEST_NAME) passed"
         fi
-      done
+      displayName: "Run Test $(TEST_NAME)"
     
-    displayName: Integration Tests sample apps
-    continueOnError: false
-
-  - task: PublishTestResults@2
-    inputs:
-      testResultsFormat: "JUnit" # Options: JUnit, NUnit, VSTest, xUnit, cTest
-      testResultsFiles: "**/**/*.tests.xml"
-      #searchFolder: '$(System.DefaultWorkingDirectory)' # Opastional
-      mergeTestResults: true # Optional
-      failTaskOnFailedTests: true
-    continueOnError: false
+    # Publish logs as artifacts
+    - task: PublishBuildArtifacts@1
+      displayName: "Publish Logs"
+      inputs:
+        pathToPublish: "$(Build.ArtifactStagingDirectory)"
+        artifactName: "TestLogs"
 
