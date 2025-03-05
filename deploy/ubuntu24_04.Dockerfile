@@ -5,9 +5,7 @@ FROM mcr.microsoft.com/mirror/docker/library/ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-c"]
 ENV CLANG_FORMAT_CHECK=1
-
-## TODO: jbpf-protobuf requires fixing under ubuntu 24.04
-#ENV CPP_CHECK=1
+ENV CPP_CHECK=1
 
 RUN echo "*** Installing packages"
 RUN apt update --fix-missing
