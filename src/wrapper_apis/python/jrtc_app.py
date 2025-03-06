@@ -79,6 +79,7 @@ class JrtcAppCfg_t(ctypes.Structure):
         ("q_size", c_int),
         ("num_streams", c_int),
         ("streams", ctypes.POINTER(JrtcStreamCfg_t)),
+        ("initialization_timeout_secs", c_float),
         ("sleep_timeout_secs", c_float),
         ("inactivity_timeout_secs", c_float)
     ]

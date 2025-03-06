@@ -43,12 +43,13 @@ extern "C"
     // Structure representing the overall application configuration
     typedef struct
     {
-        char* context;                 // Application context (string)
-        int q_size;                    // Queue size for processing
-        int num_streams;               // Number of streams
-        JrtcStreamCfg_t* streams;      // Pointer to an array of stream configurations
-        float sleep_timeout_secs;      // Sleep timeout in seconds
-        float inactivity_timeout_secs; // Inactivity timeout in seconds
+        char* context;                     // Application context (string)
+        int q_size;                        // Queue size for processing
+        int num_streams;                   // Number of streams
+        JrtcStreamCfg_t* streams;          // Pointer to an array of stream configurations
+        float initialization_timeout_secs; // Maximum time to wait for initialisation to complete.
+        float sleep_timeout_secs;          // Sleep timeout in seconds
+        float inactivity_timeout_secs;     // Inactivity timeout in seconds
     } JrtcAppCfg_t;
 
     // Callback function type for handling application events

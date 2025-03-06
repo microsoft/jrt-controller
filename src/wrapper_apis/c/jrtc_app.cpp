@@ -70,7 +70,8 @@ JrtcApp::JrtcApp(struct jrtc_app_env* env_ctx, JrtcAppCfg_t* app_cfg, JrtcAppHan
 int
 JrtcApp::Init()
 {
-    last_received_time = std::chrono::steady_clock::now();
+    auto start_time = std::chrono::steady_clock::now();
+    last_received_time = start_time;
     std::cout << app_cfg->context << "::  app_cfg: " << app_cfg << std::endl;
 
     for (int i = 0; i < app_cfg->num_streams; ++i) {
@@ -115,6 +116,16 @@ JrtcApp::Init()
         }
 
         stream_items.push_back(si);
+
+        // Check if the initialisation timeout has been exceeded
+        if (app_cfg->initialization_timeout_secs > 0) {
+            auto elapsed =
+                std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start_time);
+            if (elapsed.count() > app_cfg->initialization_timeout_secs) {
+                std::cout << app_cfg->context << "::  Timeout exceeded waiting for initialisation" << std::endl;
+                return -1; // Return error or handle timeout condition as necessary
+            }
+        }
     }
 
     // Now that all this app's channels have been created, check channels which the app might transmit to are created
@@ -129,6 +140,16 @@ JrtcApp::Init()
                 if (k++ == 10) {
                     std::cout << app_cfg->context << "::  Waiting for creation of : " << s.sid << std::endl;
                     k = 0;
+                }
+
+                // Check if the initialisation timeout has been exceeded
+                if (app_cfg->initialization_timeout_secs > 0) {
+                    auto elapsed =
+                        std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start_time);
+                    if (elapsed.count() > app_cfg->initialization_timeout_secs) {
+                        std::cout << app_cfg->context << "::  Timeout exceeded waiting for initialisation" << std::endl;
+                        return -1; // Return error or handle timeout condition as necessary
+                    }
                 }
             }
         }

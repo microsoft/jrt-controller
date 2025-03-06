@@ -125,6 +125,7 @@ jrtc_start_app(void* args)
         100,                                  // q_size
         sizeof(streams) / sizeof(streams[0]), // num_streams
         (JrtcStreamCfg_t*)streams,            // Pointer to the streams array
+        10.0f,                                // initialization_timeout_secs
         0.1f,                                 // sleep_timeout_secs
         1.0f                                  // inactivity_timeout_secs
     };
