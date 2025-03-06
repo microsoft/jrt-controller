@@ -69,11 +69,19 @@ steps:
         count=$(grep "Aggregate counter so far is" /tmp/output.log | wc -l)
         echo "The result count for $TEST is $count"
         
-        if [[ $count -eq 0 ]]; then
+        ## Additional check if TEST contains "advanced"
+        if [[ "$TEST" == *"advanced"* ]]; then
+          advanced_count=$(grep "Received aggregate counter" /tmp/output.log | wc -l)
+          echo "The advanced result count for $TEST is $advanced_count"
+        else
+          advanced_count=1  # Set to 1 to not block tests that do not need this check
+        fi
+
+        if [[ $count -eq 0 || $advanced_count -eq 0 ]]; then
           echo ".......................................................................................... Test $TEST failed..........................................................................................."
           exit 1
         else
-          echo "..........................................................................................Test $TEST passed..........................................................................................."
+          echo ".......................................................................................... Test $TEST passed..........................................................................................."
         fi
       done
     
