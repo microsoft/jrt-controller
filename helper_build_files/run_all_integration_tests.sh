@@ -22,7 +22,7 @@ for TEST in "${TEST_CASES[@]}"; do
     echo ".............................................Output.log: $TEST ............................................."
     cat $JRTC_TESTS_OUTPUT
 
-    if ! $JRTC_PATH/sample_apps/$TEST/assert.sh $JRTC_TESTS_OUTPUT; then
+    if ! $JRTC_PATH/sample_apps/$TEST/assert.sh $JRTC_TESTS_OUTPUT $TEST; then
         echo "Test Assertion failed for $TEST"
         exit 1
     fi
