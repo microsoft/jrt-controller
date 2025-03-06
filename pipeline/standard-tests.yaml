@@ -16,8 +16,21 @@ steps:
     continueOnError: false
 
   - bash: |
-      if ! docker run --init --privileged --ulimit memlock=-1 --network host --cap-add=SYS_ADMIN --shm-size=1g --mount type=tmpfs,destination=/dev/shm -e VERBOSE=1 -e JRTC_PATH=/jrtc -e RUN_TESTS=1 -v `pwd`:/jrtc_out_lib -v `pwd`/sample_apps:/jrtc/sample_apps -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out ${{parameters.testCase['sanitizerBuildParam']}} $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) jrtc; then
-        echo Error code is $?
+      if ! docker run --init --privileged \
+        --ulimit memlock=-1 \
+        --network host \
+        --cap-add=SYS_ADMIN \
+        --shm-size=1g \
+        --mount type=tmpfs,destination=/dev/shm \
+        -e VERBOSE=1 \
+        -e JRTC_PATH=/jrtc \
+        -v `pwd`:/jrtc_out_lib \
+        -v `pwd`/out:/jrtc/out \
+        -v `pwd`/sample_apps:/jrtc/sample_apps \
+        -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out \
+        -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
+          $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag); then
+        echo Error building and testing
         exit 1
       fi
     displayName: Build and Test
@@ -43,7 +56,7 @@ steps:
           -e VERBOSE=1 \
           -e JRTC_PATH=/jrtc \
           -v `pwd`:/jrtc_out_lib \
-          -v `pwd/out:/jrtc/out \
+          -v `pwd`/out:/jrtc/out \
           -v `pwd`/sample_apps:/jrtc/sample_apps \
           -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out \
           -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
