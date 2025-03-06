@@ -46,17 +46,18 @@ steps:
         --mount type=tmpfs,destination=/dev/shm \
         -e VERBOSE=1 \
         -e JRTC_PATH=/jrtc \
-        -v `pwd`:/jrtc_out_lib \
-        -v `pwd`/out:/jrtc/out \
-        -v `pwd`/sample_apps:/jrtc/sample_apps \
-        -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out \
-        -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
         ${{parameters.testCase['sanitizerBuildParam']}} \
         --entrypoint=/jrtc/helper_build_files/run_all_integration_tests.sh \
         $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) \
         |& tee $JRTC_TESTS_OUTPUT; then
           echo "Error Running JRTC Tests for $TEST"
         exit 1
+      fi
+
+      exit_code=${PIPESTATUS[0]}  # Capture docker run exit code
+      if [[ $exit_code -ne 0 ]]; then
+          echo "Error Running JRTC Tests for $TEST"
+          exit 1
       fi
       
       echo ".............................................Output.log: $TEST ............................................."
