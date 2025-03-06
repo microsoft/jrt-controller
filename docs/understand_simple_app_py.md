@@ -17,9 +17,9 @@ The logic of [first example py](../sample_apps/first_example_py/) is identical t
 
 To see the details of this logic and expected behaviour, refer to [./understand_simple_app_c.md](./understand_simple_app_c.md)
 
-For the python version, see [jrtc_app.py](../src/wrapper_apis/python/jrtc_app.py).  This file is a python wrapper used to interface to the API described in [first example c](../sample_apps/first_example_c/)..
+For the python version, see [jrtc_app.py](../src/wrapper_apis/python/jrtc_app.py).  This file is a python wrapper used to interface to the API described in [first example c](./understand_simple_app_c.md)
 
-The details of first_example_py is almost identical to first_example_c, in that the developer just has to define the state variables, the application configuration, amd the callback handler.  
+The details of first_example_py is almost identical to first_example_c, in that the developer just has to define the state variables, the application configuration, and the callback handler.  
 
 This README will simply show how to write the app in python.  
 

@@ -16,8 +16,8 @@
 
 ## 1.1. Application behaviour
 
-The [first example](../sample_apps/first_example_c/) demonstrates the loading of a simple 
-*jrt-controller* deployment.
+The [first example](../sample_apps/first_example_c/) demonstrates the loading of a simple *jrt-controller* deployment.
+
 A deployment in the *jrt-controller* terminology is a collection of modules that are loaded to the *jrt-controller* and the network functions as a set and operate as a single logical unit (i.e., as a single applicaction). 
 
 A deployment can contain one or more application modules that are loaded to the *jrt-controller* and a set of codeletSets (collection of codelets) that are loaded to network functions instrumented with the jbpf framework. 
@@ -26,20 +26,19 @@ For details about the APIs and functionalities of the *jbpf* framework, please c
 This example demonstrates a simple deployment that is composed of a single *jrt-controller* application and two codelets, which are loaded to a sample agent.
 In this example, an agent corresponds to an instrumented network function. 
 
-A [data_generator codelet](../sample_apps/jbpf_codelets/data_generator/data_generator_codelet.c) increments a counter and sends the data to the *jrt-controller* application via an output map called [ringbuf](../sample_apps/jbpf_codelets/data_generator/data_generator_codelet.yaml).
+A [data_generator codelet](../sample_apps/jbpf_codelets/data_generator/data_generator_codelet.c) increments a counter and sends the data to the *jrt-controller* application via an output map called [ringbuf](../sample_apps/jbpf_codelets/data_generator/codeletset.yaml).
 The *jrt-controller* [application](../sample_apps/first_example_c/first_example.c) aggregates the counter, prints a message about the aggregate value 
-and sends this value to a [simple_input codelet](../sample_apps/jbpf_codelets/simple_input/simple_input_program.c) 
-via a control_input channel called [input_map](../sample_apps/jbpf_codelets/simple_input/codeletset.yaml). 
+and sends this value to a [simple_input codelet](../sample_apps/jbpf_codelets/simple_input/simple_input_program.c) via a control_input channel called [input_map](../sample_apps/jbpf_codelets/simple_input/codeletset.yaml). 
 The simple_input codelet prints the received values every time it is called by the agent.
 
-To implement, Jrtc provides an (API)[../src/wrapper_apis/c/jrtc_app.h], which abstracts common functionality of all applications, such as the main execution loop, and resource management.
+To implement this, Jrtc provides an API which abstracts common functionality of all applications, such as the main execution loop, and resource management.
 
 Using this API, the user just needs to define the following ...
 - a structure detailing the app state variables.
 - the application configuration, including the definitions of the streams which the app will use.
 - a callback function which is called for every message received, or on the expiry of an inactivity timeout configured by the user.
 
-Please the API here [API](../src/wrapper_apis/c/jrtc_app.h).
+Please see the API here [API](../src/wrapper_apis/c/jrtc_app.h).
 
 ## 1.2. Implementation details
 
@@ -68,7 +67,7 @@ The streams of the applications are defined as below.
 The __"stream routing information"__ defines where streams origination and destination.  In this example, the application makes a request to the *jrt-controller* router to receive data going to any destination (`JRTC_ROUTER_REQ_DEST_ANY`), from any network function registered to the controller (`JRTC_ROUTER_REQ_DEVICE_ID_ANY`).
 
 The application also identifies the stream path, i.e. the creator of the stream, and the stream name. 
-This information is defined in the application deployment descriptor file found [here](../sample_apps/jbpf_codelets/data_generator/data_generator_codelet.yaml).
+This information is defined in the application deployment descriptor file found [here](../sample_apps/jbpf_codelets/data_generator/codeletset.yaml).
 The stream path is a string in the format `<deployment_name>://<source_path>`.
 The name of the deployment in this example, as defined in the deployment descriptor file, is `FirstExample`.
 Given that the stream of this example is created by a *jbpf* codelet, the source path name starts with the string `jbpf_agent` and is followed by the codeletset and codelet name, i.e., `jbpf_agent/data_generator_codeletset/codelet`.
@@ -125,7 +124,7 @@ context : A string passed to the abstraction class.  This is prepended to log me
 q_size :  The number of elements in the data entry array which is used when the application class receives messages.
 num_streams :  Number of streams.
 streams : The streams defined above.
-initialization_timeout_secs : Maximum time to allow for the initialisation to complete. 
+initialization_timeout_secs : Maximum time to allow for the initialization to complete. 
                       If set to zero, no timer will be run.
 sleep_timeout_secs :  How long the abstraction class receiver loop should sleep each iteration.  
                       This can be set to a nanosecond precision. 
