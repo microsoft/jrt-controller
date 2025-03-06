@@ -40,70 +40,36 @@ steps:
       set -e
       echo Building: jbpf, jrtc, jbpf codelets, jbpf IPC agent, and JRTC app
       echo And Running JRTC Tests
-      rm -rf /tmp/output.log || true
+      JRTC_TESTS_OUTPUT=/tmp/jrtc_tests_output.log
+      rm -rf $JRTC_TESTS_OUTPUT || true
 
-      TEST_CASES=("first_example" "first_example_c" "first_example_py" "advanced_example" "advanced_example_c")
+      if ! docker run --init --privileged \
+        --ulimit memlock=-1 \
+        --network host \
+        --cap-add=SYS_ADMIN \
+        --shm-size=1g \
+        --mount type=tmpfs,destination=/dev/shm \
+        -e VERBOSE=1 \
+        -e JRTC_PATH=/jrtc \
+        -v `pwd`:/jrtc_out_lib \
+        -v `pwd`/out:/jrtc/out \
+        -v `pwd`/sample_apps:/jrtc/sample_apps \
+        -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out \
+        -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
+        ${{parameters.testCase['sanitizerBuildParam']}} \
+        --entrypoint=/jrtc/helper_build_files/run_all_integration_tests.sh \
+        $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) \
+        |& tee $JRTC_TESTS_OUTPUT; then
+          echo "Error Running JRTC Tests for $TEST"
+        exit 1
+      fi
+      
+      echo ".............................................Output.log: $TEST ............................................."
+      cat $JRTC_TESTS_OUTPUT
+      
+      ## Copy to artifacts
+      cp $JRTC_TESTS_OUTPUT $(Build.ArtifactStagingDirectory)/output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}_${TEST}.log      
 
-      for TEST in "${TEST_CASES[@]}"; do
-        echo ".......................................................................................... Running test: $TEST .........................................................................................."
-        ## if it is the first iteration, set rebuild to true
-        if [ "$TEST" == "${TEST_CASES[0]}" ]; then
-          rebuild=force
-        else
-          unset rebuild
-        fi
-
-        if ! docker run --init --privileged \
-          --ulimit memlock=-1 \
-          --network host \
-          --cap-add=SYS_ADMIN \
-          --shm-size=1g \
-          --mount type=tmpfs,destination=/dev/shm \
-          -e VERBOSE=1 \
-          -e JRTC_PATH=/jrtc \
-          -v `pwd`:/jrtc_out_lib \
-          -v `pwd`/out:/jrtc/out \
-          -v `pwd`/sample_apps:/jrtc/sample_apps \
-          -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out \
-          -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
-          ${{parameters.testCase['sanitizerBuildParam']}} \
-          --entrypoint=/jrtc/helper_build_files/integration_tests.sh \
-          $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) \
-          ${TEST} $rebuild |& tee /tmp/output.log; then
-            echo "Error Running JRTC Tests for $TEST"
-          exit 1
-        fi
-        
-        echo ".............................................Output.log: $TEST ............................................."
-        cat /tmp/output.log
-        
-        ## Copy to artifacts
-        cp /tmp/output.log $(Build.ArtifactStagingDirectory)/output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}_${TEST}.log
-        
-        if ! docker run --init --privileged \
-          --ulimit memlock=-1 \
-          --network host \
-          --cap-add=SYS_ADMIN \
-          --shm-size=1g \
-          --mount type=tmpfs,destination=/dev/shm \
-          -e VERBOSE=1 \
-          -e JRTC_PATH=/jrtc \
-          -v `pwd`:/jrtc_out_lib \
-          -v /tmp/output.log:/tmp/output.log \
-          -v `pwd`/sample_apps:/jrtc/sample_apps \
-          -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out \
-          -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
-          ${{parameters.testCase['sanitizerBuildParam']}} \
-          --entrypoint=/jrtc/sample_apps/$TEST/assert.sh \
-          $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) \
-          /tmp/output.log; then
-            echo "Test Assertion failed for $TEST"
-          exit 1
-        else
-          echo "Test Assertion passed for $TEST"
-        fi
-      done
-    
     displayName: Integration Tests sample apps
     continueOnError: false
 
