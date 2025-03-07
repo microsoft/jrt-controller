@@ -32,7 +32,6 @@ steps:
     continueOnError: false
 
   - bash: |
-      set -ex
       echo Building: jbpf, jrtc, jbpf codelets, jbpf IPC agent, and JRTC app
       echo And Running JRTC Tests
       JRTC_TESTS_OUTPUT=/tmp/jrtc_tests_output.log
@@ -52,12 +51,17 @@ steps:
         echo Error running JRTC tests
         exit 1
       fi
-
-      echo ".............................................Output.log: $TEST ............................................."
-      cat $JRTC_TESTS_OUTPUT
       
-      ## Copy to artifacts
-      cp $JRTC_TESTS_OUTPUT $(Build.ArtifactStagingDirectory)/sample_tests_output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}.log      
+      if [ -f $JRTC_TESTS_OUTPUT ]; then
+        echo ".............................................Output.log: $JRTC_TESTS_OUTPUT ............................................."
+        cat $JRTC_TESTS_OUTPUT
+
+        ## Copy to artifacts
+        cp $JRTC_TESTS_OUTPUT $(Build.ArtifactStagingDirectory)/sample_tests_output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}.log
+      else
+        echo "WARNING: $JRTC_TESTS_OUTPUT does not exist. Skipping log copy." >&2
+        echo "##vso[task.logissue type=warning]$JRTC_TESTS_OUTPUT does not exist. Skipping log copy."
+      fi
 
     displayName: Integration Tests sample apps
     continueOnError: false
