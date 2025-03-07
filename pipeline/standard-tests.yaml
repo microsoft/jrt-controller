@@ -9,12 +9,6 @@ parameters:
 
 steps:
   - bash: |
-      docker tag $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) jrtc
-    displayName: Prepare images
-    failOnStderr: true
-    continueOnError: false
-
-  - bash: |
       echo ${{ parameters.testCase.description }}
       echo sanitizerBuildParam: ${{ parameters.testCase.sanitizerBuildParam }}
     displayName: Display build parameters
@@ -22,8 +16,16 @@ steps:
     continueOnError: false
 
   - bash: |
-      if ! docker run --init --privileged --ulimit memlock=-1 --network host --cap-add=SYS_ADMIN --shm-size=1g --mount type=tmpfs,destination=/dev/shm -e VERBOSE=1 -e JRTC_PATH=/jrtc -e RUN_TESTS=1 -v `pwd`:/jrtc_out_lib -v `pwd`/sample_apps:/jrtc/sample_apps -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out ${{parameters.testCase['sanitizerBuildParam']}} jrtc; then
-        echo Error code is $?
+      if ! docker run --init --privileged \
+        --ulimit memlock=-1 \
+        --network host \
+        --cap-add=SYS_ADMIN \
+        --shm-size=1g \
+        --mount type=tmpfs,destination=/dev/shm \
+        -e VERBOSE=1 \
+        -e JRTC_PATH=/jrtc \
+        $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag); then
+        echo Error building and testing
         exit 1
       fi
     displayName: Build and Test
@@ -33,59 +35,41 @@ steps:
       set -e
       echo Building: jbpf, jrtc, jbpf codelets, jbpf IPC agent, and JRTC app
       echo And Running JRTC Tests
-      rm -rf /tmp/output.log || true
+      JRTC_TESTS_OUTPUT=/tmp/jrtc_tests_output.log
+      rm -rf $JRTC_TESTS_OUTPUT || true
 
-      TEST_CASES=("first_example" "first_example_c" "first_example_py" "advanced_example" "advanced_example_c")
+      docker run --init --privileged \
+        --ulimit memlock=-1 \
+        --network host \
+        --cap-add=SYS_ADMIN \
+        --shm-size=1g \
+        --mount type=tmpfs,destination=/dev/shm \
+        -e VERBOSE=1 \
+        -e JRTC_PATH=/jrtc \
+        -v /tmp:/tmp \
+        ${{parameters.testCase['sanitizerBuildParam']}} \
+        --entrypoint=/jrtc/helper_build_files/run_all_integration_tests.sh \
+        $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) \
+        |& tee $JRTC_TESTS_OUTPUT
 
-      for TEST in "${TEST_CASES[@]}"; do
-        echo ".......................................................................................... Running test: $TEST .........................................................................................."
-        
-        if ! docker run --init --privileged \
-          --ulimit memlock=-1 \
-          --network host \
-          --cap-add=SYS_ADMIN \
-          --shm-size=1g \
-          --mount type=tmpfs,destination=/dev/shm \
-          -e VERBOSE=1 \
-          -e JRTC_PATH=/jrtc \
-          -v `pwd`:/jrtc_out_lib \
-          -v `pwd`/sample_apps:/jrtc/sample_apps \
-          -v `pwd`/jbpf-protobuf/out:/jrtc/jbpf-protobuf/out \
-          -v `pwd`/jbpf-protobuf/jbpf/out:/jrtc/jbpf-protobuf/jbpf/out \
-          ${{parameters.testCase['sanitizerBuildParam']}} \
-          --entrypoint=/jrtc/helper_build_files/integration_tests.sh \
-          jrtc \
-          $TEST |& tee /tmp/output.log; then
-            echo "Error Running JRTC Tests for $TEST"
+      exit_code=${PIPESTATUS[0]}  # Capture docker run exit code
+      if [[ $exit_code -ne 0 ]]; then
+          echo "Error Running JRTC Tests at /jrtc/sample_apps/"
           exit 1
-        fi
-        
-        echo ".............................................Output.log: $TEST ............................................."
-        cat /tmp/output.log
-        
-        ## Copy to artifacts
-        cp /tmp/output.log $(Build.ArtifactStagingDirectory)/output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}_${TEST}.log
-        
-        count=$(grep "Aggregate counter so far is" /tmp/output.log | wc -l)
-        echo "The result count for $TEST is $count"
-        
-        if [[ $count -eq 0 ]]; then
-          echo ".......................................................................................... Test $TEST failed..........................................................................................."
-          exit 1
-        else
-          echo "..........................................................................................Test $TEST passed..........................................................................................."
-        fi
-      done
-    
+      fi
+      
+      echo ".............................................Output.log: $TEST ............................................."
+      cat $JRTC_TESTS_OUTPUT
+      
+      ## Copy to artifacts
+      cp $JRTC_TESTS_OUTPUT $(Build.ArtifactStagingDirectory)/sample_tests_output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}.log      
+
     displayName: Integration Tests sample apps
     continueOnError: false
 
-  - task: PublishTestResults@2
+  # Publish logs as artifacts
+  - task: PublishBuildArtifacts@1
+    displayName: "Publish Logs"
     inputs:
-      testResultsFormat: "JUnit" # Options: JUnit, NUnit, VSTest, xUnit, cTest
-      testResultsFiles: "**/**/*.tests.xml"
-      #searchFolder: '$(System.DefaultWorkingDirectory)' # Opastional
-      mergeTestResults: true # Optional
-      failTaskOnFailedTests: true
-    continueOnError: false
-
+      pathToPublish: "$(Build.ArtifactStagingDirectory)"
+      artifactName: "TestLogs"

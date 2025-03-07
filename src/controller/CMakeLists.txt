@@ -50,8 +50,11 @@ add_dependencies(${JRTC_LIB} rest_api_lib)
 
 set_property(TARGET ${JRTC_LIB} PROPERTY ENABLE_EXPORTS ON)
 
+
+## libjrtc_lib.so
 set_target_properties(${JRTC_LIB} PROPERTIES
-    RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR}/bin
+  LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_DIR}/lib
+  RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIR}/bin
 )
 
 add_clang_format_check(
