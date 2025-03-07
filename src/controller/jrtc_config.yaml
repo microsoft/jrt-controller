@@ -1,3 +1,7 @@
+jrtc_router_config:
+  thread_config:
+    affinity_mask: 2
+    hash_sched_config: false
 jbpf_io_config:
-    jbpf_namespace: "jrtc_namespace"
-    jbpf_path: "/var/run/jrtc"
+  jbpf_namespace: jrtc
+  jbpf_path: /var/run/jbpf
