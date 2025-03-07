@@ -159,7 +159,7 @@ _jrtc_load_app_from_memory(const char* data, size_t size)
 
     void* handle = dlopen(path, RTLD_LAZY);
     if (handle == NULL) {
-        jrtc_logger(JRTC_CRITICAL, "fdlopen failed\n");
+        jrtc_logger(JRTC_CRITICAL, "fdlopen failed: %s (errno=%d, %s)\n", path, errno, dlerror());
         goto error;
     }
 
