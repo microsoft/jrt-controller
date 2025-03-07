@@ -32,7 +32,7 @@ steps:
     continueOnError: false
 
   - bash: |
-      set -e
+      set -ex
       echo Building: jbpf, jrtc, jbpf codelets, jbpf IPC agent, and JRTC app
       echo And Running JRTC Tests
       JRTC_TESTS_OUTPUT=/tmp/jrtc_tests_output.log
