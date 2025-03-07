@@ -1,0 +1,3 @@
+jbpf_io_config:
+    jbpf_namespace: "jrtc_namespace"
+    jbpf_path: "/var/run/jrtc"

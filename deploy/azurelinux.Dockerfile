@@ -8,6 +8,7 @@ RUN tdnf -y update
 RUN tdnf -y install build-essential cmake git
 RUN tdnf -y install yaml-cpp-devel yaml-cpp-static boost-devel gcovr clang python3
 RUN tdnf -y install doxygen
+RUN tdnf -y install libyaml-dev
 
 ## clang-format
 RUN tdnf -y install clang-tools-extra
