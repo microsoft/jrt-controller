@@ -36,9 +36,8 @@ steps:
       echo Building: jbpf, jrtc, jbpf codelets, jbpf IPC agent, and JRTC app
       echo And Running JRTC Tests
       JRTC_TESTS_OUTPUT=/tmp/jrtc_tests_output.log
-      rm -rf $JRTC_TESTS_OUTPUT || true
 
-      docker run --init --privileged \
+      if ! docker run --init --privileged \
         --ulimit memlock=-1 \
         --network host \
         --cap-add=SYS_ADMIN \
@@ -46,18 +45,14 @@ steps:
         --mount type=tmpfs,destination=/dev/shm \
         -e VERBOSE=1 \
         -e JRTC_PATH=/jrtc \
-        -v /tmp:/tmp \
+        -v $JRTC_TESTS_OUTPUT:/tmp/jrtc_tests_output.log \
         ${{parameters.testCase['sanitizerBuildParam']}} \
         --entrypoint=/jrtc/helper_build_files/run_all_integration_tests.sh \
-        $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag) \
-        |& tee $JRTC_TESTS_OUTPUT
-
-      exit_code=${PIPESTATUS[0]}  # Capture docker run exit code
-      if [[ $exit_code -ne 0 ]]; then
-          echo "Error Running JRTC Tests at /jrtc/sample_apps/"
-          exit 1
+        $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag); then
+        echo Error running JRTC tests
+        exit 1
       fi
-      
+
       echo ".............................................Output.log: $TEST ............................................."
       cat $JRTC_TESTS_OUTPUT
       
