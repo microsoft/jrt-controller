@@ -1,4 +1,3 @@
-
 #!/bin/bash
 
 count=$(grep "Aggregate counter so far is" $1 | wc -l)
