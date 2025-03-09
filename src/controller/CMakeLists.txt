@@ -28,9 +28,11 @@ set(JRTC_LIB jrtc_lib)
 
 set(JRTC_LIB_SRC_DIR ${PROJECT_SOURCE_DIR})
 
-set(JRTC_LIB_SOURCES ${JRTC_LIB_SRC_DIR}/jrtc_sched.c
-                              ${JRTC_LIB_SRC_DIR}/jrtc.c
-                              ${JRTC_LIB_SRC_DIR}/jrtc_int.c)
+set(JRTC_LIB_SOURCES ${JRTC_LIB_SRC_DIR}/jrtc_sched.c BOOL
+  ${JRTC_LIB_SRC_DIR}/jrtc.c
+  ${JRTC_LIB_SRC_DIR}/jrtc_int.c
+  ${JRTC_LIB_SRC_DIR}/jrtc_yaml.c
+)
 
 set(JRTC_LIB_HEADER_FILES ${JRTC_LIB_SOURCES})
 
