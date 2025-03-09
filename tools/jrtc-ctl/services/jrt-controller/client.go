@@ -15,6 +15,7 @@ import (
 //go:generate go run github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen --config=config.yaml ../../../../src/rest_api_lib/openapi.json
 
 // JrtcAPIClient is a wrapped Client with logging
+//
 //revive:disable-next-line
 type JrtcAPIClient struct {
 	ctx    context.Context
@@ -103,7 +104,7 @@ func logResponse[T someResponse](logger *logrus.Logger, resp T, rawResp *http.Re
 	}
 	if resp.StatusCode() < 200 || resp.StatusCode() > 299 {
 		l.Error("failed to send http request with non 2XX status code")
-		return resp, fmt.Errorf("failed to send http request with non 2XX status code")
+		return resp, fmt.Errorf("failed to send http request with non 2XX status code: %s", resp.Status())
 	}
 	l.Info("successfully sent http request")
 	return resp, err

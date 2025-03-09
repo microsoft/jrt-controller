@@ -14,6 +14,7 @@ import (
 	"jrtc-ctl/services/decoder"
 	"jrtc-ctl/services/jbpf"
 	jrtc "jrtc-ctl/services/jrt-controller"
+	"os"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -130,11 +131,22 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 				return fmt.Errorf(`missing "%s" jrt-controller Controller client`, key)
 			}
 
-			req, err := jrtc.NewJrtcAppLoadRequestFromBytes(a.SharedLibraryCode, a.SharedLibraryPath, a.Name, a.IOQSize, a.Deadline, a.Period, a.Runtime, a.AppParams)
+			if a.AppParams == nil {
+				a.AppParams = make(map[string]interface{})
+			}
+			if a.AppType == "python" {
+				a.AppParams["python"] = a.SharedLibraryPath
+				a.SharedLibraryPath = os.ExpandEnv("${JRTC_PATH}/out/lib/libjrtc_pythonapp_loader.so")
+				logger.Infof("Using python app loader: %s", a.SharedLibraryPath)
+				a.SharedLibraryCode, err = os.ReadFile(a.SharedLibraryPath)
+				if err != nil {
+					return err
+				}
+			}
+			req, err := jrtc.NewJrtcAppLoadRequestFromBytes(a.SharedLibraryCode, a.SharedLibraryPath, a.Name, a.IOQSize, a.Deadline, a.Period, a.Runtime, a.AppType, &a.AppParams)
 			if err != nil {
 				return err
 			}
-
 			return appLoad.App(logger, client, req)
 		})
 	}

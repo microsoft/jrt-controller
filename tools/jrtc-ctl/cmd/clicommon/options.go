@@ -34,9 +34,11 @@ func (o *Options) Parse() (*CLIConfig, error) {
 			return nil, fmt.Errorf("expected %s to be a file", a.SharedLibraryPath)
 		}
 
-		a.SharedLibraryCode, err = os.ReadFile(a.SharedLibraryPath)
-		if err != nil {
-			return nil, err
+		if a.AppType == "c" {
+			a.SharedLibraryCode, err = os.ReadFile(a.SharedLibraryPath)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
