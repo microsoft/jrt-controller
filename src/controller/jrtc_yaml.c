@@ -61,8 +61,7 @@ expand_env_vars(const char* input)
 }
 
 int
-parse_yaml_config(const char* filename, yaml_config_t* config)
-{
+parse_yaml_config(const char* filename, yaml_config_t* config) {
     FILE* file = fopen(filename, "r");
     if (!file) {
         perror("Failed to open YAML file");
@@ -86,51 +85,34 @@ parse_yaml_config(const char* filename, yaml_config_t* config)
 
     while (1) {
         if (!yaml_parser_parse(&parser, &event)) {
-            fprintf(stderr, "YAML parsing error: %s\n", parser.problem);
+            fprintf(stderr, "Failed to parse YAML file: %s\n", parser.problem);
             yaml_parser_delete(&parser);
             fclose(file);
-            return -1; // Return error code for invalid YAML
+            return -1;
         }
         if (event.type == YAML_STREAM_END_EVENT) {
             yaml_event_delete(&event);
-            break; // Stop parsing
+            break;
         }
 
         switch (event.type) {
         case YAML_SCALAR_EVENT:
-            if (strcmp((char*)event.data.scalar.value, "jrtc_router_config") == 0) {
-                in_jrtc_router_config = 1;
-            } else if (strcmp((char*)event.data.scalar.value, "thread_config") == 0 && in_jrtc_router_config) {
-                in_thread_config = 1;
-            } else if (strcmp((char*)event.data.scalar.value, "sched_config") == 0 && in_thread_config) {
-                in_sched_config = 1;
-            } else if (strcmp((char*)event.data.scalar.value, "jbpf_io_config") == 0) {
-                in_jbpf_io_config = 1;
-            } else if (in_thread_config) {
-                if (key[0] == '\0') {
-                    strncpy(key, (char*)event.data.scalar.value, sizeof(key) - 1);
-                } else {
-                    char* expanded_value = expand_env_vars((char*)event.data.scalar.value);
+            if (key[0] == '\0') {
+                // First scalar is a key
+                strncpy(key, (char*)event.data.scalar.value, sizeof(key) - 1);
+            } else {
+                // Second scalar is a value
+                char* expanded_value = expand_env_vars((char*)event.data.scalar.value);
+
+                if (in_thread_config && !in_sched_config) {
                     if (strcmp(key, "affinity_mask") == 0) {
                         config->jrtc_router_config.thread_config.affinity_mask = atoi(expanded_value);
-                    } else if (strcmp(key, "hash_sched_config") == 0) {
-                        config->jrtc_router_config.thread_config.hash_sched_config =
-                            (strcmp(expanded_value, "true") == 0) ? 1 : 0;
+                    } else if (strcmp(key, "has_sched_config") == 0) {
+                        config->jrtc_router_config.thread_config.has_sched_config = (strcmp(expanded_value, "true") == 0) ? 1 : 0;
                     }
-                    free(expanded_value);
-                    key[0] = '\0';
-                }
-            } else if (in_sched_config) {
-                if (key[0] == '\0') {
-                    strncpy(key, (char*)event.data.scalar.value, sizeof(key) - 1);
-                } else {
-                    char* expanded_value = expand_env_vars((char*)event.data.scalar.value);
+                } else if (in_sched_config) {
                     if (strcmp(key, "sched_policy") == 0) {
-                        if (strcmp(expanded_value, "JRTC_ROUTER_DEADLINE") == 0) {
-                            config->jrtc_router_config.thread_config.sched_config.sched_policy = JRTC_ROUTER_DEADLINE;
-                        } else {
-                            fprintf(stderr, "Unknown sched_policy: %s\n", expanded_value);
-                        }
+                        config->jrtc_router_config.thread_config.sched_config.sched_policy = atoi(expanded_value);
                     } else if (strcmp(key, "sched_priority") == 0) {
                         config->jrtc_router_config.thread_config.sched_config.sched_priority = atoi(expanded_value);
                     } else if (strcmp(key, "sched_deadline") == 0) {
@@ -140,30 +122,32 @@ parse_yaml_config(const char* filename, yaml_config_t* config)
                     } else if (strcmp(key, "sched_period") == 0) {
                         config->jrtc_router_config.thread_config.sched_config.sched_period = atoll(expanded_value);
                     }
-                    free(expanded_value);
-                    key[0] = '\0';
-                }
-            } else if (in_jbpf_io_config) {
-                if (key[0] == '\0') {
-                    strncpy(key, (char*)event.data.scalar.value, sizeof(key) - 1);
-                } else {
-                    char* expanded_value = expand_env_vars((char*)event.data.scalar.value);
+                } else if (in_jbpf_io_config) {
                     if (strcmp(key, "jbpf_namespace") == 0) {
-                        strncpy(
-                            config->jbpf_io_config.jbpf_namespace,
-                            expanded_value,
-                            sizeof(config->jbpf_io_config.jbpf_namespace) - 1);
+                        strncpy(config->jbpf_io_config.jbpf_namespace, expanded_value, sizeof(config->jbpf_io_config.jbpf_namespace) - 1);
                     } else if (strcmp(key, "jbpf_path") == 0) {
-                        strncpy(
-                            config->jbpf_io_config.jbpf_path,
-                            expanded_value,
-                            sizeof(config->jbpf_io_config.jbpf_path) - 1);
+                        strncpy(config->jbpf_io_config.jbpf_path, expanded_value, sizeof(config->jbpf_io_config.jbpf_path) - 1);
                     }
-                    free(expanded_value);
-                    key[0] = '\0';
                 }
+
+                free(expanded_value);
+                key[0] = '\0'; // Reset key for next key-value pair
             }
             break;
+
+        case YAML_MAPPING_START_EVENT:
+            if (strcmp(key, "jrtc_router_config") == 0) {
+                in_jrtc_router_config = 1;
+            } else if (strcmp(key, "thread_config") == 0 && in_jrtc_router_config) {
+                in_thread_config = 1;
+            } else if (strcmp(key, "sched_config") == 0 && in_thread_config) {
+                in_sched_config = 1;
+            } else if (strcmp(key, "jbpf_io_config") == 0) {
+                in_jbpf_io_config = 1;
+            }
+            key[0] = '\0'; // Reset key
+            break;
+
         case YAML_MAPPING_END_EVENT:
             if (in_sched_config) {
                 in_sched_config = 0;
@@ -175,13 +159,12 @@ parse_yaml_config(const char* filename, yaml_config_t* config)
                 in_jbpf_io_config = 0;
             }
             break;
+
         default:
             break;
         }
 
-        if (event.type != YAML_NO_EVENT) {
-            yaml_event_delete(&event);
-        }
+        yaml_event_delete(&event);
     }
 
     yaml_parser_delete(&parser);
