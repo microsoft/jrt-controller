@@ -1,7 +1,13 @@
 jrtc_router_config:
   thread_config:
-    affinity_mask: 2
-    has_sched_config: false
+    affinity_mask: 3
+    has_sched_config: true
+    sched_config:
+      sched_policy: 0
+      sched_priority: 99
+      sched_deadline: 30000000
+      sched_runtime: 10000000
+      sched_period: 30000000
 jbpf_io_config:
   jbpf_namespace: jrtc
   jbpf_path: /var/run/jbpf
