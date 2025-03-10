@@ -74,6 +74,7 @@ parse_yaml_config(const char* filename, yaml_config_t* config)
     char key[256] = {0};
     int in_jrtc_router_config = 0;
     int in_thread_config = 0;
+    int in_sched_config = 0;
     int in_jbpf_io_config = 0;
 
     if (!yaml_parser_initialize(&parser)) {
@@ -94,12 +95,15 @@ parse_yaml_config(const char* filename, yaml_config_t* config)
             yaml_event_delete(&event);
             break; // Stop parsing
         }
+
         switch (event.type) {
         case YAML_SCALAR_EVENT:
             if (strcmp((char*)event.data.scalar.value, "jrtc_router_config") == 0) {
                 in_jrtc_router_config = 1;
             } else if (strcmp((char*)event.data.scalar.value, "thread_config") == 0 && in_jrtc_router_config) {
                 in_thread_config = 1;
+            } else if (strcmp((char*)event.data.scalar.value, "sched_config") == 0 && in_thread_config) {
+                in_sched_config = 1;
             } else if (strcmp((char*)event.data.scalar.value, "jbpf_io_config") == 0) {
                 in_jbpf_io_config = 1;
             } else if (in_thread_config) {
@@ -108,10 +112,33 @@ parse_yaml_config(const char* filename, yaml_config_t* config)
                 } else {
                     char* expanded_value = expand_env_vars((char*)event.data.scalar.value);
                     if (strcmp(key, "affinity_mask") == 0) {
-                        config->jrtc_router_config.thread_config.affinity_mask = atoi((char*)expanded_value);
+                        config->jrtc_router_config.thread_config.affinity_mask = atoi(expanded_value);
                     } else if (strcmp(key, "hash_sched_config") == 0) {
                         config->jrtc_router_config.thread_config.hash_sched_config =
                             (strcmp(expanded_value, "true") == 0) ? 1 : 0;
+                    }
+                    free(expanded_value);
+                    key[0] = '\0';
+                }
+            } else if (in_sched_config) {
+                if (key[0] == '\0') {
+                    strncpy(key, (char*)event.data.scalar.value, sizeof(key) - 1);
+                } else {
+                    char* expanded_value = expand_env_vars((char*)event.data.scalar.value);
+                    if (strcmp(key, "sched_policy") == 0) {
+                        if (strcmp(expanded_value, "JRTC_ROUTER_DEADLINE") == 0) {
+                            config->jrtc_router_config.thread_config.sched_config.sched_policy = JRTC_ROUTER_DEADLINE;
+                        } else {
+                            fprintf(stderr, "Unknown sched_policy: %s\n", expanded_value);
+                        }
+                    } else if (strcmp(key, "sched_priority") == 0) {
+                        config->jrtc_router_config.thread_config.sched_config.sched_priority = atoi(expanded_value);
+                    } else if (strcmp(key, "sched_deadline") == 0) {
+                        config->jrtc_router_config.thread_config.sched_config.sched_deadline = atoll(expanded_value);
+                    } else if (strcmp(key, "sched_runtime") == 0) {
+                        config->jrtc_router_config.thread_config.sched_config.sched_runtime = atoll(expanded_value);
+                    } else if (strcmp(key, "sched_period") == 0) {
+                        config->jrtc_router_config.thread_config.sched_config.sched_period = atoll(expanded_value);
                     }
                     free(expanded_value);
                     key[0] = '\0';
@@ -138,7 +165,9 @@ parse_yaml_config(const char* filename, yaml_config_t* config)
             }
             break;
         case YAML_MAPPING_END_EVENT:
-            if (in_thread_config) {
+            if (in_sched_config) {
+                in_sched_config = 0;
+            } else if (in_thread_config) {
                 in_thread_config = 0;
             } else if (in_jrtc_router_config) {
                 in_jrtc_router_config = 0;
@@ -149,6 +178,7 @@ parse_yaml_config(const char* filename, yaml_config_t* config)
         default:
             break;
         }
+
         if (event.type != YAML_NO_EVENT) {
             yaml_event_delete(&event);
         }

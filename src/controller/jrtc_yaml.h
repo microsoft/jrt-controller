@@ -13,8 +13,19 @@
 
 typedef struct
 {
+    int sched_policy;
+    int sched_priority;
+    long long sched_deadline;
+    long long sched_runtime;
+    long long sched_period;
+} sched_config_t;
+
+typedef struct
+{
     int affinity_mask;
-    int hash_sched_config; // Boolean (0 or 1)
+    int has_affinity_mask; // Boolean (0 or 1)
+    int has_sched_config;  // Boolean (0 or 1)
+    sched_config_t sched_config;
 } thread_config_t;
 
 typedef struct
