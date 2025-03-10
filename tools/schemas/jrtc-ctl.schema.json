@@ -33,18 +33,16 @@
           "maximum": 65535,
           "minimum": 0
         },
-        "app": {
+        "path": {
           "type": "string"
         },
-        "app_params": {
-          "items": {
-            "type": "string"
-          },
-          "type": "array",
-          "description": "when omitted, the AppParams will be an empty array e.g. []",
-          "default": [
-            "[]"
-          ]
+        "type": {
+          "type": "string",
+          "description": "type is a string e.g. \"c\" or \"python\""
+        },
+        "params": {
+          "type": "object",
+          "description": "params is a dictionary e.g. key value pairs"
         }
       },
       "additionalProperties": false,
@@ -52,7 +50,8 @@
       "required": [
         "name",
         "port",
-        "app"
+        "path",
+        "type"
       ],
       "description": "App represents an application"
     },

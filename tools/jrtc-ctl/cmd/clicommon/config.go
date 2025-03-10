@@ -60,9 +60,10 @@ type App struct {
 	Port              uint16        `json:"port" jsonschema:"required,minimum=0,maximum=65535"`
 	Runtime           time.Duration `json:"-"`
 	SharedLibraryCode []byte        `json:"-"`
-	SharedLibraryPath string        `json:"app" jsonschema:"required"`
-	// when omitted, the AppParams will be an empty array e.g. []
-	AppParams []string `json:"app_params,omitempty" jsonschema:"default=[]"`
+	SharedLibraryPath string        `json:"path" jsonschema:"required"`
+	AppType           string        `json:"type" jsonschema:"required"` // type is a string e.g. "c" or "python"
+	// params is a dictionary e.g. key value pairs
+	AppParams map[string]interface{} `json:"params,omitempty"`
 }
 
 // JBPFCodelet represents a JBPF codelet

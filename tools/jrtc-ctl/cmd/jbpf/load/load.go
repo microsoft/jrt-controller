@@ -4,14 +4,14 @@
 package load
 
 import (
-	"jrtc-ctl/cmd/clicommon"
-	"jrtc-ctl/common"
-	"jrtc-ctl/jrtcbindings"
-	"jrtc-ctl/genericdecoder"
-	"jrtc-ctl/services/decoder"
-	"jrtc-ctl/services/jbpf"
 	"errors"
 	"fmt"
+	"jrtc-ctl/cmd/clicommon"
+	"jrtc-ctl/common"
+	"jrtc-ctl/genericdecoder"
+	"jrtc-ctl/jrtcbindings"
+	"jrtc-ctl/services/decoder"
+	"jrtc-ctl/services/jbpf"
 	"os"
 	"path/filepath"
 	"strings"
@@ -23,8 +23,8 @@ import (
 
 const (
 	defaultJrtcAppName = "jrtc_app"
-	maxDeviceID          = 1<<7 - 1
-	streamPathFormat     = "%s://jbpf_agent/%s/%s"
+	maxDeviceID        = 1<<7 - 1
+	streamPathFormat   = "%s://jbpf_agent/%s/%s"
 )
 
 type runOptions struct {
