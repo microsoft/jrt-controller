@@ -85,12 +85,14 @@ test_yaml_parsing()
         assert(result == 0);
         assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jrtc_1234") == 0);
         printf("Test 5 passed: Valid YAML file (with env substitution) parsed successfully.\n");
-    }    
+    }
 
     printf("All tests passed!\n");
 }
 
-void assert_string_equals(const char* input, const char* expected) {
+void
+assert_string_equals(const char* input, const char* expected)
+{
     char* result = expand_env_vars(input);
     if (result == NULL) {
         printf("Error expanding environment variables\n");
@@ -104,7 +106,9 @@ void assert_string_equals(const char* input, const char* expected) {
     free(result);
 }
 
-void test_env_expansions() {
+void
+test_env_expansions()
+{
     // Test 1: Simple environment variable expansion
     setenv("JRTC_UNIT_TEST_1", "xxxx", 1);
     assert_string_equals("${JRTC_UNIT_TEST_1}", "xxxx");
