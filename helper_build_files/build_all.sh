@@ -42,4 +42,3 @@ if [[ $rebuild == true || ! -f $JRTC_PATH/sample_apps/$1/simple_agent_ipc/simple
 else
     echo "...............Skipping jbpf IPC agent build..............."
 fi
-
