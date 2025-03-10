@@ -36,6 +36,8 @@ steps:
       echo Building: jbpf, jrtc, jbpf codelets, jbpf IPC agent, and JRTC app
       echo And Running JRTC Tests
       JRTC_TESTS_OUTPUT=/tmp/jrtc_tests_output.log
+      rm -f $JRTC_TESTS_OUTPUT || true
+      touch $JRTC_TESTS_OUTPUT
 
       if ! docker run --init --privileged \
         --ulimit memlock=-1 \
@@ -45,7 +47,7 @@ steps:
         --mount type=tmpfs,destination=/dev/shm \
         -e VERBOSE=1 \
         -e JRTC_PATH=/jrtc \
-        -v $JRTC_TESTS_OUTPUT:/tmp/jrtc_tests_output.log \
+        -v /tmp:/tmp \
         ${{parameters.testCase['sanitizerBuildParam']}} \
         --entrypoint=/jrtc/helper_build_files/run_all_integration_tests.sh \
         $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag); then
