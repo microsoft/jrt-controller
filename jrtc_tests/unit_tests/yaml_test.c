@@ -14,10 +14,7 @@ test_yaml_parsing()
 {
     printf("Running tests for YAML parsing...\n");
     char* jrtc_path = getenv("JRTC_PATH");
-    if (jrtc_path == NULL) {
-        fprintf(stderr, "JRTC_PATH environment variable is not set.\n");
-        return;
-    }
+    assert(jrtc_path != NULL);
     printf("JRTC_PATH: %s\n", jrtc_path);
 
     char config_file[256];
@@ -32,7 +29,7 @@ test_yaml_parsing()
         //   jbpf_namespace: jrtc
         //   jbpf_path: /var/run/jbpf
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/valid.yaml", jrtc_path);
-        config_t config;
+        yaml_config_t config;
         printf("Parsing config file: %s\n", config_file);
         int result = parse_yaml_config(config_file, &config);
         assert(result == 0);
@@ -46,7 +43,7 @@ test_yaml_parsing()
     // Test 2: Invalid YAML file
     {
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/invalid.yaml", jrtc_path);
-        config_t config;
+        yaml_config_t config;
         printf("Parsing config file: %s\n", config_file);
         int result = parse_yaml_config(config_file, &config);
         assert(result != 0);
@@ -56,7 +53,7 @@ test_yaml_parsing()
     // Test 3: Empty YAML file
     {
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/empty.yaml", jrtc_path);
-        config_t config;
+        yaml_config_t config;
         printf("Parsing config file: %s\n", config_file);
         int result = parse_yaml_config(config_file, &config);
         assert(result == 0);
@@ -68,7 +65,7 @@ test_yaml_parsing()
         // jbpf_io_config:
         //   jbpf_namespace: jrtc
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/valid.yaml", jrtc_path);
-        config_t config;
+        yaml_config_t config;
         printf("Parsing config file: %s\n", config_file);
         int result = parse_yaml_config(config_file, &config);
         assert(result == 0);

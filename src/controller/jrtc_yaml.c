@@ -3,7 +3,7 @@
 #include "jrtc_yaml.h"
 
 int
-parse_yaml_config(const char* filename, config_t* config)
+parse_yaml_config(const char* filename, yaml_config_t* config)
 {
     FILE* file = fopen(filename, "r");
     if (!file) {

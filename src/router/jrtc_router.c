@@ -18,6 +18,7 @@
 
 #include "jrtc_logging.h"
 #include "jbpf_mempool.h"
+#include "jrtc_yaml.h"
 
 struct jrtc_router_ctx g_router_ctx;
 
@@ -299,8 +300,42 @@ jrtc_router_thread_start(void* args)
     return NULL;
 }
 
+void
+init_jbpf_io_config_default(struct jbpf_io_config* io_config)
+{
+    if (!io_config) {
+        return;
+    }
+    memset(io_config, 0, sizeof(struct jbpf_io_config));
+    io_config->type = JBPF_IO_IPC_PRIMARY;
+    io_config->ipc_config.mem_cfg.memory_size = 1024 * 1024 * 1024;
+    strncpy(io_config->jbpf_path, JBPF_DEFAULT_RUN_PATH, JBPF_RUN_PATH_LEN - 1);
+    io_config->jbpf_path[JBPF_RUN_PATH_LEN - 1] = '\0';
+    strncpy(io_config->jbpf_namespace, JBPF_DEFAULT_NAMESPACE, JBPF_NAMESPACE_LEN - 1);
+    io_config->jbpf_namespace[JBPF_NAMESPACE_LEN - 1] = '\0';
+}
+
 int
-jrtc_router_init(struct jrtc_router_config* config)
+read_jbpf_io_config_from_yaml(struct jbpf_io_config* io_config, const char* path)
+{
+    if (!io_config || !path) {
+        return -1;
+    }
+    yaml_config_t yaml_config;
+    int res = parse_yaml_config(path, &yaml_config);
+    if (res != 0) {
+        jrtc_logger(JRTC_ERROR, "Failed to read JBPF IO config from YAML file: %s (%d)\n", path, res);
+        return -2;
+    }
+    strncpy(io_config->jbpf_path, yaml_config.jbpf_io_config.jbpf_path, JBPF_RUN_PATH_LEN - 1);
+    io_config->jbpf_path[JBPF_RUN_PATH_LEN - 1] = '\0';
+    strncpy(io_config->jbpf_namespace, yaml_config.jbpf_io_config.jbpf_namespace, JBPF_NAMESPACE_LEN - 1);
+    io_config->jbpf_namespace[JBPF_NAMESPACE_LEN - 1] = '\0';
+    return 0;
+}
+
+int
+jrtc_router_init(struct jrtc_router_config* config, const char* yaml_config_path)
 {
 
     struct jbpf_io_config io_config = {0};
@@ -313,14 +348,20 @@ jrtc_router_init(struct jrtc_router_config* config)
         return -1;
     }
 
-    io_config.type = JBPF_IO_IPC_PRIMARY;    
-    io_config.ipc_config.mem_cfg.memory_size = 1024 * 1024 * 1024;
+    init_jbpf_io_config_default(&io_config);
+    if (yaml_config_path) {
+        int res = read_jbpf_io_config_from_yaml(&io_config, yaml_config_path);
+        if (res != 0) {
+            jrtc_logger(JRTC_ERROR, "Failed to read JBPF IO config from YAML file: %s (%d)\n", yaml_config_path, res);
+            return -2;
+        }
+    }
 
-    strncpy(io_config.ipc_config.addr.jbpf_io_ipc_name, config->io_config.ipc_name, JBPF_IO_IPC_MAX_NAMELEN);
-    strncpy(io_config.jbpf_path, JBPF_DEFAULT_RUN_PATH, JBPF_RUN_PATH_LEN - 1);
-    io_config.jbpf_path[JBPF_RUN_PATH_LEN - 1] = '\0';
-    strncpy(io_config.jbpf_namespace, JBPF_DEFAULT_NAMESPACE, JBPF_NAMESPACE_LEN - 1);
-    io_config.jbpf_namespace[JBPF_NAMESPACE_LEN - 1] = '\0';
+    jrtc_logger(
+        JRTC_INFO,
+        "Initializing router with namespace %s and path %s\n",
+        io_config.jbpf_namespace,
+        io_config.jbpf_path);
 
     g_router_ctx.io_ctx = jbpf_io_init(&io_config);
     if (g_router_ctx.io_ctx == NULL) {

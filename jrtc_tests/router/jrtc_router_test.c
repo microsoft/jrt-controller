@@ -176,7 +176,7 @@ router_test()
 
     strncpy(config.io_config.ipc_name, "jrtc_router_test", 32);
 
-    res = jrtc_router_init(&config);
+    res = jrtc_router_init(&config, NULL);
 
     if (res < 0) {
         jrtc_logger(JRTC_ERROR, "Failed to initialize router\n");

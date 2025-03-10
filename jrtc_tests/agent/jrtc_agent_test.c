@@ -44,7 +44,7 @@ start_router()
 
     strncpy(config.io_config.ipc_name, channel_name, 32);
 
-    int res = jrtc_router_init(&config);
+    int res = jrtc_router_init(&config, NULL);
 
     if (res < 0) {
         jrtc_logger(JRTC_ERROR, "Failed to initialize router\n");

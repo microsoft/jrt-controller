@@ -32,9 +32,15 @@ typedef struct
 {
     jrtc_router_config_t jrtc_router_config;
     jbpf_io_config_t jbpf_io_config;
-} config_t;
+} yaml_config_t;
 
+/**
+ * @brief Parses a YAML configuration file and fills the provided config structure.
+ * @param filename The path to the YAML file.
+ * @param config Pointer to the structure to fill with parsed data.
+ * @return 0 on success, -1 on failure.
+ */
 int
-parse_yaml_config(const char* filename, config_t* config);
+parse_yaml_config(const char* filename, yaml_config_t* config);
 
 #endif // JRTC_YAML_H

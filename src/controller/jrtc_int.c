@@ -395,7 +395,7 @@ _start_rest_server(void* args)
 }
 
 int
-start_jrtc(int argc, char* argv[])
+start_jrtc(const char* config_file)
 {
     if (signal(SIGINT, ctrlc_handler) == SIG_ERR) {
         perror("signal");
@@ -424,7 +424,7 @@ start_jrtc(int argc, char* argv[])
 
     strncpy(config.io_config.ipc_name, "jrtc_controller", 32);
 
-    res = jrtc_router_init(&config);
+    res = jrtc_router_init(&config, config_file);
 
     if (res < 0) {
         jrtc_logger(JRTC_CRITICAL, "Failed to initialize router\n");
