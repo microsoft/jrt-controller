@@ -61,7 +61,8 @@ expand_env_vars(const char* input)
 }
 
 int
-parse_yaml_config(const char* filename, yaml_config_t* config) {
+parse_yaml_config(const char* filename, yaml_config_t* config)
+{
     FILE* file = fopen(filename, "r");
     if (!file) {
         perror("Failed to open YAML file");
@@ -108,7 +109,8 @@ parse_yaml_config(const char* filename, yaml_config_t* config) {
                     if (strcmp(key, "affinity_mask") == 0) {
                         config->jrtc_router_config.thread_config.affinity_mask = atoi(expanded_value);
                     } else if (strcmp(key, "has_sched_config") == 0) {
-                        config->jrtc_router_config.thread_config.has_sched_config = (strcmp(expanded_value, "true") == 0) ? 1 : 0;
+                        config->jrtc_router_config.thread_config.has_sched_config =
+                            (strcmp(expanded_value, "true") == 0) ? 1 : 0;
                     }
                 } else if (in_sched_config) {
                     if (strcmp(key, "sched_policy") == 0) {
@@ -124,9 +126,15 @@ parse_yaml_config(const char* filename, yaml_config_t* config) {
                     }
                 } else if (in_jbpf_io_config) {
                     if (strcmp(key, "jbpf_namespace") == 0) {
-                        strncpy(config->jbpf_io_config.jbpf_namespace, expanded_value, sizeof(config->jbpf_io_config.jbpf_namespace) - 1);
+                        strncpy(
+                            config->jbpf_io_config.jbpf_namespace,
+                            expanded_value,
+                            sizeof(config->jbpf_io_config.jbpf_namespace) - 1);
                     } else if (strcmp(key, "jbpf_path") == 0) {
-                        strncpy(config->jbpf_io_config.jbpf_path, expanded_value, sizeof(config->jbpf_io_config.jbpf_path) - 1);
+                        strncpy(
+                            config->jbpf_io_config.jbpf_path,
+                            expanded_value,
+                            sizeof(config->jbpf_io_config.jbpf_path) - 1);
                     }
                 }
 
