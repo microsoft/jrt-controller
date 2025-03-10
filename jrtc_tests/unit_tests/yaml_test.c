@@ -21,19 +21,19 @@ test_yaml_parsing()
 
     // Test 1: Valid YAML file
     {
-    //   jrtc_router_config:
-    //     thread_config:
-    //       affinity_mask: 3
-    //       has_sched_config: true
-    //       sched_config:
-    //         sched_policy: 0
-    //         sched_priority: 99
-    //         sched_deadline: 30000000
-    //         sched_runtime: 10000000
-    //         sched_period: 30000000
-    //   jbpf_io_config:
-    //     jbpf_namespace: "default"
-    //     jbpf_path: "/var/lib/jbpf"      
+        //   jrtc_router_config:
+        //     thread_config:
+        //       affinity_mask: 3
+        //       has_sched_config: true
+        //       sched_config:
+        //         sched_policy: 0
+        //         sched_priority: 99
+        //         sched_deadline: 30000000
+        //         sched_runtime: 10000000
+        //         sched_period: 30000000
+        //   jbpf_io_config:
+        //     jbpf_namespace: "default"
+        //     jbpf_path: "/var/lib/jbpf"
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/valid.yaml", jrtc_path);
         yaml_config_t config;
         printf("Parsing config file: %s\n", config_file);
@@ -44,7 +44,7 @@ test_yaml_parsing()
         assert(config.jrtc_router_config.thread_config.sched_config.sched_policy == 0);
         assert(config.jrtc_router_config.thread_config.sched_config.sched_deadline == 30000000);
         assert(config.jrtc_router_config.thread_config.sched_config.sched_runtime == 10000000);
-        assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);        
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);
         assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
         assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jrtc") == 0);
         assert(strcmp(config.jbpf_io_config.jbpf_path, "/var/run/jrtc") == 0);
