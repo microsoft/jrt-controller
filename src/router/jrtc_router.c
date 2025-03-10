@@ -313,7 +313,7 @@ jrtc_router_init(struct jrtc_router_config* config)
         return -1;
     }
 
-    io_config.type = JBPF_IO_IPC_PRIMARY;
+    io_config.type = JBPF_IO_IPC_PRIMARY;    
     io_config.ipc_config.mem_cfg.memory_size = 1024 * 1024 * 1024;
 
     strncpy(io_config.ipc_config.addr.jbpf_io_ipc_name, config->io_config.ipc_name, JBPF_IO_IPC_MAX_NAMELEN);
