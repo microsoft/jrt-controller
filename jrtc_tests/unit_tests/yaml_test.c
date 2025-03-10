@@ -41,11 +41,11 @@ test_yaml_parsing()
         assert(result == 0);
         assert(config.jrtc_router_config.thread_config.affinity_mask == 3);
         assert(config.jrtc_router_config.thread_config.has_sched_config == 1);
-        // assert(config.jrtc_router_config.thread_config.sched_config.sched_policy == 0);
-        // assert(config.jrtc_router_config.thread_config.sched_config.sched_deadline == 30000000);
-        // assert(config.jrtc_router_config.thread_config.sched_config.sched_runtime == 10000000);
-        // assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);        
-        // assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_policy == 0);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_deadline == 30000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_runtime == 10000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);        
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
         assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jrtc") == 0);
         assert(strcmp(config.jbpf_io_config.jbpf_path, "/var/run/jrtc") == 0);
         printf("Test 1 passed: Valid YAML file parsed successfully.\n");

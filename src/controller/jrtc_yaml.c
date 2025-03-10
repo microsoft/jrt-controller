@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <regex.h>
+#include "stdbool.h"
+#include "jbpf_common.h"
 
 char*
 expand_env_vars(const char* input)
@@ -60,6 +62,24 @@ expand_env_vars(const char* input)
     return expanded;
 }
 
+void
+init_default_yaml_config_t(yaml_config_t* config)
+{
+    memset(config, 0, sizeof(yaml_config_t));
+    config->jrtc_router_config.thread_config.affinity_mask = 1 << 1;
+    config->jrtc_router_config.thread_config.has_affinity_mask = false;
+    config->jrtc_router_config.thread_config.has_sched_config = false;
+    config->jrtc_router_config.thread_config.sched_config.sched_policy = 0;
+    config->jrtc_router_config.thread_config.sched_config.sched_priority = 99;
+    config->jrtc_router_config.thread_config.sched_config.sched_deadline = 30 * 1000 * 1000;
+    config->jrtc_router_config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
+    config->jrtc_router_config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
+    strncpy(config->jbpf_io_config.jbpf_path, JBPF_DEFAULT_RUN_PATH, JBPF_RUN_PATH_LEN - 1);
+    config->jbpf_io_config.jbpf_path[JBPF_RUN_PATH_LEN - 1] = '\0';
+    strncpy(config->jbpf_io_config.jbpf_namespace, JBPF_DEFAULT_NAMESPACE, JBPF_NAMESPACE_LEN - 1);
+    config->jbpf_io_config.jbpf_namespace[JBPF_NAMESPACE_LEN - 1] = '\0';
+}
+
 int
 parse_yaml_config(const char* filename, yaml_config_t* config)
 {
@@ -83,6 +103,7 @@ parse_yaml_config(const char* filename, yaml_config_t* config)
         return -1;
     }
     yaml_parser_set_input_file(&parser, file);
+    init_default_yaml_config_t(config);
 
     while (1) {
         if (!yaml_parser_parse(&parser, &event)) {
