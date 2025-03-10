@@ -39,7 +39,8 @@ typedef struct
  * @param input - The input string with possible ${VAR} placeholders.
  * @return - The expanded string (must be freed by the caller).
  */
-char *expand_env_vars(const char *input);
+char*
+expand_env_vars(const char* input);
 
 /**
  * @brief Parses a YAML configuration file and fills the provided config structure.
