@@ -1,3 +1,6 @@
+Copyright (c) Microsoft Corporation.
+Licensed under the MIT license.
+
 
 - [1. Intructions](#1-intructions)
 - [2. Steps](#2-steps)
@@ -52,8 +55,8 @@ Steps to run the example.   The followinf examples use "ubuntu2204" as the OS, b
   ```sh
   cd $JRTC_PATH/sample_apps/first_example_py
   source ../../setup_jrtc_env.sh
-  make -C jbpf_codelets/data_generator
-  make -C jbpf_codelets/simple_input
+  make -C ../jbpf_codelets/data_generator
+  make -C ../jbpf_codelets/simple_input
   ```
 
 ## 2.4. Build the Jbpf IPC agent
@@ -100,19 +103,6 @@ If successful, one of the log messages at the agent side should report `Registra
   sudo -E ./load_app.sh
   ```
 
- If the codelets and the app were loaded successfully, you should see the following output at the JRTC controller:
-  ```
-  App 1: Aggregate counter so far is 15
-  App 1: Aggregate counter so far is 55
-  ...
-  ```
-
-  Similarly, you should see the following printed messages on the agent side:
-  ```
-  [JBPF_DEBUG]: Got aggregate value 15
-  [JBPF_DEBUG]: Got aggregate value 55
-  ...
-  ```
 ## 2.10. To unload the codelets and the application, use the following command:
   ```sh
   cd $JRTC_PATH/sample_apps/first_example_py

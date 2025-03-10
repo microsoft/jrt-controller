@@ -11,11 +11,12 @@
 #include "jrtc.h"
 
 /* Compiler magic to make address sanitizer ignore
-   memory leaks originating from libpython */
+memory leaks originating from libpython */
+#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_LEAK__)
 __attribute__((used)) const char*
 __asan_default_options()
 {
-    return "detect_odr_violation=0:intercept_tls_get_addr=0:suppressions=suppress_python";
+    return "detect_odr_violation=0:intercept_tls_get_addr=0:suppression=libpython";
 }
 
 __attribute__((used)) const char*
@@ -29,6 +30,7 @@ __lsan_default_suppressions()
 {
     return "leak:libpython";
 }
+#endif
 
 char*
 get_folder(const char* file_path)

@@ -24,7 +24,7 @@ source setup_jrtc_env.sh
 if [[ "$CLANG_FORMAT_CHECK" == "1" ]]; then
     echo "Checking clang-format..."
     cat /jrtc/.clang-format
-    DIRS=("src" "sample_apps" "tests" "tools" "wrapper_apis")
+    DIRS=("src" "sample_apps" "tests" "tools" "wrapper_apis/c")
     cd /jrtc/
     echo The clang-format version is $(clang-format --version)
     for i in "${DIRS[@]}"; do
@@ -71,13 +71,17 @@ fi
 
 if [[ "$RUN_TESTS" == "1" ]]; then
     export JRTC_PATH=/jrtc
-    export PYTHONMALLOC=malloc
     ## TODO: ODR (Linkage problem) isn't a big issue, but we should fix it at some point
     export ASAN_OPTIONS="detect_leaks=1:strict_memcmp=1:log_path=/tmp/asan.log:detect_odr_violation=0:verbosity=2:strict_init_order=true"
     export LSAN_OPTIONS="suppressions=/jrtc/lsan_agent.supp:verbosity=2"
     export RUST_BACKTRACE=full
     if ! ctest --output-on-failure --output-junit $JRTC_OUT_DIR/jrtc_tests.xml -F; then
         echo "Error running C tests!"
+        exit 1
+    fi
+    ## if there are no tests, fail
+    if [ ! -s $JRTC_OUT_DIR/jrtc_tests.xml ]; then
+        echo "Error: No tests found!"
         exit 1
     fi
     cat /tmp/asan.log || true

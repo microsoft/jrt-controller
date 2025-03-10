@@ -10,6 +10,8 @@ option(JRTC_USE_NATIVE "Do use -march=native compiler flag (disable to increase 
 
 option(CLANG_FORMAT_CHECK "Enable clang-format check" OFF)
 option(CPP_CHECK "Enable cppcheck" OFF)
+option(BUILD_TESTING "Enable testing" ON)
+option(BUILD_PYTHON_LOADER "Build the python loader" ON)
 
 # Treat all warnings as errors except those explicitly called out in CPP using #warning
 SET(CMAKE_C_WARNINGS "-Wall -Werror")
@@ -268,16 +270,24 @@ endmacro()
 
 set(BUILD_TESTING OFF CACHE BOOL "Disable testing" FORCE)
 add_subdirectory(jbpf-protobuf)
-
-# Restore the original commands by undefining the macros
-unset(add_test)
-unset(set_tests_properties)
-
 add_subdirectory(src/logger)
 add_subdirectory(src/stream_id)
 add_subdirectory(src/router)
 add_subdirectory(src/rest_api_lib)
 add_subdirectory(src/controller)
 add_subdirectory(src/agent)
+
+if (BUILD_PYTHON_LOADER)
+    message(STATUS "Building Python loader...")
+    add_subdirectory(src/pythonapp_loader)
+else()
+    message(STATUS "Skipping Python loader build.")
+endif()
+
+# Restore the original commands by undefining the macros
+unset(add_test)
+unset(set_tests_properties)
+
+set(BUILD_TESTING ON CACHE BOOL "Enable testing" FORCE)
 add_subdirectory(tools/jrtc-ctl)
-add_subdirectory(src/pythonapp_loader)
+add_subdirectory(src/wrapper_apis)

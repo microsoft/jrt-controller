@@ -31,6 +31,7 @@
 
 /* Compiler magic to make address sanitizer ignore
 memory leaks originating from libpython */
+#if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_LEAK__)
 __attribute__((used)) const char*
 __asan_default_options()
 {
@@ -48,6 +49,7 @@ __lsan_default_suppressions()
 {
     return "leak:libpython";
 }
+#endif
 
 char*
 concat(const char* s1, const char* s2)
@@ -157,7 +159,7 @@ _jrtc_load_app_from_memory(const char* data, size_t size)
 
     void* handle = dlopen(path, RTLD_LAZY);
     if (handle == NULL) {
-        jrtc_logger(JRTC_CRITICAL, "fdlopen failed\n");
+        jrtc_logger(JRTC_CRITICAL, "fdlopen failed: %s (errno=%d, %s)\n", path, errno, dlerror());
         goto error;
     }
 
@@ -399,14 +401,6 @@ start_jrtc(int argc, char* argv[])
         perror("signal");
         return 1;
     }
-
-    printf("Checking if py is loaded\n");
-    Py_Initialize();
-    // ctypes is required module for python loader
-    // however it is reporting memory leaks
-    PyRun_SimpleString("import ctypes; print(\"hello world\")");
-    Py_Finalize();
-    printf("Checking if py is loaded - OK\n");
 
     pthread_t rest_server;
     void* rest_server_handle;

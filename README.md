@@ -1,4 +1,5 @@
 # Introduction
+[![Build Status](https://belgrade.visualstudio.com/jrt-controller/_apis/build/status%2Fjrtc?repoName=microsoft%2Fjrt-controller&branchName=main)](https://belgrade.visualstudio.com/jrt-controller/_build/latest?definitionId=148&repoName=microsoft%2Fjrt-controller&branchName=main)
 
 *jrt-controller* is a real-time controller for network functions instrumented with the [jbpf framework](https://github.com/microsoft/jbpf).
 Like jbpf, the controller is part of [Project Janus](https://www.microsoft.com/en-us/research/project/programmable-ran-platform/) and provides functionalities envisaged by the concept of real-time RIC in O-RAN. 
@@ -43,7 +44,7 @@ source ./setup_jrtc_env.sh
 
 mkdir build
 cd build
-cmake ../ && make -j
+cmake ../ && make
 ```
 
 
@@ -60,8 +61,7 @@ The documentation will be generated in the `$JRTC_OUT_DIR/docs/html` directory, 
 For more details about the capabilities of *jrt-controller* you can explore the documentation:
 
 * [High-level overview ](./docs/overview.md)
-* [Simple example](./docs/understand_simple_app.md)
-* [Advanced example](./docs/understand_advanced_app.md)
+* [Example Apps](./docs/understand_example_apps.md)
 * [Streams and messages](./docs/streams.md)
 * [Building with containers](./docs/containers.md)
 * [jrtc-ctl management tool](./docs/jrtctl.md)
@@ -74,7 +74,12 @@ For more information, you can also check the following resources:
 # Related projects
 
 - [jbpf](https://github.com/microsoft/jbpf): the userspace eBPF instrumentation and control framework used to instrument network functions that communicate with *jrt-controller*. 
-- [jbpf-protobuf](https://github.com/microsoft/jbpf-protobuf): An extension of jbpf, that introduces protobuf serialization capabilities for sending and receiving data from codelets loaded in jbpf applications.
+
+- Sample integration with [srsRAN](https://github.com/srsran/srsRAN_Project), which consists of two parts: 
+  * A [version of srsRAN](https://github.com/xfoukas/srsRAN_Project_jbpf) integrated with *jbpf*.
+  * A number of [sample applications](https://github.com/microsoft/jrtc-apps) for *jbpf* and *jrt-controller* on top of *srsRAN*.
+
+- [jbpf-protobuf](https://github.com/microsoft/jbpf-protobuf): The *jbpf* extension, used in *jrt-controller*, that demonstrates how to utilize protobuf serialization for sending and receiving data from codelets loaded in jbpf applications.
 
 # License
 
