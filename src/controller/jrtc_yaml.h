@@ -35,6 +35,13 @@ typedef struct
 } yaml_config_t;
 
 /**
+ * @brief Expands environment variables in a given string (e.g., "Path: ${HOME}/test")
+ * @param input - The input string with possible ${VAR} placeholders.
+ * @return - The expanded string (must be freed by the caller).
+ */
+char *expand_env_vars(const char *input);
+
+/**
  * @brief Parses a YAML configuration file and fills the provided config structure.
  * @param filename The path to the YAML file.
  * @param config Pointer to the structure to fill with parsed data.

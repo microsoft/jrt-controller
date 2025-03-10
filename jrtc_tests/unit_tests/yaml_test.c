@@ -73,12 +73,65 @@ test_yaml_parsing()
         printf("Test 4 passed: Valid YAML file (incomplete values) parsed successfully.\n");
     }
 
+    // Test 5: Valid YAML file with env substitution
+    {
+        // jbpf_io_config:
+        //   jbpf_namespace: jrtc_${JRTC_TEST_ID}
+        snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/valid_env.yaml", jrtc_path);
+        setenv("JRTC_TEST_ID", "1234", 1);
+        yaml_config_t config;
+        printf("Parsing config file: %s\n", config_file);
+        int result = parse_yaml_config(config_file, &config);
+        assert(result == 0);
+        assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jrtc_1234") == 0);
+        printf("Test 5 passed: Valid YAML file (with env substitution) parsed successfully.\n");
+    }    
+
     printf("All tests passed!\n");
+}
+
+void assert_string_equals(const char* input, const char* expected) {
+    char* result = expand_env_vars(input);
+    if (result == NULL) {
+        printf("Error expanding environment variables\n");
+        exit(1);
+    }
+    if (strcmp(result, expected) != 0) {
+        printf("Test failed: Expected '%s', but got '%s'\n", expected, result);
+        free(result);
+        exit(1);
+    }
+    free(result);
+}
+
+void test_env_expansions() {
+    // Test 1: Simple environment variable expansion
+    setenv("JRTC_UNIT_TEST_1", "xxxx", 1);
+    assert_string_equals("${JRTC_UNIT_TEST_1}", "xxxx");
+
+    // Test 2: Expanding multiple environment variables
+    setenv("JRTC_UNIT_TEST_2", "/home/xxx", 1);
+    assert_string_equals("${JRTC_UNIT_TEST_1} is at ${JRTC_UNIT_TEST_2}", "xxxx is at /home/xxx");
+
+    // Test 3: Non-existent environment variable (should return an empty string)
+    assert_string_equals("${NONEXISTENT_VAR}", "");
+
+    // Test 4: Empty input string (should return an empty string)
+    assert_string_equals("", "");
+
+    // Test 5: Nested environment variables (should resolve both correctly)
+    setenv("AAA", "1111", 1);
+    setenv("bbbb", "2222", 1);
+    assert_string_equals("/${AAA}/documents/${bbbb}", "/1111/documents/2222");
+
+    // Test 6: Literal `${}` without environment variable (should return empty)
+    assert_string_equals("${NOT_DEFINED}", "");
 }
 
 int
 main()
 {
     test_yaml_parsing();
+    test_env_expansions();
     return 0;
 }
