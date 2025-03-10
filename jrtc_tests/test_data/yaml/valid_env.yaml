@@ -1,0 +1,2 @@
+jbpf_io_config:
+  jbpf_namespace: jrtc_${JRTC_TEST_ID}

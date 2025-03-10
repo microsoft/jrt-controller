@@ -89,10 +89,11 @@ typedef struct jrtc_router_ctx* jrtc_router_ctx_t;
  * @brief Initialize the router
  * @ingroup router
  * @param config The configuration
+ * @param yaml_config_path The path to the YAML configuration file. Specify NULL if not used.
  * @return 0 on success, -1 on failure
  */
 int
-jrtc_router_init(struct jrtc_router_config* config);
+jrtc_router_init(struct jrtc_router_config* config, const char* yaml_config_path);
 
 /**
  * @brief Set the scheduler

@@ -1,0 +1,3 @@
+jbpf_io_config:
+  jbpf_namespace: jbpf
+  jbpf_path: /tmp
