@@ -301,7 +301,7 @@ jrtc_router_thread_start(void* args)
 }
 
 void
-init_jbpf_io_config_default(struct jbpf_io_config* io_config)
+init_jbpf_io_config_default(struct jbpf_io_config* io_config, struct jrtc_router_config* config)
 {
     if (!io_config) {
         return;
@@ -309,6 +309,7 @@ init_jbpf_io_config_default(struct jbpf_io_config* io_config)
     memset(io_config, 0, sizeof(struct jbpf_io_config));
     io_config->type = JBPF_IO_IPC_PRIMARY;
     io_config->ipc_config.mem_cfg.memory_size = 1024 * 1024 * 1024;
+    strncpy(io_config->ipc_config.addr.jbpf_io_ipc_name, config->io_config.ipc_name, JBPF_IO_IPC_MAX_NAMELEN);
     strncpy(io_config->jbpf_path, JBPF_DEFAULT_RUN_PATH, JBPF_RUN_PATH_LEN - 1);
     io_config->jbpf_path[JBPF_RUN_PATH_LEN - 1] = '\0';
     strncpy(io_config->jbpf_namespace, JBPF_DEFAULT_NAMESPACE, JBPF_NAMESPACE_LEN - 1);
@@ -348,7 +349,7 @@ jrtc_router_init(struct jrtc_router_config* config, const char* yaml_config_path
         return -1;
     }
 
-    init_jbpf_io_config_default(&io_config);
+    init_jbpf_io_config_default(&io_config, config);
     if (yaml_config_path) {
         int res = read_jbpf_io_config_from_yaml(&io_config, yaml_config_path);
         if (res != 0) {
