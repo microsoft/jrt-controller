@@ -8,21 +8,28 @@ if [ -z "$JRTC_PATH" ]; then
     exit 1
 fi
 
-pushd $JRTC_PATH/helper_build_files
+if ! pushd "$JRTC_PATH/helper_build_files"; then
+    echo "Error: Failed to change directory to $JRTC_PATH/helper_build_files"
+    exit 1
+fi
 
 TEST_CASES=("first_example" "first_example_c" "first_example_py" "advanced_example" "advanced_example_c")
 JRTC_TESTS_OUTPUT=/tmp/jrtc_tests_output.log
 
 for TEST in "${TEST_CASES[@]}"; do
     echo ".......................................................................................... Running test: $TEST .........................................................................................."
-    rm -rf $JRTC_TESTS_OUTPUT || true
+    rm -rf "$JRTC_TESTS_OUTPUT" || true
 
-    $JRTC_PATH/helper_build_files/integration_tests.sh $TEST |& tee $JRTC_TESTS_OUTPUT
-        
+    "$JRTC_PATH/helper_build_files/integration_tests.sh" "$TEST" |& tee "$JRTC_TESTS_OUTPUT"
+    if [ "${PIPESTATUS[0]}" -ne 0 ]; then
+        echo "Error: Test script failed for $TEST"
+        exit 1
+    fi
+  
     echo ".............................................Output.log: $TEST ............................................."
-    cat $JRTC_TESTS_OUTPUT
+    cat "$JRTC_TESTS_OUTPUT"
 
-    if ! $JRTC_PATH/sample_apps/$TEST/assert.sh $JRTC_TESTS_OUTPUT $TEST; then
+    if ! "$JRTC_PATH/sample_apps/$TEST/assert.sh" "$JRTC_TESTS_OUTPUT" "$TEST"; then
         echo "Test Assertion failed for $TEST"
         exit 1
     fi
@@ -31,3 +38,6 @@ for TEST in "${TEST_CASES[@]}"; do
 done
 
 echo "All tests passed!"
+
+popd || echo "Warning: popd failed, but continuing"
+exit 0
