@@ -17,14 +17,11 @@ The logic of [first example py](../sample_apps/first_example_py/) is identical t
 
 To see the details of this logic and expected behaviour, refer to [./understand_simple_app_c.md](./understand_simple_app_c.md)
 
-Both versions use the JrtcApp abstraction class.
+For the python version, see [jrtc_app.py](../src/wrapper_apis/python/jrtc_app.py).  This file is a python wrapper used to interface to the API described in [first example c](./understand_simple_app_c.md)
 
-For the python version, see [jrtc_app.py](../src/wrapper_apis/python/jrtc_app.py).  This file is a python wrapper used to interface to the JrtcApp c++ class.
+The details of first_example_py is almost identical to first_example_c, in that the developer just has to define the state variables, the application configuration, and the callback handler.  
 
-The details of first_example_py is almost identical to first_example_c, in that that developer just has to define the state variables, the application configuration, amd the callback handler.  
-The only difference is that it has a python API interface, as opposed to C.  
-
-Therefore this README will simply show how to write the app in python.  For more details of the JrtcApp API, see [./understand_simple_app_c.md](./understand_simple_app_c.md) and [./understand_advanced_app_c.md](./understand_advanced_app_c.md).
+This README will simply show how to write the app in python.  
 
 ## 1.1. Implementation details
 
@@ -76,11 +73,11 @@ app_cfg = JrtcAppCfg_t(
     100,                                           # q_size
     len(streams),                                  # num_streams
     (JrtcStreamCfg_t * len(streams))(*streams),    # streams
+    10.0,                                          # initialization_timeout_secs
     0.1,                                           # sleep_timeout_secs
     1.0                                            # inactivity_timeout_secs
 )
 ```
-
 
 ### 1.1.3. Callback handler
 
@@ -200,16 +197,20 @@ You will need to open five terminals.
 
 If the codelets and the app were loaded successfully, you should see the following output at the jrt-controller:
 ```
-App 1: Aggregate counter so far is 15
-App 1: Aggregate counter so far is 55
-...
+App1: Aggregate counter from codelet is 1
+App2: Aggregate counter from codelet is 1
+App1: Received aggregate counter 1 from output channel of App2
+App1: Received aggregate counter 1 from input channel of App1
+App1: Aggregate counter from codelet is 3
+App2: Aggregate counter from codelet is 3
+App1: Received aggregate counter 3 from output channel of App2
+App1: Received aggregate counter 3 from input channel of App1
 ```
 
 Similarly, you should see the following printed messages on the agent side from the simple input codelet:
 ```
-[JBPF_DEBUG]: Got aggregate value 15
-[JBPF_DEBUG]: Got aggregate value 55
-...
+[2025-03-06T11:54:08.746075Z] [JBPF_DEBUG]: Got aggregate value 1
+[2025-03-06T11:54:09.746131Z] [JBPF_DEBUG]: Got aggregate value 3
 ```
 
 The application can then be unloaded with the following command:

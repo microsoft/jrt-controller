@@ -1,33 +1,123 @@
 
 - [1. Understanding the advanced example application (advanced\_example\_c)](#1-understanding-the-advanced-example-application-advanced_example_c)
-  - [1.1. Implementation details - AdvancedExample1](#11-implementation-details---advancedexample1)
-    - [1.1.1. Application state variables](#111-application-state-variables)
-    - [1.1.2. Application configuration](#112-application-configuration)
-    - [1.1.3. Callback handler](#113-callback-handler)
-  - [1.2. Implementation details - AdvancedExample2](#12-implementation-details---advancedexample2)
+  - [1.1. Application description](#11-application-description)
+    - [1.1.1. Automatic serialization and routing](#111-automatic-serialization-and-routing)
+    - [1.1.2. Messages between applications](#112-messages-between-applications)
+  - [1.2. Implementation details - AdvancedExample1](#12-implementation-details---advancedexample1)
     - [1.2.1. Application state variables](#121-application-state-variables)
     - [1.2.2. Application configuration](#122-application-configuration)
     - [1.2.3. Callback handler](#123-callback-handler)
-  - [1.3. Run the application](#13-run-the-application)
-    - [1.3.1. Prerequisites](#131-prerequisites)
-    - [1.3.2. Build the application](#132-build-the-application)
-    - [1.3.3. Run the components](#133-run-the-components)
-    - [1.3.4. Expected output](#134-expected-output)
+  - [1.3. Implementation details - AdvancedExample2](#13-implementation-details---advancedexample2)
+    - [1.3.1. Application state variables](#131-application-state-variables)
+    - [1.3.2. Application configuration](#132-application-configuration)
+    - [1.3.3. Callback handler](#133-callback-handler)
+  - [1.4. Run the application](#14-run-the-application)
+    - [1.4.1. Prerequisites](#141-prerequisites)
+    - [1.4.2. Build the application](#142-build-the-application)
+    - [1.4.3. Run the components](#143-run-the-components)
+    - [1.4.4. Expected output](#144-expected-output)
 
 
 # 1. Understanding the advanced example application (advanced_example_c)
 
-The logic of [advanced example c](../sample_apps/advanced_example_c/) is identical to the [advanced example](../sample_apps/advanced_example/).
+This [advanced example](../sample_apps/advanced_example_c/) builds on the basic concepts introduced in the [simple example](./understand_simple_app_c.md) and demonstrates more advanced capabilities offered by the *jrt-controller*.
 
-To see the details of this logic and expected behaviour, refer to [./understand_advanced_app.md](./understand_advanced_app.md)
 
-The difference between the two is that advanced_example_c uses the JrtcApp abstraction class.  [See the API here](../src/wrapper_apis/c/jrtc_app.h).  To see details of the JrtApp API, refer to [./understand_simple_app_c.md](./understand_simple_app_c.md)
+## 1.1. Application description
 
-## 1.1. Implementation details - AdvancedExample1
+This example involves two deployments.
+
+The [first](../sample_apps/advanced_example_c/advanced_example1.yaml), called `AdvancedExample1`, consists of one *jrt-controller* application `app1` and two codelets:
+
+* The [data_generator codelet](../sample_apps/jbpf_codelets/data_generator/data_generator_codelet.c) increments a counter every time it is called and sends it to `app1`. 
+  It is the same as the one in the simple example. 
+
+* The [simple_input protobuf codelet](../sample_apps/jbpf_codelets/simple_input_protobuf/simple_input_program.c) receives an input from the *jrt-controller* application and prints it on the console. 
+  It is the same as the one in the simple example, except that it uses a [protobuf schema](../sample_apps/jbpf_codelets/simple_input_protobuf/simple_input.proto) for exposing the data to the *jrt-controller*.
+This enables the serialized data forwarding to a *Data collection and control* point, in addition to exposing the data to  `app2`.
+
+The [second](../sample_apps/advanced_example_c/advanced_example2.yaml) deployment, called `AdvancedExample2`, consists of a *jrt-controller* application `app2` and a single codelet:
+
+* The [data_generator_protobuf codelet](../sample_apps/jbpf_codelets/data_generator_protobuf/data_generator_pb_codelet.c) is the same as the *data_generator codelet* of `app1`, except that it uses a [protobuf schema](../sample_apps/jbpf_codelets/data_generator_protobuf/generated_data.proto) for exposing the data to the *jrt-controller*.
+
+The deployments have the following application logic:
+* [app1](../sample_apps/advanced_example_c/advanced_example1.c) reads data from the *data_generator* codelet, updates a counter, and sends the result back to the *simple_input* codelet. This part is the same as in the [simple_example app](../sample_apps/first_example_c/first_example.c). 
+  `app1` also receives data from `app2` over two streams (one input and one output) and prints it on screen. 
+
+* [app2](../sample_apps/advanced_example_c/advanced_example2.c) reads data from the `data_generator_protobuf` codelet, updates a counter, and sends the updated counters to `app2` over both the input and output streams. 
+
+There are several new elements illustrated in the advanced example that we discuss in more details. 
+
+### 1.1.1. Automatic serialization and routing
+
+One new element is the [data_generator_protobuf codelet](../sample_apps/jbpf_codelets/data_generator_protobuf/data_generator_pb_codelet.c) of deployment `AdvancedExample2`, which introduces the concept of automatic data serialization. 
+Instead of manually defining a C struct for the data sent to `app2` through the output stream `ringbuf`, the codelet leverages a protobuf schema definition, which allows the same data to also be sent to one or more *Data collection and control* end-points over the network in a serialized format (protobuf). 
+The protobuf schema that is employed for this example can be found [here](../sample_apps/jbpf_codelets/simple_input_protobuf/simple_input.proto).
+
+
+When [building](../sample_apps/jbpf_codelets/data_generator_protobuf/Makefile) the binaries of the deployment `AdvancedExample2` using `make`, a file called `generated_data.pb.h` is auto-generated, containing a C struct called `example_msg_pb`.
+The build process also generates a protobuf descriptor called (`generated_data.pb`) and a serde (serialization/deserialization) library called (`generated_data:example_msg_pb_serializer.so`).
+
+
+The codelet can use the `example_msg_pb` structure to populate the output data, just as any other user-defined C struct:
+```C
+out = (_example_msg_pb*)c;
+out->cnt = cnt;
+jbpf_ringbuf_output(&ringbuf, out, sizeof(example_msg_pb));
+```
+When the message is sent to the output channel by the jbpf codelet using the `jbpf_ringbuf_output()` API call, it is received by the *jrt-controller* applications (`app2` in this case) without any serialization overhead (plain memory and with zero-copy), just as in the simple example.
+
+However, in the case of this advanced example, the deployment also forwards the message to a remote UDP socket end-point by specifying a [forwarding policy](../sample_apps/jbpf_codelets/data_generator_protobuf/codeletset.yaml) in the codelet descriptor file:
+
+```
+out_io_channel:
+    - name: ringbuf
+    forward_destination: DestinationUDP
+    serde:
+        file_path: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator_protobuf/generated_data:example_msg_pb_serializer.so
+        protobuf:
+        package_path: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator_protobuf/generated_data.pb
+        msg_name: example_msg_pb
+```
+Here, the descriptor file specifies that any data sent through the output stream with name `ringbuf` should be routed to the *Data collection and control* end-point called `DestinationUDP` (the UDP socket).
+When forwarded, the data should be serialized using the protobuf descriptor and serde library specified under the `serde` and `protobuf` sections (generated through the build process explained previously).
+
+The *jrt-controller* is bundled with a [forwarding application](../src/controller/jrtc_north_io_app.c), which is always enabled and subscribed to all streams with forwardng destination `JRTC_ROUTER_DEST_UDP` (the `DestinationUDP` end-point).
+The forwarding application fetches data for any relevant stream, serializes it using the provided serialization information for the stream and sends it to the destination UDP socket over the network.
+The destination IP and UDP port used by the forwarding application are defined through the env variables `AA_NET_OUT_FQDN` and `AA_NET_OUT_PORT` correspondingly.
+
+Users can implement their own UDP end-point to handle the output data sent by the forwarding application (e.g., as part of their SMO), but *jrt-controller* also bundles a basic end-point with the [jrtc-ctl](jrtctl.md) tool, which can be useful for testing purposes.
+The end-point, called `jrtc-ctl decoder`, simply receives the data via a UDP port, deserializes them, and prints them on screen in JSON format.
+
+### 1.1.2. Messages between applications
+
+In the previous example, a *jbpf* codelet was the creator of each channel. 
+*jrt-controller* applications can also communicate amongst themselves using channels.
+As with codelets, there are two types of application channels, *input* and *output* (see [here](../docs/streams.md) for more details).
+
+For example, *app2* creates an instance of an output channel using the following definition:
+```C
+{
+    {
+        JRTC_ROUTER_REQ_DEST_NONE, 
+        jrtc_device_id, 
+        "AdvancedExample2://intraapp", 
+        "buffer"
+    },
+    false, // is_rx
+    &(JrtcAppChannelCfg_t){true, 100, sizeof(simple_input_pb)}},
+```
+As with the case of codelets, `app1` subscribes to this stream to receive data produced by `app2`.
+
+The example also demonstrates how the same can be done for input channels, with `app1` creating the channel and `app2` sending data to it.
+
+Note that the channel creation can optionally support de/serialization function if the data needs to be exported to external end-points. 
+
+## 1.2. Implementation details - AdvancedExample1
 
 Here are the details given for the advanced_example. 
 
-### 1.1.1. Application state variables
+### 1.2.1. Application state variables
 
 In the case of the advanced_example1, it has additional field __"agg_cnt"__.
 
@@ -40,7 +130,7 @@ typedef struct {
 } AppStateVars_t;
 ```
 
-### 1.1.2. Application configuration
+### 1.2.2. Application configuration
 
 The streams of the applications are defined as below. It can be seen that these are as per described in [./understand_advanced_app.md](./understand_advanced_app.md).
 
@@ -106,16 +196,17 @@ The application config is detailed below.
 
 ```C
 const JrtcAppCfg_t app_cfg = {
-    "AdvancedExample1",                            // context
+    "AdvancedExample1",                        // context
     100,                                       // q_size
     sizeof(streams) / sizeof(streams[0]),      // num_streams
     (JrtcStreamCfg_t*)streams,                 // Pointer to the streams array
+    10.0f,                                     // initialization_timeout_secs
     0.1f,                                      // sleep_timeout_secs
     1.0f                                       // inactivity_timeout_secs
 };
 ```
 
-### 1.1.3. Callback handler
+### 1.2.3. Callback handler
 
 ```C
 void app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, void* s) {
@@ -172,11 +263,11 @@ void app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_en
 }
 ```
 
-## 1.2. Implementation details - AdvancedExample2
+## 1.3. Implementation details - AdvancedExample2
 
 Here are the details given for the advanced_example. 
 
-### 1.2.1. Application state variables
+### 1.3.1. Application state variables
 
 In the case of the advanced_example1, it has additional fields __"agg_cnt"__ and __"received_counter"__.
 
@@ -190,7 +281,7 @@ typedef struct {
 } AppStateVars_t;
 ```
 
-### 1.2.2. Application configuration
+### 1.3.2. Application configuration
 
 The streams of the applications are defined as below. It can be seen that these are as per described in [./understand_advanced_app.md](./understand_advanced_app.md).
 
@@ -248,12 +339,13 @@ const JrtcAppCfg_t app_cfg = {
     100,                                       // q_size
     sizeof(streams) / sizeof(streams[0]),      // num_streams
     (JrtcStreamCfg_t*)streams,                 // Pointer to the streams array
+    10.0f,                                     // initialization_timeout_secs
     0.1f,                                      // sleep_timeout_secs
     1.0f                                       // inactivity_timeout_secs
 };
 ```
 
-### 1.2.3. Callback handler
+### 1.3.3. Callback handler
 
 ```C
 // Function for handling received data (as in Python)
@@ -309,17 +401,15 @@ void app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_en
 }
 ```
 
-In the above handler it can be seen the app will send to its own "output" channel, which is APP2_OUT_SIDX.
+In the above handler it can be seen the app will send to its own "output" channel, which is APP2_OUT_SIDX.  To do this it calls "jrtc_app_router_channel_send_output".
 
-However to do that, it first calls helper function __"jrtc_app_get_channel_context"__.  This is a helper function provided by the JrtcApp class, which returns a Jrtc channel context structure for a given stream index.  This stream structure is then used when calling the core Jrtc function "jrtc_router_channel_send_output".
+## 1.4. Run the application
 
-## 1.3. Run the application
+### 1.4.1. Prerequisites
 
-### 1.3.1. Prerequisites
+Before running the sample apps, the *jrt-controller* must be built (see [README.md](../README.md) for instructions).
 
-Before running the sample apps, the *jrt-controller* must be built (see [README.md](../../README.md) for instructions).
-
-### 1.3.2. Build the application
+### 1.4.2. Build the application
 
 The application can be built using the following commands:
   ```sh
@@ -330,7 +420,7 @@ The application can be built using the following commands:
 This will build the all the sample codelets (`data_generator`, `data_generator_protobuf`, `simple_input` and `simple_input_protobuf`), the sample agent (`simple_agent_ipc`) and the *jrt-controller* application (`app1.so`).
 
 
-### 1.3.3. Run the components
+### 1.4.3. Run the components
 
 You will need to open five terminals.
 
@@ -378,7 +468,7 @@ You will need to open five terminals.
   ```
 
 
-### 1.3.4. Expected output
+### 1.4.4. Expected output
 
 If the codelets and the app were loaded successfully, you should see the following output at the jrt-controller:
 ```

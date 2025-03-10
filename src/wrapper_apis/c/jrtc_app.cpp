@@ -70,7 +70,8 @@ JrtcApp::JrtcApp(struct jrtc_app_env* env_ctx, JrtcAppCfg_t* app_cfg, JrtcAppHan
 int
 JrtcApp::Init()
 {
-    last_received_time = std::chrono::steady_clock::now();
+    auto start_time = std::chrono::steady_clock::now();
+    last_received_time = start_time;
     std::cout << app_cfg->context << "::  app_cfg: " << app_cfg << std::endl;
 
     for (int i = 0; i < app_cfg->num_streams; ++i) {
@@ -115,6 +116,16 @@ JrtcApp::Init()
         }
 
         stream_items.push_back(si);
+
+        // Check if the initialisation timeout has been exceeded
+        if (app_cfg->initialization_timeout_secs > 0) {
+            auto elapsed =
+                std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start_time);
+            if (elapsed.count() > app_cfg->initialization_timeout_secs) {
+                std::cout << app_cfg->context << "::  Timeout exceeded waiting for initialisation" << std::endl;
+                return -1; // Return error or handle timeout condition as necessary
+            }
+        }
     }
 
     // Now that all this app's channels have been created, check channels which the app might transmit to are created
@@ -129,6 +140,16 @@ JrtcApp::Init()
                 if (k++ == 10) {
                     std::cout << app_cfg->context << "::  Waiting for creation of : " << s.sid << std::endl;
                     k = 0;
+                }
+
+                // Check if the initialisation timeout has been exceeded
+                if (app_cfg->initialization_timeout_secs > 0) {
+                    auto elapsed =
+                        std::chrono::duration_cast<std::chrono::seconds>(std::chrono::steady_clock::now() - start_time);
+                    if (elapsed.count() > app_cfg->initialization_timeout_secs) {
+                        std::cout << app_cfg->context << "::  Timeout exceeded waiting for initialisation" << std::endl;
+                        return -1; // Return error or handle timeout condition as necessary
+                    }
                 }
             }
         }
@@ -163,7 +184,8 @@ JrtcApp::run()
         std::vector<jrtc_router_data_entry_t> data_entries(app_cfg->q_size, {0});
         while (!atomic_load(&env_ctx->app_exit)) {
             auto now = std::chrono::steady_clock::now();
-            if (std::chrono::duration<double>(now - last_received_time).count() > app_cfg->inactivity_timeout_secs) {
+            if ((app_cfg->inactivity_timeout_secs > 0) &&
+                (std::chrono::duration<double>(now - last_received_time).count() > app_cfg->inactivity_timeout_secs)) {
                 app_handler(true, -1, nullptr, app_state);
                 last_received_time = now;
             }
@@ -202,11 +224,11 @@ JrtcApp::run()
 
 // ###########################################################
 // Retrieves the stream ID associated with a given index
-jrtc_router_stream_id_t
+jrtc_router_stream_id_t*
 JrtcApp::get_stream(int stream_idx)
 {
-    return (static_cast<size_t>(stream_idx) < stream_items.size()) ? stream_items[stream_idx].sid
-                                                                   : jrtc_router_stream_id_t();
+    return (static_cast<size_t>(stream_idx) < stream_items.size()) ? &stream_items[stream_idx].sid
+                                                                   : nullptr; // jrtc_router_stream_id_t();
 }
 
 // ###########################################################
@@ -221,30 +243,69 @@ JrtcApp::get_chan_ctx(int stream_idx)
 // C API wrapper functions
 extern "C"
 {
+    // create new instance of app
     JrtcApp*
     jrtc_app_create(struct jrtc_app_env* env_ctx, JrtcAppCfg_t* app_cfg, JrtcAppHandler app_handler, void* app_state)
     {
         return new JrtcApp(env_ctx, app_cfg, app_handler, app_state);
     }
+
+    // start an app
     void
     jrtc_app_run(JrtcApp* app)
     {
         if (app)
             app->run();
     }
+
+    // delete an app
     void
     jrtc_app_destroy(JrtcApp* app)
     {
         delete app;
     }
-    jrtc_router_stream_id_t
-    jrtc_app_get_stream(JrtcApp* app, int stream_idx)
+
+    // abstraction wrapper for jrtc_router_channel_reserve_buf, using stream_index
+    void*
+    jrtc_app_router_channel_reserve_buf(JrtcApp* app, int stream_idx)
     {
-        return app->get_stream(stream_idx);
+        auto chan_ctx = app->get_chan_ctx(stream_idx);
+        if (!chan_ctx) {
+            return NULL;
+        }
+        return jrtc_router_channel_reserve_buf(chan_ctx);
     }
-    dapp_channel_ctx_t
-    jrtc_app_get_channel_context(JrtcApp* app, int stream_idx)
+
+    // abstraction wrapper for jrtc_router_channel_send_output, using stream_index
+    int
+    jrtc_app_router_channel_send_output(JrtcApp* app, int stream_idx)
     {
-        return app->get_chan_ctx(stream_idx);
+        auto chan_ctx = app->get_chan_ctx(stream_idx);
+        if (!chan_ctx) {
+            return -1;
+        }
+        return jrtc_router_channel_send_output(chan_ctx);
+    }
+
+    // abstraction wrapper for jrtc_router_channel_send_output_msg, using stream_index
+    int
+    jrtc_app_router_channel_send_output_msg(JrtcApp* app, int stream_idx, void* data, size_t data_len)
+    {
+        auto chan_ctx = app->get_chan_ctx(stream_idx);
+        if (!chan_ctx) {
+            return -1;
+        }
+        return jrtc_router_channel_send_output_msg(chan_ctx, data, data_len);
+    }
+
+    // abstraction wrapper for jrtc_app_router_channel_send_input_msg, using stream_index
+    int
+    jrtc_app_router_channel_send_input_msg(JrtcApp* app, uint stream_idx, void* data, size_t data_len)
+    {
+        jrtc_router_stream_id_t* sid = app->get_stream(stream_idx);
+        if (!sid) {
+            return -1;
+        }
+        return jrtc_router_channel_send_input_msg(*sid, data, data_len);
     }
 }
