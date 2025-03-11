@@ -21,7 +21,7 @@ if JRTC_PATH is None:
 
 sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/")
 sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/simple_input/")
-from generated_data import example_msg
+#from generated_data import example_msg
 from simple_input import simple_input
 
 from jrtc_router_lib import jrtc_router_input_channel_exists

@@ -94,26 +94,35 @@ get_file_name_without_py(const char* file_path)
 void
 do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp, void* args)
 {
+    printf("Running Python script: %s\n", python_script);
+    fflush(stdout);
     PyGILState_STATE gstate = PyGILState_Ensure();
+    printf("Acquired GIL in thread: %ld\n", pthread_self());
+    fflush(stdout);
     PyThreadState* ts = PyThreadState_New(interp);
+    printf("Created new thread state: %p\n", ts);
+    fflush(stdout);
     PyEval_RestoreThread(ts);
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
     if (!pCapsule) {
         fprintf(stderr, "Error: Failed to create Python capsule.\n");
         goto cleanup;
     }
-
+    printf("Created capsule: %p\n", pCapsule);
+    fflush(stdout);
     PyObject* sysPath = PySys_GetObject("path");
     if (sysPath) {
         PyList_Append(sysPath, PyUnicode_FromString(folder));
     }
-
+    printf("Appended folder to sys.path: %s\n", folder);
+    fflush(stdout);
     PyObject* pName = PyUnicode_DecodeFSDefault(python_script);
     if (!pName) {
         fprintf(stderr, "Error: Failed to create Python string for module name.\n");
         goto cleanup;
     }
-
+    printf("Module name: %s\n", python_script);
+    fflush(stdout);
     PyObject* pModule = PyImport_Import(pName);
     Py_DECREF(pName);
 
@@ -122,21 +131,24 @@ do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp
         PyErr_Print();
         goto cleanup;
     }
-
+    printf("Imported module: %s\n", python_script);
+    fflush(stdout);
     PyObject* pFunc = PyObject_GetAttrString(pModule, "jrtc_start_app");
     if (!pFunc || !PyCallable_Check(pFunc)) {
         fprintf(stderr, "Error: Function 'jrtc_start_app' is not callable.\n");
         PyErr_Print();
         goto cleanup_module;
     }
-
+    printf("Function found: jrtc_start_app\n");
+    fflush(stdout);
     PyObject* pArgs = PyTuple_Pack(1, pCapsule);
     if (!pArgs) {
         fprintf(stderr, "Error: Failed to create arguments tuple.\n");
         PyErr_Print();
         goto cleanup_func;
     }
-
+    printf("Calling function with args: %p\n", pCapsule);
+    fflush(stdout);
     PyObject* pResult = PyObject_CallObject(pFunc, pArgs);
     Py_DECREF(pArgs);
     if (!pResult) {
@@ -151,6 +163,8 @@ cleanup_func:
 cleanup_module:
     Py_DECREF(pModule);
 cleanup:
+    printf("Cleaning up...\n");
+    fflush(stdout);
     Py_XDECREF(pCapsule);
     PyThreadState_Clear(ts);
     PyThreadState_DeleteCurrent();
