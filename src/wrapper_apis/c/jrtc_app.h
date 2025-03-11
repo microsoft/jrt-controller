@@ -43,12 +43,13 @@ extern "C"
     // Structure representing the overall application configuration
     typedef struct
     {
-        char* context;                 // Application context (string)
-        int q_size;                    // Queue size for processing
-        int num_streams;               // Number of streams
-        JrtcStreamCfg_t* streams;      // Pointer to an array of stream configurations
-        float sleep_timeout_secs;      // Sleep timeout in seconds
-        float inactivity_timeout_secs; // Inactivity timeout in seconds
+        char* context;                     // Application context (string)
+        int q_size;                        // Queue size for processing
+        int num_streams;                   // Number of streams
+        JrtcStreamCfg_t* streams;          // Pointer to an array of stream configurations
+        float initialization_timeout_secs; // Maximum time to wait for initialisation to complete.
+        float sleep_timeout_secs;          // Sleep timeout in seconds
+        float inactivity_timeout_secs;     // Inactivity timeout in seconds
     } JrtcAppCfg_t;
 
     // Callback function type for handling application events
@@ -73,19 +74,29 @@ extern "C"
     void
     jrtc_app_destroy(JrtcApp* app);
 
-    // Function to retrieve a stream identifier from the application instance
-    // @param app - Pointer to the JrtcApp instance
+    // abstraction wrapper for jrtc_router_channel_reserve_buf, using stream_index
+    // @param app - Pointer to the JrtcApp instance to be destroyed
     // @param stream_idx - Index of the stream
-    // @return Stream ID associated with the given index
-    jrtc_router_stream_id_t
-    jrtc_app_get_stream(JrtcApp* app, int stream_idx);
+    void*
+    jrtc_app_router_channel_reserve_buf(JrtcApp* app, int stream_idx);
 
-    // Function to retrieve the channel context for a given stream index
-    // @param app - Pointer to the JrtcApp instance
+    // abstraction wrapper for jrtc_router_channel_send_output, using stream_index
+    // @param app - Pointer to the JrtcApp instance to be destroyed
     // @param stream_idx - Index of the stream
-    // @return Channel context associated with the given index
-    dapp_channel_ctx_t
-    jrtc_app_get_channel_context(JrtcApp* app, int stream_idx);
+    int
+    jrtc_app_router_channel_send_output(JrtcApp* app, int stream_idx);
+
+    // abstraction wrapper for jrtc_router_channel_send_output_msg, using stream_index
+    // @param app - Pointer to the JrtcApp instance to be destroyed
+    // @param stream_idx - Index of the stream
+    int
+    jrtc_app_router_channel_send_output_msg(JrtcApp* app, int stream_idx, void* data, size_t data_len);
+
+    // abstraction wrapper for jrtc_app_router_channel_send_input_msg, using stream_index
+    // @param app - Pointer to the JrtcApp instance to be destroyed
+    // @param stream_idx - Index of the stream
+    int
+    jrtc_app_router_channel_send_input_msg(JrtcApp* app, uint stream_idx, void* data, size_t data_len);
 
 #ifdef __cplusplus
 }
