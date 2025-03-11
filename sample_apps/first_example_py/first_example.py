@@ -75,12 +75,8 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
             aggregate_counter.aggregate_counter = state.agg_cnt
             data_to_send = bytes(aggregate_counter)
 
-            # get the inout stream
-            sid = jrtc_app_get_stream(state.app, SIMPLE_INPUT_IN_STREAM_IDX)
-            assert (sid is not None), "Failed to get SIMPLE_INPUT_IN_STREAM_IDX stream"
-
             # send the data
-            res = jrtc_router_channel_send_input_msg(sid, data_to_send, len(data_to_send))
+            res = jrtc_app_router_channel_send_input_msg(state.app, SIMPLE_INPUT_IN_STREAM_IDX, data_to_send, len(data_to_send))
             assert res == 0, "Failed to send aggregate counter to input map"
 
             print(f"FirstExample: Aggregate counter so far is: {state.agg_cnt}", flush=True)
@@ -118,6 +114,7 @@ def jrtc_start_app(capsule):
         100,                                           # q_size
         len(streams),                                  # num_streams
         (JrtcStreamCfg_t * len(streams))(*streams),    # streams
+        10.0,                                          # initialization_timeout_secs
         0.1,                                           # sleep_timeout_secs
         1.0                                            # inactivity_timeout_secs
     )

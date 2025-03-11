@@ -1,36 +1,50 @@
 
 - [1. Understanding the simple example application (first\_example\_c)](#1-understanding-the-simple-example-application-first_example_c)
-  - [1.1. Implementation details](#11-implementation-details)
-    - [1.1.1. Application state variables](#111-application-state-variables)
-    - [1.1.2. Application configuration](#112-application-configuration)
-    - [1.1.3. Callback handler](#113-callback-handler)
-  - [1.2. Run the application](#12-run-the-application)
-    - [1.2.1. Prerequisites](#121-prerequisites)
-    - [1.2.2. Build the application](#122-build-the-application)
-    - [1.2.3. Run the components](#123-run-the-components)
-    - [1.2.4. Expected output](#124-expected-output)
+  - [1.1. Application behaviour](#11-application-behaviour)
+  - [1.2. Implementation details](#12-implementation-details)
+    - [1.2.1. Application state variables](#121-application-state-variables)
+    - [1.2.2. Application configuration](#122-application-configuration)
+    - [1.2.3. Callback handler](#123-callback-handler)
+  - [1.3. Run the application](#13-run-the-application)
+    - [1.3.1. Prerequisites](#131-prerequisites)
+    - [1.3.2. Build the application](#132-build-the-application)
+    - [1.3.3. Run the components](#133-run-the-components)
+    - [1.3.4. Expected output](#134-expected-output)
 
 
 # 1. Understanding the simple example application (first_example_c)
 
-The logic of first [first example c](../sample_apps/first_example_c/) is identical to the [first example](../sample_apps/first_example/).
+## 1.1. Application behaviour
 
-To see the details of this logic and expected behaviour, refer to [./understand_simple_app.md](./understand_simple_app.md)
+The [first example](../sample_apps/first_example_c/) demonstrates the loading of a simple *jrt-controller* deployment.
 
-The difference between the two is that first_example_c uses the JrtcApp abstraction class.  [See the API here](../src/wrapper_apis/c/jrtc_app.h).
+A deployment in the *jrt-controller* terminology is a collection of modules that are loaded to the *jrt-controller* and the network functions as a set and operate as a single logical unit (i.e., as a single applicaction). 
 
-Using this abstraction class, the user just needs to define the following ...
+A deployment can contain one or more application modules that are loaded to the *jrt-controller* and a set of codeletSets (collection of codelets) that are loaded to network functions instrumented with the jbpf framework. 
+For details about the APIs and functionalities of the *jbpf* framework, please consult the *jbpf* [documentation](https://github.com/microsoft/jbpf/blob/main/README.md).
+
+This example demonstrates a simple deployment that is composed of a single *jrt-controller* application and two codelets, which are loaded to a sample agent.
+In this example, an agent corresponds to an instrumented network function. 
+
+A [data_generator codelet](../sample_apps/jbpf_codelets/data_generator/data_generator_codelet.c) increments a counter and sends the data to the *jrt-controller* application via an output map called [ringbuf](../sample_apps/jbpf_codelets/data_generator/codeletset.yaml).
+The *jrt-controller* [application](../sample_apps/first_example_c/first_example.c) aggregates the counter, prints a message about the aggregate value 
+and sends this value to a [simple_input codelet](../sample_apps/jbpf_codelets/simple_input/simple_input_program.c) via a control_input channel called [input_map](../sample_apps/jbpf_codelets/simple_input/codeletset.yaml). 
+The simple_input codelet prints the received values every time it is called by the agent.
+
+To implement this, Jrtc provides an API which abstracts common functionality of all applications, such as the main execution loop, and resource management.
+
+Using this API, the user just needs to define the following ...
 - a structure detailing the app state variables.
-- the application configuration, including the definitions of the streams which the app will use,
-- a callback function which is called for every message received, or on the expiry of an inactivity timeout nby the user.
+- the application configuration, including the definitions of the streams which the app will use.
+- a callback function which is called for every message received, or on the expiry of an inactivity timeout configured by the user.
 
-The class itself will take care of creating and registering all channels, will run the receiver loop, and will clean up resources when the application exits.
+Please see the API here [API](../src/wrapper_apis/c/jrtc_app.h).
 
-## 1.1. Implementation details
+## 1.2. Implementation details
 
 Here are the details given for the first_example.
 
-### 1.1.1. Application state variables
+### 1.2.1. Application state variables
 
 The following shows the __AppStateVars_t__ which are the state variables for an app .
 
@@ -46,13 +60,22 @@ typedef struct {
 } AppStateVars_t;
 ```
 
-### 1.1.2. Application configuration
+### 1.2.2. Application configuration
 
-The streams of the applications are defined as below. It can be seen that these are as per described in [./understand_simple_app.md](./understand_simple_app.md).
+The streams of the applications are defined as below. 
 
-The __"is_rx"__ field specifies whether, from this application's perspective, a channel is a "rx" (i.e. the app will receive data from it), or it is a "tx" (i.e. the app will send data to it)
+The __"stream routing information"__ defines where streams origination and destination.  In this example, the application makes a request to the *jrt-controller* router to receive data going to any destination (`JRTC_ROUTER_REQ_DEST_ANY`), from any network function registered to the controller (`JRTC_ROUTER_REQ_DEVICE_ID_ANY`).
 
-The __"AppChannelCfg"__ field is used to create channels "owned" by the the application itself.  These are used in the cases where JRTC applications send data to each other, as opposed to receiving/transmitting data from/to a Jbpf codelet.  These are not used in this first_example, so refer to [./understand_advanced_app_c.md](./understand_advanced_app_c.md) for further details.
+The application also identifies the stream path, i.e. the creator of the stream, and the stream name. 
+This information is defined in the application deployment descriptor file found [here](../sample_apps/jbpf_codelets/data_generator/codeletset.yaml).
+The stream path is a string in the format `<deployment_name>://<source_path>`.
+The name of the deployment in this example, as defined in the deployment descriptor file, is `FirstExample`.
+Given that the stream of this example is created by a *jbpf* codelet, the source path name starts with the string `jbpf_agent` and is followed by the codeletset and codelet name, i.e., `jbpf_agent/data_generator_codeletset/codelet`.
+Finally, the stream name is the name of the output map that the *jbpf* codelet uses to send the data out, i.e., `ringbuf` in this example.
+
+The __"is_rx"__ field specifies whether, from this application's perspective, a channel is "rx" (i.e. the app will receive data from it), or it is "tx" (i.e. the app will send data to it)
+
+The __"AppChannelCfg"__ field is used to create channels "owned" by the application itself.  These are used in the cases where JRTC applications send data to each other, as opposed to receiving/transmitting data from/to a Jbpf codelet.  These are not used in this first_example, so refer to [./understand_advanced_app_c.md](./understand_advanced_app_c.md) for further details.
 
 ```C
 const JrtcStreamCfg_t streams[] = {
@@ -89,6 +112,7 @@ const JrtcAppCfg_t app_cfg = {
     100,                                       // q_size
     sizeof(streams) / sizeof(streams[0]),      // num_streams
     (JrtcStreamCfg_t*)streams,                 // Pointer to the streams array
+    10.0f,                                     // initialization_timeout_secs
     0.1f,                                      // sleep_timeout_secs
     1.0f                                       // inactivity_timeout_secs
 };
@@ -100,11 +124,16 @@ context : A string passed to the abstraction class.  This is prepended to log me
 q_size :  The number of elements in the data entry array which is used when the application class receives messages.
 num_streams :  Number of streams.
 streams : The streams defined above.
-sleep_timeout_secs :  How long the abstraction class receiver loop should sleep each iteration.
+initialization_timeout_secs : Maximum time to allow for the initialization to complete. 
+                      If set to zero, no timer will be run.
+sleep_timeout_secs :  How long the abstraction class receiver loop should sleep each iteration.  
+                      This can be set to a nanosecond precision. 
+                      If set to zero, no sleep will be done.
 inactivity_timeout_secs : Inactivity duration to wait before callback the handler is called with "timeout=True".
+                      If set to zero, no inactivity timer will be run.
 ```
 
-### 1.1.3. Callback handler
+### 1.2.3. Callback handler
 
 ```C
 void app_handler(bool timeout, int stream_idx, jrtc_router_data_entry_t* data_entry, void* s) {
@@ -148,20 +177,20 @@ In the cases where the handler is called when data arrives, the other arguments 
 ```sh
 stream_index : The stream index of the stream on which the message has been received.  The index is zero-based.  In this case, stream index "0" means it has been received on stream "FirstExample://jbpf_agent/data_generator_codeletset/codelet"/"ringbuf".
 data_entry: the data message itself.
-s: an opaque pointer to the AppStateVars_t.  This would ba cast to "state"
+s: an opaque pointer to the AppStateVars_t.  This should be cast to "state"
 ```
 
 It can be seen that in this simple handler, "agg_cnt" is incremented by 1 for every message received from "FirstExample://jbpf_agent/data_generator_codeletset/codelet"/"ringbuf".
 
-If the number of received messages is divisible by 5, the handler creates an "aggregate_counter" struct, populates it with agg_cnt, and sends it to "FirstExample://jbpf_agent/simple_input_codeletset/codelet"/"input_map".  However to do that, it first calls helper function __"jrtc_app_get_stream"__.  This is a helper function provided by the JrtcApp class, which returns a Jrtc stream structure for a given stream index.  This stream structure is then used when calling the core Jrtc function "jrtc_router_channel_send_input_msg".
+If the number of received messages is divisible by 5, the handler creates an "aggregate_counter" struct, populates it with agg_cnt, and sends it to "FirstExample://jbpf_agent/simple_input_codeletset/codelet"/"input_map" by calling  "jrtc_app_router_channel_send_input_msg".
 
-## 1.2. Run the application
+## 1.3. Run the application
 
-### 1.2.1. Prerequisites
+### 1.3.1. Prerequisites
 
 Before running the sample apps, the *jrt-controller* must be built (see [README.md](../../README.md) for instructions).
 
-### 1.2.2. Build the application
+### 1.3.2. Build the application
 
 The application can be built using the following commands:
   ```sh
@@ -172,7 +201,7 @@ The application can be built using the following commands:
 This will build the two sample codelets (`data_generator` and `simple_input`), the sample agent (`simple_agent_ipc`) and the *jrt-controller* application (`app1.so`).
 
 
-### 1.2.3. Run the components
+### 1.3.3. Run the components
 
 You will need to open five terminals.
 
@@ -220,20 +249,24 @@ You will need to open five terminals.
   ```
 
 
-### 1.2.4. Expected output
+### 1.3.4. Expected output
 
 If the codelets and the app were loaded successfully, you should see the following output at the jrt-controller:
 ```
-App 1: Aggregate counter so far is 15
-App 1: Aggregate counter so far is 55
-...
+App1: Aggregate counter from codelet is 1
+App2: Aggregate counter from codelet is 1
+App1: Received aggregate counter 1 from output channel of App2
+App1: Received aggregate counter 1 from input channel of App1
+App1: Aggregate counter from codelet is 3
+App2: Aggregate counter from codelet is 3
+App1: Received aggregate counter 3 from output channel of App2
+App1: Received aggregate counter 3 from input channel of App1
 ```
 
 Similarly, you should see the following printed messages on the agent side from the simple input codelet:
 ```
-[JBPF_DEBUG]: Got aggregate value 15
-[JBPF_DEBUG]: Got aggregate value 55
-...
+[2025-03-06T11:54:08.746075Z] [JBPF_DEBUG]: Got aggregate value 1
+[2025-03-06T11:54:09.746131Z] [JBPF_DEBUG]: Got aggregate value 3
 ```
 
 The application can then be unloaded with the following command:
