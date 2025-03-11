@@ -9,14 +9,9 @@ if [ -z "$JRTC_PATH" ]; then
 fi
 
 echo "...............Building all..............."
-## parameter: specify "force" to force build jrt-controller
-$JRTC_PATH/helper_build_files/build_all.sh $2
-
-echo "...............Building Codelets..............."
-## first parameter: specify the app name
-## second parameter: specify "force" to force build codelets
-$JRTC_PATH/sample_apps/$1/build.sh $1 $2
+## first parameter is the app name
+## second parameter: specify "force" to force build jrt-controller
+time $JRTC_PATH/helper_build_files/build_all.sh $1 $2
 
 echo "...............Running JRTC Tests..............."
-## first parameter: specify the app name
-$JRTC_PATH/sample_apps/$1/run.sh
+time $JRTC_PATH/sample_apps/$1/run.sh

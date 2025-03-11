@@ -8,6 +8,7 @@
 ### env parameter: SANITIZER
 ### env parameter: CLANG_FORMAT_CHECK
 ### env parameter: CPP_CHECK
+### evn parameter: BUILD_PYTHON_LOADER
 get_flags() {
     FLAGS=""
     OUTPUT=""
@@ -30,5 +31,11 @@ get_flags() {
         FLAGS="$FLAGS -DCPP_CHECK=on"
     else
         OUTPUT="$OUTPUT Skipping cppcheck\n"
-    fi    
+    fi
+    if [[ "$BUILD_PYTHON_LOADER" == "1" || "$BUILD_PYTHON_LOADER" == "" ]]; then
+        OUTPUT="$OUTPUT Building Python Loader\n"
+        FLAGS="$FLAGS -DBUILD_PYTHON_LOADER=on"
+    else
+        OUTPUT="$OUTPUT Skipping Python Loader\n"
+    fi
 }

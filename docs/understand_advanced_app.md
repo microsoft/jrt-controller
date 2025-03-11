@@ -1,9 +1,20 @@
-# Understanding the advanced example application
+- [1. Understanding the advanced example application](#1-understanding-the-advanced-example-application)
+  - [1.1. Application description](#11-application-description)
+    - [1.1.1. Automatic serialization and routing](#111-automatic-serialization-and-routing)
+    - [1.1.2. Messages between applications](#112-messages-between-applications)
+  - [1.2. Run the application](#12-run-the-application)
+    - [1.2.1. Prerequisites](#121-prerequisites)
+    - [1.2.2. Build the application](#122-build-the-application)
+    - [1.2.3. Run the example](#123-run-the-example)
+    - [1.2.4. Expected output](#124-expected-output)
+
+
+# 1. Understanding the advanced example application
 
 This [advanced example](../sample_apps/advanced_example/) builds on the basic concepts introduced in the [simple example](./understand_simple_app.md) and demonstrates more advanced capabilities offered by the *jrt-controller*.
 
 
-## Application description
+## 1.1. Application description
 
 This example involves two deployments.
 
@@ -31,7 +42,7 @@ The deployments have the following application logic:
 There are several new elements illustrated in the advanced example that we discuss in more details. 
 
 
-### Automatic serialization and routing
+### 1.1.1. Automatic serialization and routing
 
 One new element is the [data_generator_protobuf codelet](../sample_apps/advanced_example/jbpf_codelets/data_generator_protobuf/data_generator_pb_codelet.c) of deployment `AdvancedExample2`, which introduces the concept of automatic data serialization. 
 Instead of manually defining a C struct for the data sent to `app2` through the output stream `ringbuf`, the codelet leverages a protobuf schema definition, which allows the same data to also be sent to one or more *Data collection and control* end-points over the network in a serialized format (protobuf). 
@@ -72,7 +83,7 @@ The destination IP and UDP port used by the forwarding application are defined t
 Users can implement their own UDP end-point to handle the output data sent by the fowrading application (e.g., as part of their SMO), but *jrt-controller* also bundles a basic end-point with the [jrtc-ctl](jrtctl.md) tool, which can be useful for testing purposes.
 The end-point, called `jrtc-ctl decoder`, simply receives the data via a UDP port, deserializes them, and prints them on screen in JSON format.
 
-### Messages between applications
+### 1.1.2. Messages between applications
 
 In the previous example, a *jbpf* codelet was the creator of each channel. 
 *jrt-controller* applications can also communicate amongst themselves using channels.
@@ -98,14 +109,14 @@ The example also demonstrates how the same can be done for input channels, with 
 Note that the channel creation can optionally support de/serialization function if the data needs to be exported to external end-points. 
 
 
-## Run the application
+## 1.2. Run the application
 
-### Prerequisites
+### 1.2.1. Prerequisites
 
 Before running the sample apps, the *jrt-controller* must be built (see [README.md](../../README.md) for instructions).
 
 
-### Build the application
+### 1.2.2. Build the application
 
 To build the application, type:
 ```sh
@@ -113,7 +124,7 @@ cd $JRTC_PATH/sample_apps/advanced_example
 make
 ```
 
-### Run the example
+### 1.2.3. Run the example
 
 You will need to open five terminals:
 * **Terminal 1:** 
@@ -160,7 +171,7 @@ You will need to open five terminals:
 
 
 
-### Expected output
+### 1.2.4. Expected output
 
 If the codelets and the app were loaded successfully, you should see the following output at the jrt-controller:
 ```
