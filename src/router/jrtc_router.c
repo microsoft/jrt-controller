@@ -12,7 +12,7 @@
 #include "jbpf_io_hash.h"
 #include "jbpf_io_utils.h"
 
-// Forward declaration (no need to include jrtc_yaml_int.h here)
+// Forward declaration
 struct yaml_config;
 
 #include "jrtc_router.h"

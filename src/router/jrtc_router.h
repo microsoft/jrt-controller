@@ -4,11 +4,9 @@
 #define JRTC_ROUTER_H
 
 #include <stdbool.h>
-
 #include "jbpf_io_defs.h"
-// #include "jrtc_yaml_int.h"
 
-// Forward declaration (no need to include jrtc_yaml_int.h here)
+// Forward declaration
 struct yaml_config;
 
 /**

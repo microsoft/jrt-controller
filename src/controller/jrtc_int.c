@@ -423,10 +423,7 @@ start_jrtc(const char* config_file)
         return -2;
     }
     strncpy(yaml_config.jrtc_router_config.io_config.ipc_name, IPC_NAME, JBPF_IO_IPC_MAX_NAMELEN - 1);
-    strncpy(
-        yaml_config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name,
-        IPC_NAME,
-        JBPF_IO_IPC_MAX_NAMELEN - 1);
+    strncpy(yaml_config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, IPC_NAME, JBPF_IO_IPC_MAX_NAMELEN - 1);
 
     res = jrtc_router_init(&yaml_config);
 
