@@ -106,7 +106,7 @@ jrtc_start_app(void* args)
         return NULL;
     }
     struct jrtc_app_env* env_ctx = args;
-    char* full_path = env_ctx->app_params[0];
+    char* full_path = env_ctx->params[0].val;
     printf("Python Full Path: %s\n", full_path);
     // extract the folder of `full_path`
     char* folder = get_folder(full_path);
