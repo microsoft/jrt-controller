@@ -31,6 +31,8 @@
 #include "jrtc_yaml_int.h"
 #include "jrtc_yaml.h"
 
+#define IPC_NAME "jrtc_controller"
+
 /* Compiler magic to make address sanitizer ignore
 memory leaks originating from libpython */
 #if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_LEAK__)
@@ -420,8 +422,11 @@ start_jrtc(const char* config_file)
         jrtc_logger(JRTC_ERROR, "Failed to read thread config from YAML file: %s (%d)\n", config_file, res);
         return -2;
     }
-    strncpy(yaml_config.jrtc_router_config.io_config.ipc_name, "jrtc_controller", JBPF_IO_IPC_MAX_NAMELEN - 1);
-    strncpy(yaml_config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, yaml_config.jrtc_router_config.io_config.ipc_name, JBPF_IO_IPC_MAX_NAMELEN - 1);
+    strncpy(yaml_config.jrtc_router_config.io_config.ipc_name, IPC_NAME, JBPF_IO_IPC_MAX_NAMELEN - 1);
+    strncpy(
+        yaml_config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name,
+        IPC_NAME,
+        JBPF_IO_IPC_MAX_NAMELEN - 1);
 
     res = jrtc_router_init(&yaml_config);
 
