@@ -90,7 +90,7 @@ test_yaml_parsing()
         assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);
         assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
         assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jbpf") == 0);
-        assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);        
+        assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);
         printf("Test 3 passed: Empty YAML file handled correctly.\n");
     }
 
@@ -112,7 +112,7 @@ test_yaml_parsing()
         assert(config.jrtc_router_config.thread_config.sched_config.sched_runtime == 10000000);
         assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);
         assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
-        assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);        
+        assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);
         printf("Test 4 passed: Valid YAML file (incomplete values) parsed successfully.\n");
     }
 
@@ -135,7 +135,7 @@ test_yaml_parsing()
         assert(config.jrtc_router_config.thread_config.sched_config.sched_runtime == 10000000);
         assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);
         assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
-        assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);        
+        assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);
         printf("Test 5 passed: Valid YAML file (with env substitution) parsed successfully.\n");
     }
 
