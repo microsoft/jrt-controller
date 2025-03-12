@@ -6,6 +6,10 @@
 #include <stdbool.h>
 
 #include "jbpf_io_defs.h"
+//#include "jrtc_yaml_int.h"
+
+// Forward declaration (no need to include jrtc_yaml_int.h here)
+struct yaml_config;
 
 /**
  * @brief The jrtc_router_sched_policy_e enum
@@ -89,11 +93,10 @@ typedef struct jrtc_router_ctx* jrtc_router_ctx_t;
  * @brief Initialize the router
  * @ingroup router
  * @param config The configuration
- * @param yaml_config_path The path to the YAML configuration file. Specify NULL if not used.
  * @return 0 on success, -1 on failure
  */
 int
-jrtc_router_init(struct jrtc_router_config* config, const char* yaml_config_path);
+jrtc_router_init(struct yaml_config* config);
 
 /**
  * @brief Set the scheduler

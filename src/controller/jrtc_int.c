@@ -28,6 +28,7 @@
 
 #include "jrtc_rest_server.h"
 #include "jrtc_logging.h"
+#include "jrtc_yaml_int.h"
 #include "jrtc_yaml.h"
 
 /* Compiler magic to make address sanitizer ignore
@@ -414,40 +415,15 @@ start_jrtc(const char* config_file)
     rest_server_handle = jrtc_create_rest_server();
     pthread_create(&rest_server, NULL, _start_rest_server, rest_server_handle);
 
-    config.thread_config.affinity_mask = 1 << 1;
-    config.thread_config.has_affinity_mask = false;
-    config.thread_config.has_sched_config = false;
-    config.thread_config.sched_config.sched_policy = JRTC_ROUTER_DEADLINE;
-    config.thread_config.sched_config.sched_priority = 99;
-    config.thread_config.sched_config.sched_deadline = 30 * 1000 * 1000;
-    config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
-    config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
-
     yaml_config_t yaml_config;
-    if (config_file) {
-        int res = parse_yaml_config(config_file, &yaml_config);
-        if (res != 0) {
-            jrtc_logger(JRTC_ERROR, "Failed to read thread config from YAML file: %s (%d)\n", config_file, res);
-            return -2;
-        }
-        config.thread_config.affinity_mask = yaml_config.jrtc_router_config.thread_config.affinity_mask;
-        config.thread_config.has_affinity_mask = yaml_config.jrtc_router_config.thread_config.has_affinity_mask;
-        config.thread_config.has_sched_config = yaml_config.jrtc_router_config.thread_config.has_sched_config;
-        config.thread_config.sched_config.sched_policy =
-            yaml_config.jrtc_router_config.thread_config.sched_config.sched_policy;
-        config.thread_config.sched_config.sched_priority =
-            yaml_config.jrtc_router_config.thread_config.sched_config.sched_priority;
-        config.thread_config.sched_config.sched_deadline =
-            yaml_config.jrtc_router_config.thread_config.sched_config.sched_deadline;
-        config.thread_config.sched_config.sched_runtime =
-            yaml_config.jrtc_router_config.thread_config.sched_config.sched_runtime;
-        config.thread_config.sched_config.sched_period =
-            yaml_config.jrtc_router_config.thread_config.sched_config.sched_period;
+    res = set_config_values(config_file, &yaml_config);
+    if (res != 0) {
+        jrtc_logger(JRTC_ERROR, "Failed to read thread config from YAML file: %s (%d)\n", config_file, res);
+        return -2;
     }
-
     strncpy(config.io_config.ipc_name, "jrtc_controller", 32);
 
-    res = jrtc_router_init(&config, config_file);
+    res = jrtc_router_init(&yaml_config);
 
     if (res < 0) {
         jrtc_logger(JRTC_CRITICAL, "Failed to initialize router\n");

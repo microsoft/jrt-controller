@@ -1,12 +1,17 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-#include "jrtc_yaml.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <regex.h>
 #include "stdbool.h"
 #include "jbpf_common.h"
+#include "jrtc_logging.h"
+#include "jrtc_router.h"
+#include "jbpf_io_defs.h"
+#include "jrtc_yaml_int.h"
+#include "jrtc_yaml.h"
+#include <yaml.h>
 
 char*
 expand_env_vars(const char* input)
@@ -66,6 +71,8 @@ void
 init_default_yaml_config_t(yaml_config_t* config)
 {
     memset(config, 0, sizeof(yaml_config_t));
+    config->jbpf_io_config.type = JBPF_IO_IPC_PRIMARY;
+    config->jbpf_io_config.ipc_config.mem_cfg.memory_size = 1024 * 1024 * 1024;    
     config->jrtc_router_config.thread_config.affinity_mask = 1 << 1;
     config->jrtc_router_config.thread_config.has_affinity_mask = false;
     config->jrtc_router_config.thread_config.has_sched_config = false;
@@ -78,11 +85,18 @@ init_default_yaml_config_t(yaml_config_t* config)
     config->jbpf_io_config.jbpf_path[JBPF_RUN_PATH_LEN - 1] = '\0';
     strncpy(config->jbpf_io_config.jbpf_namespace, JBPF_DEFAULT_NAMESPACE, JBPF_NAMESPACE_LEN - 1);
     config->jbpf_io_config.jbpf_namespace[JBPF_NAMESPACE_LEN - 1] = '\0';
+    strncpy(config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, config->jrtc_router_config.io_config.ipc_name, JBPF_IO_IPC_MAX_NAMELEN);
 }
 
 int
-parse_yaml_config(const char* filename, yaml_config_t* config)
+set_config_values(const char* filename, yaml_config_t* config)
 {
+    init_default_yaml_config_t(config);
+
+    if (!filename) {
+        jrtc_logger(JRTC_INFO, "set_config_values: Filename is NULL\n");
+        return 0;        
+    }
     FILE* file = fopen(filename, "r");
     if (!file) {
         perror("Failed to open YAML file");
@@ -103,7 +117,6 @@ parse_yaml_config(const char* filename, yaml_config_t* config)
         return -1;
     }
     yaml_parser_set_input_file(&parser, file);
-    init_default_yaml_config_t(config);
 
     while (1) {
         if (!yaml_parser_parse(&parser, &event)) {

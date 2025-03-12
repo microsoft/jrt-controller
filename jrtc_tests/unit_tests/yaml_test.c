@@ -7,6 +7,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+
+#include "jrtc_router.h"
+#include "jrtc_yaml_int.h"
 #include "jrtc_yaml.h"
 
 void
@@ -37,7 +40,7 @@ test_yaml_parsing()
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/valid.yaml", jrtc_path);
         yaml_config_t config;
         printf("Parsing config file: %s\n", config_file);
-        int result = parse_yaml_config(config_file, &config);
+        int result = set_config_values(config_file, &config);
         assert(result == 0);
         assert(config.jrtc_router_config.thread_config.affinity_mask == 3);
         assert(config.jrtc_router_config.thread_config.has_sched_config == 1);
@@ -56,8 +59,18 @@ test_yaml_parsing()
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/invalid.yaml", jrtc_path);
         yaml_config_t config;
         printf("Parsing config file: %s\n", config_file);
-        int result = parse_yaml_config(config_file, &config);
+        int result = set_config_values(config_file, &config);
         assert(result != 0);
+        // check the default values
+        assert(config.jrtc_router_config.thread_config.affinity_mask == 2);
+        assert(config.jrtc_router_config.thread_config.has_sched_config == 0);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_policy == 0);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_deadline == 30000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_runtime == 10000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
+        assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jbpf") == 0);
+        assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);
         printf("Test 2 passed: Invalid YAML file handled correctly.\n");
     }
 
@@ -66,8 +79,18 @@ test_yaml_parsing()
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/empty.yaml", jrtc_path);
         yaml_config_t config;
         printf("Parsing config file: %s\n", config_file);
-        int result = parse_yaml_config(config_file, &config);
+        int result = set_config_values(config_file, &config);
         assert(result == 0);
+        // check the default values
+        assert(config.jrtc_router_config.thread_config.affinity_mask == 2);
+        assert(config.jrtc_router_config.thread_config.has_sched_config == 0);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_policy == 0);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_deadline == 30000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_runtime == 10000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
+        assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jbpf") == 0);
+        assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);        
         printf("Test 3 passed: Empty YAML file handled correctly.\n");
     }
 
@@ -75,12 +98,21 @@ test_yaml_parsing()
     {
         // jbpf_io_config:
         //   jbpf_namespace: jrtc
-        snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/valid.yaml", jrtc_path);
+        snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/valid_incomplete.yaml", jrtc_path);
         yaml_config_t config;
         printf("Parsing config file: %s\n", config_file);
-        int result = parse_yaml_config(config_file, &config);
+        int result = set_config_values(config_file, &config);
         assert(result == 0);
         assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jrtc") == 0);
+        // check the default values
+        assert(config.jrtc_router_config.thread_config.affinity_mask == 2);
+        assert(config.jrtc_router_config.thread_config.has_sched_config == 0);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_policy == 0);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_deadline == 30000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_runtime == 10000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
+        assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);        
         printf("Test 4 passed: Valid YAML file (incomplete values) parsed successfully.\n");
     }
 
@@ -92,9 +124,18 @@ test_yaml_parsing()
         setenv("JRTC_TEST_ID", "1234", 1);
         yaml_config_t config;
         printf("Parsing config file: %s\n", config_file);
-        int result = parse_yaml_config(config_file, &config);
+        int result = set_config_values(config_file, &config);
         assert(result == 0);
         assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jrtc_1234") == 0);
+        // check the default values
+        assert(config.jrtc_router_config.thread_config.affinity_mask == 2);
+        assert(config.jrtc_router_config.thread_config.has_sched_config == 0);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_policy == 0);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_deadline == 30000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_runtime == 10000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);
+        assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
+        assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);        
         printf("Test 5 passed: Valid YAML file (with env substitution) parsed successfully.\n");
     }
 
