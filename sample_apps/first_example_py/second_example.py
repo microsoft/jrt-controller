@@ -42,7 +42,7 @@ class AppStateVars(ctypes.Structure):
 ##########################################################################
 # Handler callback function (this function gets called by the C library)
 def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(struct_jrtc_router_data_entry), state_ptr: int):
-    print("FirstExample: app_handler called", flush=True)
+    print("SecondExample: app_handler called", flush=True)
 
     GENERATOR_OUT_STREAM_IDX = 0
     SIMPLE_INPUT_IN_STREAM_IDX = 1
@@ -89,7 +89,7 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
 def jrtc_start_app(capsule):
 
     while True:
-        print("FirstExample: Waiting for input channel to be created...", flush=True)
+        print("SecondExample: Waiting for input channel to be created...", flush=True)
         time.sleep(1)
 
     streams = [
