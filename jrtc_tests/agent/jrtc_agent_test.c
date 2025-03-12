@@ -24,6 +24,7 @@
 #include "jbpf_io.h"
 #include "jbpf_io_channel.h"
 #include "jrtc_logging.h"
+#include "jrtc_yaml.h"
 #include "jrtc_yaml_int.h"
 
 const char channel_name[] = "agent";
@@ -33,6 +34,7 @@ int
 start_router()
 {
     struct yaml_config config = {0};
+    init_yaml_config(&config);
 
     config.jrtc_router_config.thread_config.affinity_mask = 1 << 1;
     config.jrtc_router_config.thread_config.has_affinity_mask = false;
@@ -43,7 +45,7 @@ start_router()
     config.jrtc_router_config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
     config.jrtc_router_config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
 
-    strncpy(config.jrtc_router_config.io_config.ipc_name, channel_name, 32);
+    strncpy(config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, channel_name, JBPF_IO_IPC_MAX_NAMELEN);
 
     int res = jrtc_router_init(&config);
 

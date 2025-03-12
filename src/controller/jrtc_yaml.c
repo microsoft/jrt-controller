@@ -68,7 +68,7 @@ expand_env_vars(const char* input)
 }
 
 void
-init_default_yaml_config_t(yaml_config_t* config)
+init_yaml_config(yaml_config_t* config)
 {
     memset(config, 0, sizeof(yaml_config_t));
     config->jbpf_io_config.type = JBPF_IO_IPC_PRIMARY;
@@ -91,7 +91,7 @@ init_default_yaml_config_t(yaml_config_t* config)
 int
 set_config_values(const char* filename, yaml_config_t* config)
 {
-    init_default_yaml_config_t(config);
+    init_yaml_config(config);
 
     if (!filename) {
         jrtc_logger(JRTC_INFO, "set_config_values: Filename is NULL\n");

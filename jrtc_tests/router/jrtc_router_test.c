@@ -25,6 +25,7 @@
 #include "jbpf_io.h"
 #include "jbpf_io_channel.h"
 #include "jrtc_logging.h"
+#include "jrtc_yaml.h"
 #include "jrtc_yaml_int.h"
 
 struct test_struct
@@ -162,6 +163,7 @@ router_test()
 {
 
     struct yaml_config config = {0};
+    init_yaml_config(&config);
     pthread_t test_app_tid, test_app2_tid;
     int res;
 
@@ -174,7 +176,7 @@ router_test()
     config.jrtc_router_config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
     config.jrtc_router_config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
 
-    strncpy(config.jrtc_router_config.io_config.ipc_name, "jrtc_router_test", 32);
+    strncpy(config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, "jrtc_router_test", JBPF_IO_IPC_MAX_NAMELEN);
 
     res = jrtc_router_init(&config);
 

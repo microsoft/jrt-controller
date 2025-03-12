@@ -407,7 +407,6 @@ start_jrtc(const char* config_file)
     pthread_t rest_server;
     void* rest_server_handle;
 
-    struct jrtc_router_config config = {0};
     int res;
 
     sem_init(&jrtc_stop, 0, 0);
@@ -421,7 +420,7 @@ start_jrtc(const char* config_file)
         jrtc_logger(JRTC_ERROR, "Failed to read thread config from YAML file: %s (%d)\n", config_file, res);
         return -2;
     }
-    strncpy(config.io_config.ipc_name, "jrtc_controller", 32);
+    strncpy(yaml_config.jrtc_router_config.io_config.ipc_name, "jrtc_controller", 32);
 
     res = jrtc_router_init(&yaml_config);
 

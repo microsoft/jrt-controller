@@ -24,4 +24,13 @@ expand_env_vars(const char* input);
 int
 set_config_values(const char* filename, yaml_config_t* config);
 
+/**
+ * @brief Initialize the YAML configuration with default values.
+ * @param config Pointer to the structure to fill with default values.
+ * @note This function sets the default values for the YAML configuration.
+ *       It should be called before using the configuration structure.
+ */
+void
+init_yaml_config(yaml_config_t* config);
+
 #endif // JRTC_YAML_H
