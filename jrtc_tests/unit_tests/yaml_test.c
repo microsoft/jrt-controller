@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 /**
-    This test tests the yaml parsing functionality in jrtc_yaml.c
+    This test tests the yaml parsing functionality in jrtc_config.c
  */
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,8 +9,8 @@
 #include <assert.h>
 
 #include "jrtc_router.h"
-#include "jrtc_yaml_int.h"
-#include "jrtc_yaml.h"
+#include "jrtc_config_int.h"
+#include "jrtc_config.h"
 
 void
 test_yaml_parsing()
@@ -38,7 +38,7 @@ test_yaml_parsing()
         //     jbpf_namespace: "default"
         //     jbpf_path: "/var/lib/jbpf"
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/valid.yaml", jrtc_path);
-        yaml_config_t config;
+        jrtc_config_t config;
         printf("Parsing config file: %s\n", config_file);
         int result = set_config_values(config_file, &config);
         assert(result == 0);
@@ -57,7 +57,7 @@ test_yaml_parsing()
     // Test 2: Invalid YAML file
     {
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/invalid.yaml", jrtc_path);
-        yaml_config_t config;
+        jrtc_config_t config;
         printf("Parsing config file: %s\n", config_file);
         int result = set_config_values(config_file, &config);
         assert(result != 0);
@@ -77,7 +77,7 @@ test_yaml_parsing()
     // Test 3: Empty YAML file
     {
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/empty.yaml", jrtc_path);
-        yaml_config_t config;
+        jrtc_config_t config;
         printf("Parsing config file: %s\n", config_file);
         int result = set_config_values(config_file, &config);
         assert(result == 0);
@@ -99,7 +99,7 @@ test_yaml_parsing()
         // jbpf_io_config:
         //   jbpf_namespace: jrtc
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/valid_incomplete.yaml", jrtc_path);
-        yaml_config_t config;
+        jrtc_config_t config;
         printf("Parsing config file: %s\n", config_file);
         int result = set_config_values(config_file, &config);
         assert(result == 0);
@@ -122,7 +122,7 @@ test_yaml_parsing()
         //   jbpf_namespace: jrtc_${JRTC_TEST_ID}
         snprintf(config_file, sizeof(config_file), "%s/jrtc_tests/test_data/yaml/valid_env.yaml", jrtc_path);
         setenv("JRTC_TEST_ID", "1234", 1);
-        yaml_config_t config;
+        jrtc_config_t config;
         printf("Parsing config file: %s\n", config_file);
         int result = set_config_values(config_file, &config);
         assert(result == 0);

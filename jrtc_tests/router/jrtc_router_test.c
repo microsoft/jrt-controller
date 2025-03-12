@@ -25,8 +25,8 @@
 #include "jbpf_io.h"
 #include "jbpf_io_channel.h"
 #include "jrtc_logging.h"
-#include "jrtc_yaml.h"
-#include "jrtc_yaml_int.h"
+#include "jrtc_config.h"
+#include "jrtc_config_int.h"
 
 struct test_struct
 {
@@ -162,8 +162,8 @@ int
 router_test()
 {
 
-    struct yaml_config config = {0};
-    init_yaml_config(&config);
+    struct jrtc_config config = {0};
+    init_jrtc_config(&config);
     pthread_t test_app_tid, test_app2_tid;
     int res;
 

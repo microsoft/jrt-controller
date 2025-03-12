@@ -9,8 +9,8 @@
 #include "jrtc_logging.h"
 #include "jrtc_router.h"
 #include "jbpf_io_defs.h"
-#include "jrtc_yaml_int.h"
-#include "jrtc_yaml.h"
+#include "jrtc_config_int.h"
+#include "jrtc_config.h"
 #include <yaml.h>
 
 char*
@@ -68,9 +68,9 @@ expand_env_vars(const char* input)
 }
 
 void
-init_yaml_config(yaml_config_t* config)
+init_jrtc_config(jrtc_config_t* config)
 {
-    memset(config, 0, sizeof(yaml_config_t));
+    memset(config, 0, sizeof(jrtc_config_t));
     config->jbpf_io_config.type = JBPF_IO_IPC_PRIMARY;
     config->jbpf_io_config.ipc_config.mem_cfg.memory_size = 1024 * 1024 * 1024;
     config->jrtc_router_config.thread_config.affinity_mask = 1 << 1;
@@ -92,9 +92,9 @@ init_yaml_config(yaml_config_t* config)
 }
 
 int
-set_config_values(const char* filename, yaml_config_t* config)
+set_config_values(const char* filename, jrtc_config_t* config)
 {
-    init_yaml_config(config);
+    init_jrtc_config(config);
 
     if (!filename) {
         jrtc_logger(JRTC_INFO, "set_config_values: Filename is NULL\n");

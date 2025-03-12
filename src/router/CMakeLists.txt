@@ -12,7 +12,7 @@ set(JRTC_ROUTER_LIB jrtc_router)
 
 set(JRTC_ROUTER_SRC_DIR ${PROJECT_SOURCE_DIR})
 
-set(JRTC_ROUTER_SOURCES ${JRTC_ROUTER_SRC_DIR}/jrtc_router.c ${PROJECT_SOURCE_DIR}/../controller/jrtc_yaml.c)
+set(JRTC_ROUTER_SOURCES ${JRTC_ROUTER_SRC_DIR}/jrtc_router.c ${PROJECT_SOURCE_DIR}/../controller/jrtc_config.c)
 
 set(JRTC_ROUTER_HEADER_FILES ${JRTC_ROUTER_SRC_DIR} PARENT_SCOPE)
 

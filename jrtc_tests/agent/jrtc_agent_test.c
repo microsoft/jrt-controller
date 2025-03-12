@@ -24,8 +24,8 @@
 #include "jbpf_io.h"
 #include "jbpf_io_channel.h"
 #include "jrtc_logging.h"
-#include "jrtc_yaml.h"
-#include "jrtc_yaml_int.h"
+#include "jrtc_config.h"
+#include "jrtc_config_int.h"
 
 const char channel_name[] = "agent";
 const char stream_path[] = "/tmp/jrtc";
@@ -33,8 +33,8 @@ const char stream_path[] = "/tmp/jrtc";
 int
 start_router()
 {
-    struct yaml_config config = {0};
-    init_yaml_config(&config);
+    struct jrtc_config config = {0};
+    init_jrtc_config(&config);
 
     config.jrtc_router_config.thread_config.affinity_mask = 1 << 1;
     config.jrtc_router_config.thread_config.has_affinity_mask = false;

@@ -13,7 +13,7 @@
 #include "jbpf_io_utils.h"
 
 // Forward declaration
-struct yaml_config;
+struct jrtc_config;
 
 #include "jrtc_router.h"
 #include "jrtc_router_app_api.h"
@@ -21,7 +21,7 @@ struct yaml_config;
 
 #include "jrtc_logging.h"
 #include "jbpf_mempool.h"
-#include "jrtc_yaml_int.h"
+#include "jrtc_config_int.h"
 
 struct jrtc_router_ctx g_router_ctx;
 
@@ -304,7 +304,7 @@ jrtc_router_thread_start(void* args)
 }
 
 int
-jrtc_router_init(struct yaml_config* config)
+jrtc_router_init(struct jrtc_config* config)
 {
 
     struct router_thread_args* thread_args;

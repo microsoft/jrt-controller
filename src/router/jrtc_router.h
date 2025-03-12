@@ -7,7 +7,7 @@
 #include "jbpf_io_defs.h"
 
 // Forward declaration
-struct yaml_config;
+struct jrtc_config;
 
 /**
  * @brief The jrtc_router_sched_policy_e enum
@@ -94,7 +94,7 @@ typedef struct jrtc_router_ctx* jrtc_router_ctx_t;
  * @return 0 on success, -1 on failure
  */
 int
-jrtc_router_init(struct yaml_config* config);
+jrtc_router_init(struct jrtc_config* config);
 
 /**
  * @brief Set the scheduler

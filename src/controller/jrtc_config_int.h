@@ -6,12 +6,12 @@ struct jrtc_router_config;
 
 #include "jbpf_io_defs.h"
 
-struct yaml_config
+struct jrtc_config
 {
     struct jrtc_router_config jrtc_router_config;
     struct jbpf_io_config jbpf_io_config;
 };
 
-typedef struct yaml_config yaml_config_t;
+typedef struct jrtc_config jrtc_config_t;
 
 #endif

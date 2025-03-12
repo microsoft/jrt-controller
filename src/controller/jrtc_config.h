@@ -3,7 +3,7 @@
 #ifndef JRTC_YAML_H
 #define JRTC_YAML_H
 
-#include "jrtc_yaml_int.h"
+#include "jrtc_config_int.h"
 
 /**
  * @brief Expands environment variables in a given string (e.g., "Path: ${HOME}/test")
@@ -18,11 +18,11 @@ expand_env_vars(const char* input);
  * @param filename The path to the YAML file (Optional, could be set to NULL).
  * @param config Pointer to the structure to fill with parsed data.
  * @return 0 on success, -1 on failure.
- * @note the default values are set in the yaml_config_t structure and when
+ * @note the default values are set in the jrtc_config_t structure and when
  *       the filename is not NULL, the values are overridden with the ones in the file.
  */
 int
-set_config_values(const char* filename, yaml_config_t* config);
+set_config_values(const char* filename, jrtc_config_t* config);
 
 /**
  * @brief Initialize the YAML configuration with default values.
@@ -31,6 +31,6 @@ set_config_values(const char* filename, yaml_config_t* config);
  *       It should be called before using the configuration structure.
  */
 void
-init_yaml_config(yaml_config_t* config);
+init_jrtc_config(jrtc_config_t* config);
 
 #endif // JRTC_YAML_H

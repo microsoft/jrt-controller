@@ -34,7 +34,7 @@ set(JRTC_LIB_SRC_DIR ${PROJECT_SOURCE_DIR})
 set(JRTC_LIB_SOURCES ${JRTC_LIB_SRC_DIR}/jrtc_sched.c
   ${JRTC_LIB_SRC_DIR}/jrtc.c
   ${JRTC_LIB_SRC_DIR}/jrtc_int.c
-  ${JRTC_LIB_SRC_DIR}/jrtc_yaml.c
+  ${JRTC_LIB_SRC_DIR}/jrtc_config.c
 )
 
 set(JRTC_LIB_HEADER_FILES ${JRTC_LIB_SOURCES})
