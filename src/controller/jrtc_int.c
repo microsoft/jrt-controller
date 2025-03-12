@@ -414,13 +414,14 @@ start_jrtc(const char* config_file)
     rest_server_handle = jrtc_create_rest_server();
     pthread_create(&rest_server, NULL, _start_rest_server, rest_server_handle);
 
-    yaml_config_t yaml_config;
+    yaml_config_t yaml_config = {0};
     res = set_config_values(config_file, &yaml_config);
     if (res != 0) {
         jrtc_logger(JRTC_ERROR, "Failed to read thread config from YAML file: %s (%d)\n", config_file, res);
         return -2;
     }
-    strncpy(yaml_config.jrtc_router_config.io_config.ipc_name, "jrtc_controller", 32);
+    strncpy(yaml_config.jrtc_router_config.io_config.ipc_name, "jrtc_controller", JBPF_IO_IPC_MAX_NAMELEN - 1);
+    strncpy(yaml_config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, yaml_config.jrtc_router_config.io_config.ipc_name, JBPF_IO_IPC_MAX_NAMELEN - 1);
 
     res = jrtc_router_init(&yaml_config);
 
