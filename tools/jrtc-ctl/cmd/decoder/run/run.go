@@ -4,12 +4,12 @@
 package run
 
 import (
+	"errors"
+	"fmt"
 	"jrtc-ctl/common"
 	"jrtc-ctl/jrtcbindings"
 	"jrtc-ctl/services/cache"
 	"jrtc-ctl/services/decoder"
-	"errors"
-	"fmt"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -105,7 +105,6 @@ func attemptDecodeAndPrint(logger *logrus.Logger, srv *decoder.Server, data *dec
 	if err != nil {
 		return err
 	}
-
 	l := logger.WithField("streamUUID", streamUUID.String())
 
 	schema, exists, err := srv.StreamToSchema.Get(data.StreamUUID[:])
