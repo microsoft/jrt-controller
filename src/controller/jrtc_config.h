@@ -5,6 +5,8 @@
 
 #include "jrtc_config_int.h"
 
+#define DEFAULT_JRTC_NAME "jrtc-controller"
+
 /**
  * @brief Expands environment variables in a given string (e.g., "Path: ${HOME}/test")
  * @param input - The input string with possible ${VAR} placeholders.

@@ -85,10 +85,10 @@ init_jrtc_config(jrtc_config_t* config)
     config->jbpf_io_config.jbpf_path[JBPF_RUN_PATH_LEN - 1] = '\0';
     strncpy(config->jbpf_io_config.jbpf_namespace, JBPF_DEFAULT_NAMESPACE, JBPF_NAMESPACE_LEN - 1);
     config->jbpf_io_config.jbpf_namespace[JBPF_NAMESPACE_LEN - 1] = '\0';
-    strncpy(
-        config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name,
-        config->jrtc_router_config.io_config.ipc_name,
-        JBPF_IO_IPC_MAX_NAMELEN);
+    strncpy(config->jrtc_router_config.io_config.ipc_name, DEFAULT_JRTC_NAME, JBPF_IO_IPC_MAX_NAMELEN - 1);
+    config->jrtc_router_config.io_config.ipc_name[JBPF_IO_IPC_MAX_NAMELEN - 1] = '\0';
+    strncpy(config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, DEFAULT_JRTC_NAME, JBPF_IO_IPC_MAX_NAMELEN - 1);
+    config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name[JBPF_IO_IPC_MAX_NAMELEN - 1] = '\0';
 }
 
 int
@@ -172,6 +172,17 @@ set_config_values(const char* filename, jrtc_config_t* config)
                             config->jbpf_io_config.jbpf_path,
                             expanded_value,
                             sizeof(config->jbpf_io_config.jbpf_path) - 1);
+                    }
+                } else if (in_jrtc_router_config) {
+                    if (strcmp(key, "ipc_name") == 0) {
+                        strncpy(
+                            config->jrtc_router_config.io_config.ipc_name,
+                            expanded_value,
+                            sizeof(config->jrtc_router_config.io_config.ipc_name) - 1);
+                        strncpy(
+                            config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name,
+                            expanded_value,
+                            sizeof(config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name) - 1);
                     }
                 }
 

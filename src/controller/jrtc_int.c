@@ -425,9 +425,6 @@ start_jrtc(const char* config_file)
         jrtc_logger(JRTC_ERROR, "Failed to read thread config from YAML file: %s (%d)\n", config_file, res);
         return -2;
     }
-    strncpy(jrtc_config.jrtc_router_config.io_config.ipc_name, IPC_NAME, JBPF_IO_IPC_MAX_NAMELEN - 1);
-    strncpy(jrtc_config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, IPC_NAME, JBPF_IO_IPC_MAX_NAMELEN - 1);
-
     res = jrtc_router_init(&jrtc_config);
 
     if (res < 0) {
