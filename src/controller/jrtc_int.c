@@ -31,8 +31,6 @@
 #include "jrtc_config_int.h"
 #include "jrtc_config.h"
 
-#define IPC_NAME "jrt_controller"
-
 /* Compiler magic to make address sanitizer ignore
 memory leaks originating from libpython */
 #if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_LEAK__)
