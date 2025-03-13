@@ -71,6 +71,7 @@ void
 init_jrtc_config(jrtc_config_t* config)
 {
     memset(config, 0, sizeof(jrtc_config_t));
+
     config->jbpf_io_config.type = JBPF_IO_IPC_PRIMARY;
     config->jbpf_io_config.ipc_config.mem_cfg.memory_size = 1024 * 1024 * 1024;
     config->jrtc_router_config.thread_config.affinity_mask = 1 << 1;
@@ -81,10 +82,12 @@ init_jrtc_config(jrtc_config_t* config)
     config->jrtc_router_config.thread_config.sched_config.sched_deadline = 30 * 1000 * 1000;
     config->jrtc_router_config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
     config->jrtc_router_config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
+
     strncpy(config->jbpf_io_config.jbpf_path, JBPF_DEFAULT_RUN_PATH, JBPF_RUN_PATH_LEN - 1);
     config->jbpf_io_config.jbpf_path[JBPF_RUN_PATH_LEN - 1] = '\0';
     strncpy(config->jbpf_io_config.jbpf_namespace, JBPF_DEFAULT_NAMESPACE, JBPF_NAMESPACE_LEN - 1);
     config->jbpf_io_config.jbpf_namespace[JBPF_NAMESPACE_LEN - 1] = '\0';
+
     strncpy(config->jrtc_router_config.io_config.ipc_name, DEFAULT_JRTC_NAME, JBPF_IO_IPC_MAX_NAMELEN - 1);
     config->jrtc_router_config.io_config.ipc_name[JBPF_IO_IPC_MAX_NAMELEN - 1] = '\0';
     strncpy(config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, DEFAULT_JRTC_NAME, JBPF_IO_IPC_MAX_NAMELEN - 1);

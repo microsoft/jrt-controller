@@ -25,7 +25,7 @@ test_yaml_parsing()
     // Test 1: Valid YAML file
     {
         //   jrtc_router_config:
-        //     ipc_name: "jrtc-controller1234"
+        //     ipc_name: "jrt-controller1234"
         //     thread_config:
         //       affinity_mask: 3
         //       has_sched_config: true
@@ -52,8 +52,11 @@ test_yaml_parsing()
         assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
         assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jrtc") == 0);
         assert(strcmp(config.jbpf_io_config.jbpf_path, "/var/run/jrtc") == 0);
-        assert(strcmp(config.jrtc_router_config.io_config.ipc_name, "jrtc-controller1234") == 0);
-        assert(strcmp(config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, "jrtc-controller1234") == 0);
+        assert(strcmp(config.jrtc_router_config.io_config.ipc_name, "aaaaa") == 0);
+        assert(
+            strcmp(
+                config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, config.jrtc_router_config.io_config.ipc_name) ==
+            0);
         printf("Test 1 passed: Valid YAML file parsed successfully.\n");
     }
 
@@ -75,7 +78,10 @@ test_yaml_parsing()
         assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jbpf") == 0);
         assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);
         assert(strcmp(config.jrtc_router_config.io_config.ipc_name, DEFAULT_JRTC_NAME) == 0);
-        assert(strcmp(config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, DEFAULT_JRTC_NAME) == 0);
+        assert(
+            strcmp(
+                config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, config.jrtc_router_config.io_config.ipc_name) ==
+            0);
         printf("Test 2 passed: Invalid YAML file handled correctly.\n");
     }
 
@@ -97,7 +103,10 @@ test_yaml_parsing()
         assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jbpf") == 0);
         assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);
         assert(strcmp(config.jrtc_router_config.io_config.ipc_name, DEFAULT_JRTC_NAME) == 0);
-        assert(strcmp(config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, DEFAULT_JRTC_NAME) == 0);
+        assert(
+            strcmp(
+                config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, config.jrtc_router_config.io_config.ipc_name) ==
+            0);
         printf("Test 3 passed: Empty YAML file handled correctly.\n");
     }
 
@@ -121,7 +130,10 @@ test_yaml_parsing()
         assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
         assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);
         assert(strcmp(config.jrtc_router_config.io_config.ipc_name, DEFAULT_JRTC_NAME) == 0);
-        assert(strcmp(config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, DEFAULT_JRTC_NAME) == 0);
+        assert(
+            strcmp(
+                config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, config.jrtc_router_config.io_config.ipc_name) ==
+            0);
         printf("Test 4 passed: Valid YAML file (incomplete values) parsed successfully.\n");
     }
 
@@ -146,7 +158,10 @@ test_yaml_parsing()
         assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
         assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);
         assert(strcmp(config.jrtc_router_config.io_config.ipc_name, DEFAULT_JRTC_NAME) == 0);
-        assert(strcmp(config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, DEFAULT_JRTC_NAME) == 0);
+        assert(
+            strcmp(
+                config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, config.jrtc_router_config.io_config.ipc_name) ==
+            0);
         printf("Test 5 passed: Valid YAML file (with env substitution) parsed successfully.\n");
     }
 

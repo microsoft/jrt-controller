@@ -318,9 +318,10 @@ jrtc_router_init(struct jrtc_config* config)
 
     jrtc_logger(
         JRTC_INFO,
-        "Initializing router with namespace %s and path %s\n",
+        "Initializing router with namespace %s and path %s, ipc_name %s\n",
         config->jbpf_io_config.jbpf_namespace,
-        config->jbpf_io_config.jbpf_path);
+        config->jbpf_io_config.jbpf_path,
+        config->jrtc_router_config.io_config.ipc_name);
 
     g_router_ctx.io_ctx = jbpf_io_init(&config->jbpf_io_config);
     if (g_router_ctx.io_ctx == NULL) {
