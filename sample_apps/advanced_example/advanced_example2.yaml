@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
-# yaml-language-server: $schema=../../tools/schemas/jrtc-ctl.schema.json
 
 name: AdvancedExample2
 
@@ -10,9 +9,11 @@ decoder:
 
 app:
   - name: app2
-    app: ${JRTC_PATH}/sample_apps/advanced_example/app2.so
+    path: ${JRTC_PATH}/sample_apps/advanced_example/app2.so
+    type: c
     port: 3001
-    app_params: []
+    params:
+      key: value
 
 jbpf:
   device:
@@ -21,5 +22,5 @@ jbpf:
 
   codelet_set:
     - device: 1
-      config: ${JRTC_PATH}/sample_apps/advanced_example/jbpf_codelets/data_generator_protobuf/data_generator_pb_codelet.yaml
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator_protobuf/codeletset.yaml
 

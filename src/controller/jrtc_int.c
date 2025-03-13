@@ -159,7 +159,7 @@ _jrtc_load_app_from_memory(const char* data, size_t size)
 
     void* handle = dlopen(path, RTLD_LAZY);
     if (handle == NULL) {
-        jrtc_logger(JRTC_CRITICAL, "fdlopen failed\n");
+        jrtc_logger(JRTC_CRITICAL, "fdlopen failed: %s (errno=%d, %s)\n", path, errno, dlerror());
         goto error;
     }
 
@@ -255,11 +255,14 @@ load_app(load_app_request_t load_req)
     app_env->app_handle = app_handle;
     app_env->app_exit = false;
     app_env->io_queue_size = load_req.ioq_size;
-    memset(app_env->app_params, 0, sizeof(app_env->app_params));
+    memset(app_env->params, 0, sizeof(app_env->params));
 
     for (int i = 0; i < MAX_APP_PARAMS; i++) {
-        if (load_req.app_params[i] != NULL) {
-            app_env->app_params[i] = strdup(load_req.app_params[i]);
+        if (load_req.params[i].key != NULL) {
+            app_env->params[i].key = strdup(load_req.params[i].key);
+        }
+        if (load_req.params[i].val != NULL) {
+            app_env->params[i].val = strdup(load_req.params[i].val);
         }
     }
 
@@ -345,7 +348,7 @@ load_default_north_io_app()
 
     load_req_north_io.deadline_us = 0;
     load_req_north_io.app_name = strdup("north_io_app");
-    memset(load_req_north_io.app_params, 0, sizeof(load_req_north_io.app_params));
+    memset(load_req_north_io.params, 0, sizeof(load_req_north_io.params));
 
     int res = load_app(load_req_north_io);
     if (res == 0) {

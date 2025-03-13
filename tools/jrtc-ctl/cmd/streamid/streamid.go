@@ -4,9 +4,9 @@
 package streamid
 
 import (
+	"fmt"
 	"jrtc-ctl/common"
 	"jrtc-ctl/jrtcbindings"
-	"fmt"
 	"strings"
 
 	"github.com/spf13/cobra"

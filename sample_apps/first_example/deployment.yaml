@@ -1,14 +1,18 @@
+# yaml-language-server: $schema=../../tools/schemas/jrtc-ctl.schema.json
+
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
-# yaml-language-server: $schema=../../tools/schemas/jrtc-ctl.schema.json
 
 name: FirstExample
 
 app:
   - name: app1
-    app: ${JRTC_PATH}/sample_apps/first_example/app1.so
+    path: ${JRTC_PATH}/sample_apps/first_example/app1.so
     port: 3001
-    app_params: []
+    type: c
+    params:
+      key1: value1
+      key2: value2
 
 jbpf:
   device:
@@ -17,7 +21,7 @@ jbpf:
 
   codelet_set:
     - device: 1
-      config: ${JRTC_PATH}/sample_apps/first_example/jbpf_codelets/data_generator/data_generator_codelet.yaml
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/codeletset.yaml
 
     - device: 1
-      config: ${JRTC_PATH}/sample_apps/first_example/jbpf_codelets/simple_input/codeletset.yaml
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/simple_input/codeletset.yaml

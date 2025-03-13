@@ -24,7 +24,7 @@ source setup_jrtc_env.sh
 if [[ "$CLANG_FORMAT_CHECK" == "1" ]]; then
     echo "Checking clang-format..."
     cat /jrtc/.clang-format
-    DIRS=("src" "sample_apps" "tests" "tools" "wrapper_apis")
+    DIRS=("src" "sample_apps" "tests" "tools" "wrapper_apis/c")
     cd /jrtc/
     echo The clang-format version is $(clang-format --version)
     for i in "${DIRS[@]}"; do
@@ -77,6 +77,11 @@ if [[ "$RUN_TESTS" == "1" ]]; then
     export RUST_BACKTRACE=full
     if ! ctest --output-on-failure --output-junit $JRTC_OUT_DIR/jrtc_tests.xml -F; then
         echo "Error running C tests!"
+        exit 1
+    fi
+    ## if there are no tests, fail
+    if [ ! -s $JRTC_OUT_DIR/jrtc_tests.xml ]; then
+        echo "Error: No tests found!"
         exit 1
     fi
     cat /tmp/asan.log || true

@@ -81,6 +81,8 @@ add_custom_target(${BINARY_NAME}-test ALL
     COMMENT "Running tests for jrtc-ctl"
 )
 
+add_dependencies(jrtc-ctl jrtc_router_stream_id_static)
+
 ## TODO: Add it to `make test`
 #add_dependencies(test ${BINARY_NAME}-test)
 #add_dependencies(lint ${BINARY_NAME}-lint)
