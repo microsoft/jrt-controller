@@ -1,0 +1,5 @@
+jbpf_io_config:
+  jbpf_namespace: jbpf
+  jbpf_path: /tmp
+jrtc_router_config:
+  ipc_name: "jrt_controller"

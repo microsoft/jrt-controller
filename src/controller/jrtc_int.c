@@ -28,6 +28,8 @@
 
 #include "jrtc_rest_server.h"
 #include "jrtc_logging.h"
+#include "jrtc_config_int.h"
+#include "jrtc_config.h"
 
 /* Compiler magic to make address sanitizer ignore
 memory leaks originating from libpython */
@@ -398,7 +400,7 @@ _start_rest_server(void* args)
 }
 
 int
-start_jrtc(int argc, char* argv[])
+start_jrtc(const char* config_file)
 {
     if (signal(SIGINT, ctrlc_handler) == SIG_ERR) {
         perror("signal");
@@ -408,7 +410,6 @@ start_jrtc(int argc, char* argv[])
     pthread_t rest_server;
     void* rest_server_handle;
 
-    struct jrtc_router_config config = {0};
     int res;
 
     sem_init(&jrtc_stop, 0, 0);
@@ -416,18 +417,13 @@ start_jrtc(int argc, char* argv[])
     rest_server_handle = jrtc_create_rest_server();
     pthread_create(&rest_server, NULL, _start_rest_server, rest_server_handle);
 
-    config.thread_config.affinity_mask = 1 << 1;
-    config.thread_config.has_affinity_mask = false;
-    config.thread_config.has_sched_config = false;
-    config.thread_config.sched_config.sched_policy = JRTC_ROUTER_DEADLINE;
-    config.thread_config.sched_config.sched_priority = 99;
-    config.thread_config.sched_config.sched_deadline = 30 * 1000 * 1000;
-    config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
-    config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
-
-    strncpy(config.io_config.ipc_name, "jrtc_controller", 32);
-
-    res = jrtc_router_init(&config);
+    jrtc_config_t jrtc_config = {0};
+    res = set_config_values(config_file, &jrtc_config);
+    if (res != 0) {
+        jrtc_logger(JRTC_ERROR, "Failed to read thread config from YAML file: %s (%d)\n", config_file, res);
+        return -2;
+    }
+    res = jrtc_router_init(&jrtc_config);
 
     if (res < 0) {
         jrtc_logger(JRTC_CRITICAL, "Failed to initialize router\n");

@@ -5,11 +5,14 @@ cmake_minimum_required(VERSION 3.16)
 
 project(router)
 
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(YAML REQUIRED yaml-0.1)
+
 set(JRTC_ROUTER_LIB jrtc_router)
 
 set(JRTC_ROUTER_SRC_DIR ${PROJECT_SOURCE_DIR})
 
-set(JRTC_ROUTER_SOURCES ${JRTC_ROUTER_SRC_DIR}/jrtc_router.c)
+set(JRTC_ROUTER_SOURCES ${JRTC_ROUTER_SRC_DIR}/jrtc_router.c ${PROJECT_SOURCE_DIR}/../controller/jrtc_config.c)
 
 set(JRTC_ROUTER_HEADER_FILES ${JRTC_ROUTER_SRC_DIR} PARENT_SCOPE)
 
@@ -22,13 +25,17 @@ set_property(TARGET ${JRTC_ROUTER_LIB} PROPERTY POSITION_INDEPENDENT_CODE ON)
 add_library(Jrtc::router_lib ALIAS ${JRTC_ROUTER_LIB})
 
 target_link_libraries(${JRTC_ROUTER_LIB} Jrtc::router_stream_id_lib_static
-                                            jbpf::io_lib)
+  jbpf::io_lib
+  ${JRTC_LIB}
+  ${YAML_LIBRARIES}  
+)
 
 target_include_directories(${JRTC_ROUTER_LIB} PUBLIC ${JRTC_ROUTER_HEADER_FILES}
                                                        ${JRTC_LOGGER_HEADERS}
                                                        ${JRTC_ROUTER_STREAM_ID_HEADER_FILES}
                                                        ${JBPF_IO_HEADER_FILES}
                                                        ${JBPF_MEM_MGMT_HEADER_FILES}
+                                                       ${YAML_INCLUDE_DIRS}
                                                        ${JBPF_CK_HEADER_FILES})
 
 add_dependencies(${JRTC_ROUTER_LIB} jbpf_libck)

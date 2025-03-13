@@ -28,7 +28,7 @@ void*
 start_jrtc_func(void* args)
 {
     jrtc_logger(JRTC_INFO, "Starting jrtc now.\n");
-    int res = start_jrtc(0, NULL);
+    int res = start_jrtc(NULL);
     if (res < 0) {
         jrtc_logger(JRTC_CRITICAL, "jrt-controller failed to start\n");
     }
