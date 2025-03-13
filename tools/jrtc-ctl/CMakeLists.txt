@@ -61,7 +61,7 @@ find_program(GOLANGCI_LINT_EXECUTABLE golangci-lint)
 if(NOT GOLANGCI_LINT_EXECUTABLE)
     message(WARNING "golangci-lint not found. Skipping linting step.")
 else()
-    add_custom_target(${BINARY_NAME}-lint ALL
+    add_custom_target(${BINARY_NAME}-lint
         COMMAND ${CMAKE_COMMAND} -E env
             CGO_CFLAGS=${JRTCCTL_CGO_CFLAGS}
             CGO_LDFLAGS=${JRTCCTL_CGO_LDFLAGS}
@@ -72,7 +72,7 @@ else()
 endif()
 
 # Add a custom target to run tests
-add_custom_target(${BINARY_NAME}-test ALL
+add_custom_target(${BINARY_NAME}-test
     COMMAND ${CMAKE_COMMAND} -E env
         CGO_CFLAGS=${JRTCCTL_CGO_CFLAGS}
         CGO_LDFLAGS=${JRTCCTL_CGO_LDFLAGS}
