@@ -10,6 +10,7 @@ struct jrtc_config
 {
     struct jrtc_router_config jrtc_router_config;
     struct jbpf_io_config jbpf_io_config;
+    int port;
 };
 
 typedef struct jrtc_config jrtc_config_t;

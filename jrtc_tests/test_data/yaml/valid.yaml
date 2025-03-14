@@ -3,6 +3,7 @@ jbpf_io_config:
   jbpf_path: "/var/run/jrtc"
 jrtc_router_config:
   ipc_name: "aaaaa"
+  port: 1234
   thread_config:
     affinity_mask: 3
     has_sched_config: true
