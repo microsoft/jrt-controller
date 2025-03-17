@@ -72,7 +72,7 @@ main()
 
     jbpf_config.io_config.io_type = JBPF_IO_IPC_CONFIG;
     jbpf_config.io_config.io_ipc_config.ipc_mem_size = JBPF_HUGEPAGE_SIZE_1GB;
-    strncpy(jbpf_config.io_config.io_ipc_config.ipc_name, "jrtc_controller", JBPF_IO_IPC_MAX_NAMELEN);
+    strncpy(jbpf_config.io_config.io_ipc_config.ipc_name, "jrt_controller", JBPF_IO_IPC_MAX_NAMELEN);
 
     // Enable LCM IPC interface using UNIX socket at the default socket path (the default is through C API)
     jbpf_config.lcm_ipc_config.has_lcm_ipc_thread = true;

@@ -26,7 +26,7 @@ elseif(CMAKE_BUILD_TYPE MATCHES Debug)
     set(JRTCCTL_CGO_CFLAGS "${JRTCCTL_CGO_CFLAGS} -g -O1 -fprofile-arcs -ftest-coverage --coverage")
     set(JRTCCTL_CGO_LDFLAGS "${JRTCCTL_CGO_LDFLAGS} -g -O1 -fprofile-arcs -ftest-coverage  --coverage -lgcov")
     add_compile_options(--coverage -g)
-    add_link_options(--coverage)    
+    add_link_options(--coverage)
 else()
     set(JRTCCTL_CGO_CFLAGS "${JRTCCTL_CGO_CFLAGS} -O3")
     set(JRTCCTL_CGO_LDFLAGS "${JRTCCTL_CGO_LDFLAGS} -O3")
@@ -59,17 +59,17 @@ add_custom_target(${BINARY_NAME} ALL
 find_program(GOLANGCI_LINT_EXECUTABLE golangci-lint)
 
 if(NOT GOLANGCI_LINT_EXECUTABLE)
-    message(FATAL_ERROR "golangci-lint not found. Please install golangci-lint.")
+    message(WARNING "golangci-lint not found. Skipping linting step.")
+else()
+    add_custom_target(${BINARY_NAME}-lint
+        COMMAND ${CMAKE_COMMAND} -E env
+            CGO_CFLAGS=${JRTCCTL_CGO_CFLAGS}
+            CGO_LDFLAGS=${JRTCCTL_CGO_LDFLAGS}
+            ${GOLANGCI_LINT_EXECUTABLE} run --concurrency=1
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Running linting for jrtc-ctl"
+    )
 endif()
-
-add_custom_target(${BINARY_NAME}-lint
-    COMMAND ${CMAKE_COMMAND} -E env
-        CGO_CFLAGS=${JRTCCTL_CGO_CFLAGS}
-        CGO_LDFLAGS=${JRTCCTL_CGO_LDFLAGS}
-        ${GOLANGCI_LINT_EXECUTABLE} run --concurrency=1
-    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    COMMENT "Running linting for jrtc-ctl"
-)
 
 # Add a custom target to run tests
 add_custom_target(${BINARY_NAME}-test

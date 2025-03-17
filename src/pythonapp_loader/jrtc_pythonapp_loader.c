@@ -72,6 +72,15 @@ get_file_name_without_py(const char* file_path)
     if (file_path == NULL) {
         return NULL;
     }
+    struct jrtc_app_env* env_ctx = args;
+    char* full_path = env_ctx->params[0].val;
+    printf("Python Full Path: %s\n", full_path);
+    // extract the folder of `full_path`
+    char* folder = get_folder(full_path);
+    printf("Folder: %s\n", folder);
+    // python_script should be the filename without the .py
+    char* python_script = get_file_name_without_py(full_path);
+    printf("Python Script: %s\n", python_script);
 
     const char* file_name = strrchr(file_path, '/');
     file_name = (file_name != NULL) ? file_name + 1 : file_path;

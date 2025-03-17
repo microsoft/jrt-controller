@@ -1,0 +1,3 @@
+## this test yaml only contains partial values
+jbpf_io_config:
+  jbpf_namespace: jrtc

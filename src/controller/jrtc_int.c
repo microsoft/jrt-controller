@@ -28,6 +28,8 @@
 
 #include "jrtc_rest_server.h"
 #include "jrtc_logging.h"
+#include "jrtc_config_int.h"
+#include "jrtc_config.h"
 
 /* Compiler magic to make address sanitizer ignore
 memory leaks originating from libpython */
@@ -255,11 +257,14 @@ load_app(load_app_request_t load_req)
     app_env->app_handle = app_handle;
     app_env->app_exit = false;
     app_env->io_queue_size = load_req.ioq_size;
-    memset(app_env->app_params, 0, sizeof(app_env->app_params));
+    memset(app_env->params, 0, sizeof(app_env->params));
 
     for (int i = 0; i < MAX_APP_PARAMS; i++) {
-        if (load_req.app_params[i] != NULL) {
-            app_env->app_params[i] = strdup(load_req.app_params[i]);
+        if (load_req.params[i].key != NULL) {
+            app_env->params[i].key = strdup(load_req.params[i].key);
+        }
+        if (load_req.params[i].val != NULL) {
+            app_env->params[i].val = strdup(load_req.params[i].val);
         }
     }
 
@@ -345,7 +350,7 @@ load_default_north_io_app()
 
     load_req_north_io.deadline_us = 0;
     load_req_north_io.app_name = strdup("north_io_app");
-    memset(load_req_north_io.app_params, 0, sizeof(load_req_north_io.app_params));
+    memset(load_req_north_io.params, 0, sizeof(load_req_north_io.params));
 
     int res = load_app(load_req_north_io);
     if (res == 0) {
@@ -395,7 +400,7 @@ _start_rest_server(void* args)
 }
 
 int
-start_jrtc(int argc, char* argv[])
+start_jrtc(const char* config_file)
 {
     if (signal(SIGINT, ctrlc_handler) == SIG_ERR) {
         perror("signal");
@@ -405,7 +410,6 @@ start_jrtc(int argc, char* argv[])
     pthread_t rest_server;
     void* rest_server_handle;
 
-    struct jrtc_router_config config = {0};
     int res;
 
     sem_init(&jrtc_stop, 0, 0);
@@ -413,18 +417,13 @@ start_jrtc(int argc, char* argv[])
     rest_server_handle = jrtc_create_rest_server();
     pthread_create(&rest_server, NULL, _start_rest_server, rest_server_handle);
 
-    config.thread_config.affinity_mask = 1 << 1;
-    config.thread_config.has_affinity_mask = false;
-    config.thread_config.has_sched_config = false;
-    config.thread_config.sched_config.sched_policy = JRTC_ROUTER_DEADLINE;
-    config.thread_config.sched_config.sched_priority = 99;
-    config.thread_config.sched_config.sched_deadline = 30 * 1000 * 1000;
-    config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
-    config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
-
-    strncpy(config.io_config.ipc_name, "jrtc_controller", 32);
-
-    res = jrtc_router_init(&config);
+    jrtc_config_t jrtc_config = {0};
+    res = set_config_values(config_file, &jrtc_config);
+    if (res != 0) {
+        jrtc_logger(JRTC_ERROR, "Failed to read thread config from YAML file: %s (%d)\n", config_file, res);
+        return -2;
+    }
+    res = jrtc_router_init(&jrtc_config);
 
     if (res < 0) {
         jrtc_logger(JRTC_CRITICAL, "Failed to initialize router\n");
