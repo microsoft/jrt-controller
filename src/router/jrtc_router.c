@@ -1019,7 +1019,16 @@ jrtc_router_input_channel_exists(struct jrtc_router_stream_id stream_id)
 
     router_ctx = jrtc_router_get_ctx();
 
-    if (jbpf_io_find_channel(router_ctx->io_ctx, *(struct jbpf_io_stream_id*)&stream_id, false)) {
+    if (!router_ctx) {
+        jrtc_logger(JRTC_ERROR, "Failed to get router context.\n");
+        return 0;
+    }
+    if (!router_ctx->io_ctx) {
+        jrtc_logger(JRTC_ERROR, "IO context is null.\n");
+        return 0;
+    }
+    struct jbpf_io_stream_id _stream_id = *(struct jbpf_io_stream_id*)&stream_id;
+    if (jbpf_io_find_channel(router_ctx->io_ctx, _stream_id, false)) {
         return 1;
     }
     return 0;

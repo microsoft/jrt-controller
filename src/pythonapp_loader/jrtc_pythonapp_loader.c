@@ -6,12 +6,20 @@
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
-#include <stdio.h>
+#include <assert.h>
 #include "jrtc_router_app_api.h"
 #include "jrtc.h"
 
-/* Compiler magic to make address sanitizer ignore
-memory leaks originating from libpython */
+#define PYTHON_ENTRYPOINT "jrtc_start_app"
+
+struct python_state
+{
+    char* folder;
+    char* python_script;
+    PyInterpreterState* ts;
+    void* args;
+};
+
 #if defined(__SANITIZE_ADDRESS__) || defined(__SANITIZE_LEAK__)
 __attribute__((used)) const char*
 __asan_default_options()
@@ -36,24 +44,22 @@ char*
 get_folder(const char* file_path)
 {
     if (file_path == NULL) {
-        return NULL; // Handle NULL input safely
+        return strdup("./");
     }
 
     char* folder = strdup(file_path);
     if (folder == NULL) {
-        return NULL; // Memory allocation failed
+        return NULL;
     }
 
     char* last_slash = strrchr(folder, '/');
     if (last_slash != NULL) {
-        // Edge case: If it's the only character (root `/`), return `/`
         if (last_slash == folder) {
             folder[1] = '\0';
         } else {
             *last_slash = '\0';
         }
     } else {
-        // No `/` found, return "./"
         free(folder);
         return strdup("./");
     }
@@ -65,155 +71,259 @@ char*
 get_file_name_without_py(const char* file_path)
 {
     if (file_path == NULL) {
-        return NULL; // Handle NULL input safely
-    }
-
-    // Find the last '/' in the file path
-    const char* file_name = strrchr(file_path, '/');
-    if (file_name != NULL) {
-        file_name++; // Move past the '/'
-    } else {
-        file_name = file_path; // No '/' found, use the whole string
-    }
-
-    // Find the last '.' in the file name
-    const char* last_dot = strrchr(file_name, '.');
-    size_t name_length;
-    if (last_dot != NULL && strcmp(last_dot, ".py") == 0) {
-        name_length = last_dot - file_name; // Length without ".py"
-    } else {
-        name_length = strlen(file_name); // Full length
-    }
-
-    // Allocate memory for the new string
-    char* result = (char*)malloc(name_length + 1);
-    if (result == NULL) {
-        return NULL; // Memory allocation failed
-    }
-
-    // Copy the relevant portion of the file name
-    strncpy(result, file_name, name_length);
-    result[name_length] = '\0'; // Null-terminate the string
-
-    return result; // Caller must free the allocated memory
-}
-
-void*
-jrtc_start_app(void* args)
-{
-    if (args == NULL) {
-        fprintf(stderr, "Error: App context is NULL.\n");
         return NULL;
     }
-    struct jrtc_app_env* env_ctx = args;
-    char* full_path = env_ctx->params[0].val;
-    printf("Python Full Path: %s\n", full_path);
-    // extract the folder of `full_path`
-    char* folder = get_folder(full_path);
-    printf("Folder: %s\n", folder);
-    // python_script should be the filename without the .py
-    char* python_script = get_file_name_without_py(full_path);
-    printf("Python Script: %s\n", python_script);
 
-    // Initialize the Python interpreter
-    if (!Py_IsInitialized()) {
-        Py_Initialize();
-        printf("Python interpreter initialized.\n");
+    const char* file_name = strrchr(file_path, '/');
+    file_name = (file_name != NULL) ? file_name + 1 : file_path;
+
+    const char* last_dot = strrchr(file_name, '.');
+    size_t name_length =
+        (last_dot && strcmp(last_dot, ".py") == 0) ? (size_t)(last_dot - file_name) : strlen(file_name);
+
+    char* result = (char*)malloc(name_length + 1);
+    if (result == NULL) {
+        return NULL;
     }
 
-    // Create a Python capsule for the `args`
-    PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
-    if (!pCapsule) {
-        fprintf(stderr, "Error: Failed to create Python capsule.\n");
-        goto exit2;
-    }
+    strncpy(result, file_name, name_length);
+    result[name_length] = '\0';
 
-    // Add current working directory to the Python path
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        fprintf(stderr, "Error: Failed to get current working directory.\n");
-        goto exit1;
-    }
-    printf("Current working directory: %s\n", cwd);
+    return result;
+}
 
-    PyObject* sysPath = PySys_GetObject("path");
-    if (!sysPath) {
-        fprintf(stderr, "Error: Failed to get Python sys.path.\n");
-        goto exit1;
-    }
+void
+run_python_without_interpreter(char* folder, char* python_script, void* args)
+{
+    printf("Running Python script (Single App): %s\n", python_script);
+    fflush(stdout);
 
-    PyObject* path = PyUnicode_FromString(cwd);
-    if (!path) {
-        fprintf(stderr, "Error: Failed to create Python string for cwd.\n");
-        goto exit1;
-    }
-
-    PyList_Append(sysPath, path);
-    PyList_Append(sysPath, PyUnicode_FromString(folder));
-    Py_DECREF(path);
-
-    // Import the Python module
-    PyObject* pName = PyUnicode_DecodeFSDefault(python_script);
-    if (!pName) {
-        fprintf(stderr, "Error: Failed to create Python string for module name %s.\n", python_script);
-        goto exit1;
-    }
-
+    // Acquire GIL just once when interacting with Python
     PyGILState_STATE gstate = PyGILState_Ensure();
+
+    if (args == NULL) {
+        fprintf(stderr, "Error: Received NULL argument for PyCapsule_New\n");
+        PyGILState_Release(gstate);
+        return;
+    }
+
+    // Add folder to sys.path
+    PyObject* sysPath = PySys_GetObject("path");
+    PyObject* temp = PyUnicode_FromString(folder);
+    PyList_Append(sysPath, temp);
+    Py_DECREF(temp);
+
+    // Import the Python script/module
+    PyObject* pName = PyUnicode_DecodeFSDefault(python_script);
     PyObject* pModule = PyImport_Import(pName);
-    PyGILState_Release(gstate);
-
-    PyErr_Print();
-
-    printf("Importing Python Module: %s\n", python_script);
     Py_DECREF(pName);
 
     if (!pModule) {
         fprintf(stderr, "Error: Failed to import module: %s.\n", python_script);
         PyErr_Print();
+        PyGILState_Release(gstate);
+        return;
+    }
+
+    // Get the function reference
+    PyObject* pFunc = PyObject_GetAttrString(pModule, PYTHON_ENTRYPOINT);
+    if (!pFunc || !PyCallable_Check(pFunc)) {
+        fprintf(stderr, "Error: Cannot find function '%s' in module '%s'.\n", PYTHON_ENTRYPOINT, python_script);
+        PyErr_Print();
+        Py_XDECREF(pModule);
+        PyGILState_Release(gstate);
+        return;
+    }
+
+    // Pass the arguments to the Python function
+    PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
+    if (!pCapsule) {
+        fprintf(stderr, "Error: PyCapsule_New failed.\n");
+        Py_XDECREF(pModule);
+        PyGILState_Release(gstate);
+        return;
+    }
+
+    PyObject* pArgs = PyTuple_Pack(1, pCapsule);
+    if (!pArgs) {
+        fprintf(stderr, "Error: PyTuple_Pack failed.\n");
+        Py_XDECREF(pCapsule);
+        Py_XDECREF(pModule);
+        PyGILState_Release(gstate);
+        return;
+    }
+
+    // Call the function
+    PyObject_CallObject(pFunc, pArgs);
+    Py_XDECREF(pArgs);
+    Py_XDECREF(pCapsule);
+    Py_XDECREF(pFunc);
+    Py_XDECREF(pModule);
+
+    // Release the GIL
+    PyGILState_Release(gstate);
+}
+
+void
+run_python_using_interpreter(char* folder, char* python_script, PyInterpreterState* interp, void* args)
+{
+    printf("Running Python script (Multiple Apps): %s\n", python_script);
+    fflush(stdout);
+
+    // Acquire GIL just once when interacting with Python
+    PyGILState_STATE gstate = PyGILState_Ensure();
+
+    if (args == NULL) {
+        fprintf(stderr, "Error: Received NULL argument for PyCapsule_New\n");
+        PyGILState_Release(gstate);
+        return;
+    }
+
+    // We use the provided interpreter state for single-threaded mode, no additional thread state needed.
+    PyThreadState* ts = PyThreadState_New(interp);
+    if (!ts) {
+        fprintf(stderr, "Error: Failed to create new thread state.\n");
+        PyGILState_Release(gstate);
+        return;
+    }
+
+    PyThreadState_Swap(ts);
+
+    // Add folder to sys.path
+    PyObject* sysPath = PySys_GetObject("path");
+    PyObject* temp = PyUnicode_FromString(folder);
+    PyList_Append(sysPath, temp);
+    Py_DECREF(temp);
+
+    // Import the Python script/module
+    PyObject* pName = PyUnicode_DecodeFSDefault(python_script);
+    PyObject* pModule = PyImport_Import(pName);
+    Py_DECREF(pName);
+
+    if (!pModule) {
+        fprintf(stderr, "Error: Failed to import module: %s.\n", python_script);
+        PyErr_Print();
+        PyGILState_Release(gstate);
+        PyThreadState_Swap(NULL);
+        PyThreadState_Clear(ts);
+        PyThreadState_Delete(ts);
+        return;
+    }
+
+    // Get the function reference
+    PyObject* pFunc = PyObject_GetAttrString(pModule, PYTHON_ENTRYPOINT);
+    if (!pFunc || !PyCallable_Check(pFunc)) {
+        fprintf(stderr, "Error: Cannot find function '%s' in module '%s'.\n", PYTHON_ENTRYPOINT, python_script);
+        PyErr_Print();
+        Py_XDECREF(pModule);
+        PyGILState_Release(gstate);
+        PyThreadState_Swap(NULL);
+        PyThreadState_Clear(ts);
+        PyThreadState_Delete(ts);
+        return;
+    }
+
+    PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
+    if (!pCapsule) {
+        fprintf(stderr, "Error: PyCapsule_New failed.\n");
+        Py_XDECREF(pModule);
+        PyGILState_Release(gstate);
+        PyThreadState_Swap(NULL);
+        PyThreadState_Clear(ts);
+        PyThreadState_Delete(ts);
+        return;
+    }
+
+    PyObject* pArgs = PyTuple_Pack(1, pCapsule);
+    if (!pArgs) {
+        fprintf(stderr, "Error: PyTuple_Pack failed.\n");
+        Py_XDECREF(pCapsule);
+        Py_XDECREF(pModule);
+        PyGILState_Release(gstate);
+        PyThreadState_Swap(NULL);
+        PyThreadState_Clear(ts);
+        PyThreadState_Delete(ts);
+        return;
+    }
+
+    // Call the function
+    PyObject_CallObject(pFunc, pArgs);
+    Py_XDECREF(pArgs);
+    Py_XDECREF(pCapsule);
+    Py_XDECREF(pFunc);
+    Py_XDECREF(pModule);
+
+    // Clean up thread state
+    PyThreadState_Swap(NULL);
+    PyThreadState_Clear(ts);
+    PyThreadState_Delete(ts);
+
+    // Release GIL
+    PyGILState_Release(gstate);
+}
+
+void*
+run_subinterpreter(void* state)
+{
+    struct python_state* pstate = (struct python_state*)state;
+    run_python_using_interpreter(pstate->folder, pstate->python_script, pstate->ts, pstate->args);
+    return NULL;
+}
+
+void*
+jrtc_start_app(void* args)
+{
+    struct jrtc_app_env* env_ctx = (struct jrtc_app_env*)args;
+    char* full_path = env_ctx->params[0].val;
+    char* python_type = env_ctx->params[0].key;
+    printf("Python type: %s\n", python_type);
+    fflush(stdout);
+    char* folder = get_folder(full_path);
+    char* python_script = get_file_name_without_py(full_path);
+
+    if (!folder || !python_script) {
+        fprintf(stderr, "Error: Memory allocation failed.\n");
+        goto exit0;
+    }
+
+    if (!Py_IsInitialized()) {
+        Py_Initialize();
+    }
+
+    if (strcmp(python_type, "python_single_app") == 0) {
+        run_python_without_interpreter(folder, python_script, args);
         goto exit1;
     }
 
-    // Get the Python function
-    PyObject* pFunc = PyObject_GetAttrString(pModule, "jrtc_start_app");
-    if (!pFunc || !PyCallable_Check(pFunc)) {
-        fprintf(stderr, "Error: Function 'jrtc_start_app' is not callable.\n");
-        PyErr_Print();
-        goto exit0;
+    // Initialize the main interpreter and create sub-interpreter
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyThreadState* main_ts = PyThreadState_Get();
+    PyThreadState* ts1 = Py_NewInterpreter(); // Create a sub-interpreter
+    if (!ts1) {
+        fprintf(stderr, "Error: Failed to create new Python interpreter.\n");
+        goto exit2;
     }
 
-    // Prepare arguments and call the Python function
-    PyObject* pArgs = PyTuple_Pack(1, pCapsule);
-    if (!pArgs) {
-        fprintf(stderr, "Error: Failed to create arguments tuple.\n");
-        PyErr_Print();
-        goto exit0;
-    }
+    // Swap to the new interpreter state for execution
+    PyThreadState_Swap(ts1);
 
-    PyObject* pResult = PyObject_CallObject(pFunc, pArgs);
-    Py_DECREF(pArgs);
+    struct python_state p1 = {folder, python_script, ts1->interp, args};
+    run_subinterpreter(&p1);
 
-    if (!pResult) {
-        fprintf(stderr, "Error: Function call failed.\n");
-        PyErr_Print();
-        goto exit0;
-    } else {
-        Py_DECREF(pResult);
-    }
+    // Clean up the sub-interpreter state
+    PyThreadState_Swap(ts1);
+    Py_EndInterpreter(ts1);
 
-    // Clean up
-exit0:
-    Py_DECREF(pFunc);
-    Py_DECREF(pModule);
-exit1:
-    Py_XDECREF(pCapsule);
+    PyThreadState_Swap(main_ts);
+
 exit2:
-    // Finalize the Python interpreter
+    PyGILState_Release(gstate);
+
+exit1:
     if (Py_IsInitialized()) {
         Py_Finalize();
     }
-
-    // Free the allocated memory
+exit0:
     free(folder);
     free(python_script);
     return NULL;
