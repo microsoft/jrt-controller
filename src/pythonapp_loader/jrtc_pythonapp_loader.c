@@ -96,30 +96,30 @@ do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp
     printf("Running Python script: %s\n", python_script);
     fflush(stdout);
 
-    // Step 1: Acquire the GIL
+    // Acquire GIL just once when interacting with Python
     PyGILState_STATE gstate = PyGILState_Ensure();
 
-    // Step 2: Create new thread state for this interpreter
-    printf("Creating new thread state...\n");
-    fflush(stdout);
+    if (args == NULL) {
+        fprintf(stderr, "Error: Received NULL argument for PyCapsule_New\n");
+        PyGILState_Release(gstate);
+        return;
+    }
+
     PyThreadState* ts = PyThreadState_New(interp);
     if (!ts) {
         fprintf(stderr, "Error: Failed to create new thread state.\n");
         PyGILState_Release(gstate);
         return;
     }
-
-    // Step 3: Swap to this thread state
-    printf("Swapping to new thread state: %p\n", ts);
-    fflush(stdout);
     PyThreadState_Swap(ts);
 
-    // Run your Python code as usual here...
+    // Add folder to sys.path
     PyObject* sysPath = PySys_GetObject("path");
     PyObject* temp = PyUnicode_FromString(folder);
     PyList_Append(sysPath, temp);
     Py_DECREF(temp);
 
+    // Import the Python script/module
     PyObject* pName = PyUnicode_DecodeFSDefault(python_script);
     PyObject* pModule = PyImport_Import(pName);
     Py_DECREF(pName);
@@ -127,31 +127,51 @@ do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp
     if (!pModule) {
         fprintf(stderr, "Error: Failed to import module: %s.\n", python_script);
         PyErr_Print();
-        goto cleanup;
+        PyGILState_Release(gstate);
+        return;
     }
 
+    // Get the function reference
     PyObject* pFunc = PyObject_GetAttrString(pModule, "jrtc_start_app");
-    if (pFunc && PyCallable_Check(pFunc)) {
-        PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
-        PyObject* pArgs = PyTuple_Pack(1, pCapsule);
-        PyObject_CallObject(pFunc, pArgs);
-        Py_XDECREF(pArgs);
-        Py_XDECREF(pCapsule);
-    } else {
-        fprintf(stderr, "Error: Function 'jrtc_start_app' not callable.\n");
+    if (!pFunc || !PyCallable_Check(pFunc)) {
+        fprintf(stderr, "Error: Function 'jrtc_start_app' is not callable.\n");
         PyErr_Print();
+        Py_XDECREF(pModule);
+        PyGILState_Release(gstate);
+        return;
     }
 
+    // Call 'jrtc_start_app'
+    PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
+    if (!pCapsule) {
+        fprintf(stderr, "Error: PyCapsule_New failed.\n");
+        Py_XDECREF(pModule);
+        PyGILState_Release(gstate);
+        return;
+    }
+
+    PyObject* pArgs = PyTuple_Pack(1, pCapsule);
+    if (!pArgs) {
+        fprintf(stderr, "Error: PyTuple_Pack failed.\n");
+        Py_XDECREF(pCapsule);
+        Py_XDECREF(pModule);
+        PyGILState_Release(gstate);
+        return;
+    }
+
+    // Call the function
+    PyObject_CallObject(pFunc, pArgs);
+    Py_XDECREF(pArgs);
+    Py_XDECREF(pCapsule);
     Py_XDECREF(pFunc);
     Py_XDECREF(pModule);
 
-cleanup:
-    // Step 4: Proper cleanup
+    // Clean up thread state
     PyThreadState_Clear(ts);
     PyThreadState_Swap(NULL);
     PyThreadState_Delete(ts);
 
-    // Step 5: Release the GIL
+    // Release GIL to allow parallel execution
     PyGILState_Release(gstate);
 }
 
