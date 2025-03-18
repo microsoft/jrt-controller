@@ -9,3 +9,4 @@ source $CURRENT_DIR/../../setup_jrtc_env.sh
 cd $JRTC_PATH
 ## Testing relative path to deployment.yaml
 $JRTC_OUT_DIR/bin/jrtc-ctl load -c ./sample_apps/first_example_py/deployment.yaml --log-level trace
+$JRTC_OUT_DIR/bin/jrtc-ctl load -c ./sample_apps/first_example_py/deployment2.yaml --log-level trace
