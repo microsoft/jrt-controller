@@ -10,6 +10,8 @@
 #include "jrtc_router_app_api.h"
 #include "jrtc.h"
 
+#define PYTHON_ENTRYPOINT "jrtc_start_app"
+
 struct python_state
 {
     char* folder;
@@ -105,13 +107,102 @@ do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp
         return;
     }
 
+    // We use the provided interpreter state for single-threaded mode, no additional thread state needed.
     PyThreadState* ts = PyThreadState_New(interp);
     if (!ts) {
         fprintf(stderr, "Error: Failed to create new thread state.\n");
         PyGILState_Release(gstate);
         return;
     }
+
     PyThreadState_Swap(ts);
+
+    // Add folder to sys.path
+    PyObject* sysPath = PySys_GetObject("path");
+    PyObject* temp = PyUnicode_FromString(folder);
+    PyList_Append(sysPath, temp);
+    Py_DECREF(temp);
+
+    // Import the Python script/module
+    PyObject* pName = PyUnicode_DecodeFSDefault(python_script);
+    PyObject* pModule = PyImport_Import(pName);
+    Py_DECREF(pName);
+
+    if (!pModule) {
+        fprintf(stderr, "Error: Failed to import module: %s.\n", python_script);
+        PyErr_Print();
+        PyGILState_Release(gstate);
+        PyThreadState_Swap(NULL);
+        PyThreadState_Clear(ts);
+        PyThreadState_Delete(ts);
+        return;
+    }
+
+    // Get the function reference
+    PyObject* pFunc = PyObject_GetAttrString(pModule, PYTHON_ENTRYPOINT);
+    if (!pFunc || !PyCallable_Check(pFunc)) {
+        fprintf(stderr, "Error: Cannot find function '%s' in module '%s'.\n", PYTHON_ENTRYPOINT, python_script);
+        PyErr_Print();
+        Py_XDECREF(pModule);
+        PyGILState_Release(gstate);
+        PyThreadState_Swap(NULL);
+        PyThreadState_Clear(ts);
+        PyThreadState_Delete(ts);
+        return;
+    }
+
+    PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
+    if (!pCapsule) {
+        fprintf(stderr, "Error: PyCapsule_New failed.\n");
+        Py_XDECREF(pModule);
+        PyGILState_Release(gstate);
+        PyThreadState_Swap(NULL);
+        PyThreadState_Clear(ts);
+        PyThreadState_Delete(ts);
+        return;
+    }
+
+    PyObject* pArgs = PyTuple_Pack(1, pCapsule);
+    if (!pArgs) {
+        fprintf(stderr, "Error: PyTuple_Pack failed.\n");
+        Py_XDECREF(pCapsule);
+        Py_XDECREF(pModule);
+        PyGILState_Release(gstate);
+        PyThreadState_Swap(NULL);
+        PyThreadState_Clear(ts);
+        PyThreadState_Delete(ts);
+        return;
+    }
+
+    // Call the function
+    PyObject_CallObject(pFunc, pArgs);
+    Py_XDECREF(pArgs);
+    Py_XDECREF(pCapsule);
+    Py_XDECREF(pFunc);
+    Py_XDECREF(pModule);
+
+    // Clean up thread state
+    PyThreadState_Swap(NULL);
+    PyThreadState_Clear(ts);
+    PyThreadState_Delete(ts);
+
+    // Release GIL
+    PyGILState_Release(gstate);
+}
+
+// Function to execute Python code in the main interpreter
+void do_stuff_in_main_interpreter(char* folder, char* python_script, void* args) {
+    printf("Running Python script: %s\n", python_script);
+    fflush(stdout);
+
+    // Acquire GIL just once when interacting with Python
+    PyGILState_STATE gstate = PyGILState_Ensure();
+
+    if (args == NULL) {
+        fprintf(stderr, "Error: Received NULL argument for PyCapsule_New\n");
+        PyGILState_Release(gstate);
+        return;
+    }
 
     // Add folder to sys.path
     PyObject* sysPath = PySys_GetObject("path");
@@ -132,16 +223,16 @@ do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp
     }
 
     // Get the function reference
-    PyObject* pFunc = PyObject_GetAttrString(pModule, "jrtc_start_app");
+    PyObject* pFunc = PyObject_GetAttrString(pModule, PYTHON_ENTRYPOINT);
     if (!pFunc || !PyCallable_Check(pFunc)) {
-        fprintf(stderr, "Error: Function 'jrtc_start_app' is not callable.\n");
+        fprintf(stderr, "Error: Cannot find function '%s' in module '%s'.\n", PYTHON_ENTRYPOINT, python_script);
         PyErr_Print();
         Py_XDECREF(pModule);
         PyGILState_Release(gstate);
         return;
     }
 
-    // Call 'jrtc_start_app'
+    // Pass the arguments to the Python function
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
     if (!pCapsule) {
         fprintf(stderr, "Error: PyCapsule_New failed.\n");
@@ -166,12 +257,7 @@ do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp
     Py_XDECREF(pFunc);
     Py_XDECREF(pModule);
 
-    // Clean up thread state
-    PyThreadState_Clear(ts);
-    PyThreadState_Swap(NULL);
-    PyThreadState_Delete(ts);
-
-    // Release GIL to allow parallel execution
+    // Release the GIL
     PyGILState_Release(gstate);
 }
 
@@ -198,29 +284,29 @@ jrtc_start_app(void* args)
 
     if (!Py_IsInitialized()) {
         Py_Initialize();
+        // first thread
+        do_stuff_in_main_interpreter(folder, python_script, args);
+        goto exit1;
     }
 
-    // Don't release the GIL — Py_NewInterpreter handles it internally
+    // Initialize the main interpreter and create sub-interpreter
     PyThreadState* main_ts = PyThreadState_Get();
-    PyThreadState* ts1 = Py_NewInterpreter();
+    PyThreadState* ts1 = Py_NewInterpreter(); // Create a sub-interpreter
     if (!ts1) {
         fprintf(stderr, "Error: Failed to create new Python interpreter.\n");
         goto exit1;
     }
 
-    // Swap to the new interpreter state to run Python code
+    // Swap to the new interpreter state for execution
     PyThreadState_Swap(ts1);
-
-    if (!ts1) {
-        fprintf(stderr, "Error: Failed to create new Python interpreter.\n");
-        goto exit1;
-    }
 
     struct python_state p1 = {folder, python_script, ts1->interp, args};
     run_subinterpreter(&p1);
 
+    // Clean up the sub-interpreter state
     PyThreadState_Swap(ts1);
     Py_EndInterpreter(ts1);
+
     PyThreadState_Swap(main_ts);
 
 exit1:
