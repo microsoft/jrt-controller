@@ -156,6 +156,8 @@ class JrtcPythonApp():
         Initializes the application by creating streams and registering them if needed.
         """
 
+        print(f"{self.app_cfg.context}::  App initializing...")
+
         self.env_ctx = get_ctx_from_capsule(self.capsule)
         self.app_ctx = self.env_ctx.dapp_ctx.contents    
 
@@ -208,7 +210,7 @@ class JrtcPythonApp():
                 # it is a channel which this app will be send to, so wait for it be created
                 req_id = si.stream_id.convert_to_struct_jrtc_router_stream_id()
                 write_notif = True
-                print(f"Waiting for {s.sid} to be created...")
+                print(f"Waiting for {s.sid} to be created...", flush=True)
                 while not jrtc_router_input_channel_exists(req_id):
                     
                     time.sleep(0.1)

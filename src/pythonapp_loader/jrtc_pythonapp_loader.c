@@ -72,15 +72,6 @@ get_file_name_without_py(const char* file_path)
     if (file_path == NULL) {
         return NULL;
     }
-    struct jrtc_app_env* env_ctx = args;
-    char* full_path = env_ctx->params[0].val;
-    printf("Python Full Path: %s\n", full_path);
-    // extract the folder of `full_path`
-    char* folder = get_folder(full_path);
-    printf("Folder: %s\n", folder);
-    // python_script should be the filename without the .py
-    char* python_script = get_file_name_without_py(full_path);
-    printf("Python Script: %s\n", python_script);
 
     const char* file_name = strrchr(file_path, '/');
     file_name = (file_name != NULL) ? file_name + 1 : file_path;
@@ -205,7 +196,7 @@ void*
 jrtc_start_app(void* args)
 {
     struct jrtc_app_env* env_ctx = (struct jrtc_app_env*)args;
-    char* full_path = env_ctx->app_params[0];
+    char* full_path = env_ctx->params[0].val;
     char* folder = get_folder(full_path);
     char* python_script = get_file_name_without_py(full_path);
 
@@ -229,9 +220,7 @@ jrtc_start_app(void* args)
     }
 
     struct python_state p1 = {folder, python_script, ts1->interp, args};
-    pthread_t thread1;
-    pthread_create(&thread1, NULL, run_subinterpreter, (void*)&p1);
-    pthread_join(thread1, NULL);
+    run_subinterpreter(&p1);
 
     PyThreadState_Swap(ts1);
     Py_EndInterpreter(ts1);

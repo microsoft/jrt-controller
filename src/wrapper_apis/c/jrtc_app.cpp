@@ -135,10 +135,11 @@ JrtcApp::Init()
 
         if ((!s.is_rx) && (!si.chan_ctx)) {
             int k = 0;
+            std::cout << app_cfg->context << "::  Waiting for creation of : " << s.sid.io_map << s.sid.stream_source << s.sid.destination << s.sid.device_id << std::endl;
             while (!jrtc_router_input_channel_exists(si.sid)) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100)); // Sleeps for 100ms
                 if (k++ == 10) {
-                    std::cout << app_cfg->context << "::  Waiting for creation of : " << s.sid << std::endl;
+                    std::cout << app_cfg->context << "::  Waiting for creation of : " << s.sid.io_map << s.sid.stream_source << s.sid.destination << s.sid.device_id << std::endl;
                     k = 0;
                 }
 
