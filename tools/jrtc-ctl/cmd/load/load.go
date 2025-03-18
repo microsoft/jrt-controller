@@ -134,10 +134,12 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 			if a.AppParams == nil {
 				a.AppParams = make(map[string]interface{})
 			}
-			if a.AppType == "python" {
-				a.AppParams["python"] = a.SharedLibraryPath
+			// TODO: Fix the Python Loader to handle both single and multi-threaded apps
+			if a.AppType == "python" || a.AppType == "python_single_app" {
+				a.AppParams[a.AppType] = a.SharedLibraryPath
 				a.SharedLibraryPath = os.ExpandEnv("${JRTC_PATH}/out/lib/libjrtc_pythonapp_loader.so")
 				logger.Infof("Using python app loader: %s", a.SharedLibraryPath)
+				logger.Infof("Python Type: %s", a.AppType)
 				a.SharedLibraryCode, err = os.ReadFile(a.SharedLibraryPath)
 				if err != nil {
 					return err
