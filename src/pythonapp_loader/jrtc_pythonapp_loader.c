@@ -1,7 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
 #include <Python.h>
-#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -91,7 +90,8 @@ get_file_name_without_py(const char* file_path)
     return result;
 }
 
-void do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp, void* args)
+void
+do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp, void* args)
 {
     printf("Running Python script: %s\n", python_script);
     fflush(stdout);
@@ -116,8 +116,8 @@ void do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* i
     // Properly swap to the new thread state (instead of PyEval_RestoreThread)
     printf("Swapping to new thread state: %p\n", ts);
     fflush(stdout);
-    PyThreadState_Swap(ts);  // Swaps current state to `ts` (acquiring the subinterpreter's GIL)
-    
+    PyThreadState_Swap(ts); // Swaps current state to `ts` (acquiring the subinterpreter's GIL)
+
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
     if (!pCapsule) {
         fprintf(stderr, "Error: Failed to create Python capsule.\n");
@@ -180,7 +180,7 @@ cleanup:
 
     // Properly release the thread state
     PyThreadState_Clear(ts);
-    PyThreadState_Swap(NULL);  // Unset the current thread state
+    PyThreadState_Swap(NULL); // Unset the current thread state
     PyThreadState_Delete(ts);
 }
 
@@ -209,7 +209,7 @@ jrtc_start_app(void* args)
         Py_Initialize();
     } else {
         printf("Releasing GIL before creating a new interpreter...\n");
-        PyEval_SaveThread();  // Releases GIL
+        PyEval_SaveThread(); // Releases GIL
     }
 
     PyThreadState* main_ts = PyThreadState_Get();

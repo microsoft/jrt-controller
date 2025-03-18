@@ -1,0 +1,29 @@
+# yaml-language-server: $schema=../../tools/schemas/jrtcctl.schema.json
+
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
+name: SecondExample
+
+decoder:
+  - type: decodergrpc
+    port: 20789
+    
+app:
+  - name: app2
+    app: ${JRTC_PATH}/out/lib/libjrtc_pythonapp_loader.so
+    app_params:
+      - ${JRTC_PATH}/sample_apps/two_python/second_example
+    port: 3001
+
+jbpf:
+  device:
+    - id: 1
+      port: 8080
+
+  codelet_set:
+    - device: 1
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/codeletset.yaml
+
+    - device: 1
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/simple_input/codeletset.yaml

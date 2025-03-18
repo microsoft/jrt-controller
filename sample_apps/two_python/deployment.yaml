@@ -3,17 +3,16 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-name: SecondExample
+name: FirstExample
 
 decoder:
   - type: decodergrpc
     port: 20789
     
 app:
-  - name: app2
-    app: ${JRTC_PATH}/out/lib/libjrtc_pythonapp_loader.so
-    app_params:
-      - ${JRTC_PATH}/sample_apps/first_example_py/second_example
+  - name: app1
+    path: ${JRTC_PATH}/sample_apps/two_python/first_example.py
+    type: python
     port: 3001
 
 jbpf:
