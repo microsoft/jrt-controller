@@ -19,8 +19,8 @@ JRTC_PATH = f'{os.environ.get("JRTC_PATH")}'
 if JRTC_PATH is None:
     raise ValueError("JRTC_PATH not set")
 
-sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/")
-sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/simple_input/")
+sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/data_generator2/")
+sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/simple_input2/")
 #from generated_data import example_msg
 from simple_input import simple_input
 
@@ -95,7 +95,7 @@ def jrtc_start_app(capsule):
             JrtcStreamIdCfg_t(
                 JRTC_ROUTER_REQ_DEST_ANY, 
                 JRTC_ROUTER_REQ_DEVICE_ID_ANY, 
-                b"SecondExample://jbpf_agent/data_generator_codeletset/codelet", 
+                b"SecondExample://jbpf_agent/data_generator_codeletset2/codelet", 
                 b"ringbuf"),
             True,   # is_rx
             None    # No AppChannelCfg 
@@ -105,7 +105,7 @@ def jrtc_start_app(capsule):
             JrtcStreamIdCfg_t(
                 JRTC_ROUTER_REQ_DEST_NONE, 
                 1, 
-                b"SecondExample://jbpf_agent/simple_input_codeletset/codelet", 
+                b"SecondExample://jbpf_agent/simple_input_codeletset2/codelet", 
                 b"input_map"),
             False,  # is_rx
             None    # No AppChannelCfg 

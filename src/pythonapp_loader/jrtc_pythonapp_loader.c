@@ -96,51 +96,31 @@ do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp
     printf("Running Python script: %s\n", python_script);
     fflush(stdout);
 
-    // Debug: Print interpreter state
-    printf("Python Interpreter State: %p\n", interp);
-    fflush(stdout);
-    if (!interp) {
-        fprintf(stderr, "Error: Invalid interpreter state.\n");
-        return;
-    }
+    // Step 1: Acquire the GIL
+    PyGILState_STATE gstate = PyGILState_Ensure();
 
-    // Create new thread state
+    // Step 2: Create new thread state for this interpreter
     printf("Creating new thread state...\n");
     fflush(stdout);
     PyThreadState* ts = PyThreadState_New(interp);
     if (!ts) {
         fprintf(stderr, "Error: Failed to create new thread state.\n");
+        PyGILState_Release(gstate);
         return;
     }
 
-    // Properly swap to the new thread state (instead of PyEval_RestoreThread)
+    // Step 3: Swap to this thread state
     printf("Swapping to new thread state: %p\n", ts);
     fflush(stdout);
-    PyThreadState_Swap(ts); // Swaps current state to `ts` (acquiring the subinterpreter's GIL)
+    PyThreadState_Swap(ts);
 
-    PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
-    if (!pCapsule) {
-        fprintf(stderr, "Error: Failed to create Python capsule.\n");
-        goto cleanup;
-    }
-
-    // Append folder to sys.path safely
+    // Run your Python code as usual here...
     PyObject* sysPath = PySys_GetObject("path");
-    if (sysPath) {
-        PyObject* temp = PyUnicode_FromString(folder);
-        if (temp) {
-            PyList_Append(sysPath, temp);
-            Py_DECREF(temp);
-        }
-    }
+    PyObject* temp = PyUnicode_FromString(folder);
+    PyList_Append(sysPath, temp);
+    Py_DECREF(temp);
 
-    // Import the Python script
     PyObject* pName = PyUnicode_DecodeFSDefault(python_script);
-    if (!pName) {
-        fprintf(stderr, "Error: Failed to create Python string for module name.\n");
-        goto cleanup;
-    }
-
     PyObject* pModule = PyImport_Import(pName);
     Py_DECREF(pName);
 
@@ -150,38 +130,29 @@ do_stuff_in_thread(char* folder, char* python_script, PyInterpreterState* interp
         goto cleanup;
     }
 
-    // Get function
     PyObject* pFunc = PyObject_GetAttrString(pModule, "jrtc_start_app");
-    if (!pFunc || !PyCallable_Check(pFunc)) {
-        fprintf(stderr, "Error: Function 'jrtc_start_app' is not callable.\n");
+    if (pFunc && PyCallable_Check(pFunc)) {
+        PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
+        PyObject* pArgs = PyTuple_Pack(1, pCapsule);
+        PyObject_CallObject(pFunc, pArgs);
+        Py_XDECREF(pArgs);
+        Py_XDECREF(pCapsule);
+    } else {
+        fprintf(stderr, "Error: Function 'jrtc_start_app' not callable.\n");
         PyErr_Print();
-        goto cleanup_module;
     }
 
-    // Call the function
-    PyObject* pArgs = PyTuple_Pack(1, pCapsule);
-    if (pArgs) {
-        PyObject* pResult = PyObject_CallObject(pFunc, pArgs);
-        Py_DECREF(pArgs);
-
-        if (!pResult) {
-            fprintf(stderr, "Error: Function call failed.\n");
-            PyErr_Print();
-        } else {
-            Py_DECREF(pResult);
-        }
-    }
-
-cleanup_module:
     Py_XDECREF(pFunc);
     Py_XDECREF(pModule);
-cleanup:
-    Py_XDECREF(pCapsule);
 
-    // Properly release the thread state
+cleanup:
+    // Step 4: Proper cleanup
     PyThreadState_Clear(ts);
-    PyThreadState_Swap(NULL); // Unset the current thread state
+    PyThreadState_Swap(NULL);
     PyThreadState_Delete(ts);
+
+    // Step 5: Release the GIL
+    PyGILState_Release(gstate);
 }
 
 void*
@@ -207,13 +178,19 @@ jrtc_start_app(void* args)
 
     if (!Py_IsInitialized()) {
         Py_Initialize();
-    } else {
-        printf("Releasing GIL before creating a new interpreter...\n");
-        PyEval_SaveThread(); // Releases GIL
     }
 
+    // Don't release the GIL — Py_NewInterpreter handles it internally
     PyThreadState* main_ts = PyThreadState_Get();
     PyThreadState* ts1 = Py_NewInterpreter();
+    if (!ts1) {
+        fprintf(stderr, "Error: Failed to create new Python interpreter.\n");
+        goto exit1;
+    }
+
+    // Swap to the new interpreter state to run Python code
+    PyThreadState_Swap(ts1);
+
     if (!ts1) {
         fprintf(stderr, "Error: Failed to create new Python interpreter.\n");
         goto exit1;

@@ -22,7 +22,7 @@ jbpf:
 
   codelet_set:
     - device: 1
-      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/codeletset.yaml
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator2/codeletset.yaml
 
     - device: 1
-      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/simple_input/codeletset.yaml
+      config: ${JRTC_PATH}/sample_apps/jbpf_codelets/simple_input2/codeletset.yaml

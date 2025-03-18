@@ -18,6 +18,16 @@ struct packet
 
 // Hook declaration and definition.
 DECLARE_JBPF_HOOK(
+    test2,
+    struct jbpf_generic_ctx ctx,
+    ctx,
+    HOOK_PROTO(struct packet* p, int ctx_id),
+    HOOK_ASSIGN(ctx.ctx_id = ctx_id; ctx.data = (uint64_t)(void*)p; ctx.data_end = (uint64_t)(void*)(p + 1);))
+
+DEFINE_JBPF_HOOK(test2)
+
+// Hook declaration and definition.
+DECLARE_JBPF_HOOK(
     test1,
     struct jbpf_generic_ctx ctx,
     ctx,
@@ -93,6 +103,7 @@ main()
 
     while (1) {
         hook_test1(&p, 1);
+        hook_test2(&p, 1);
         usleep(1000000);
     }
 
