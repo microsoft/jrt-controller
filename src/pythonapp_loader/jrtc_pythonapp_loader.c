@@ -296,11 +296,12 @@ jrtc_start_app(void* args)
     }
 
     // Initialize the main interpreter and create sub-interpreter
+    PyGILState_STATE gstate = PyGILState_Ensure();
     PyThreadState* main_ts = PyThreadState_Get();
     PyThreadState* ts1 = Py_NewInterpreter(); // Create a sub-interpreter
     if (!ts1) {
         fprintf(stderr, "Error: Failed to create new Python interpreter.\n");
-        goto exit1;
+        goto exit2;
     }
 
     // Swap to the new interpreter state for execution
@@ -314,6 +315,9 @@ jrtc_start_app(void* args)
     Py_EndInterpreter(ts1);
 
     PyThreadState_Swap(main_ts);
+
+exit2:
+    PyGILState_Release(gstate);
 
 exit1:
     if (Py_IsInitialized()) {
