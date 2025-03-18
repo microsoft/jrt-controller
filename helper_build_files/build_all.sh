@@ -1,6 +1,7 @@
 #!/bin/bash
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
+
 set -e
 if [ -z "$JRTC_PATH" ]; then
     echo "Error: JRTC_PATH environment variable is not set. Please set it before running this script."
@@ -8,7 +9,7 @@ if [ -z "$JRTC_PATH" ]; then
 fi
 
 rebuild=false
-if [ "$1" == "force" ]; then
+if [ "$2" == "force" ]; then
     rebuild=true
 fi
 
