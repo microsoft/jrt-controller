@@ -81,16 +81,13 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
             res = jrtc_app_router_channel_send_input_msg(state.app, SIMPLE_INPUT_IN_STREAM_IDX, data_to_send, len(data_to_send))
             assert res == 0, "Failed to send aggregate counter to input map"
 
-            print(f"FirstExample: Aggregate counter so far is: {state.agg_cnt}", flush=True)
+            print(f"SecondExample: Aggregate counter so far is: {state.agg_cnt}", flush=True)
 
 
 ##########################################################################
 # Main function to start the app (converted from jrtc_start_app)
 def jrtc_start_app(capsule):
-
-    while True:
-        print("SecondExample: Waiting for input channel to be created...", flush=True)
-        time.sleep(1)
+    print("SecondExample: jrtc_start_app called", flush=True)
 
     streams = [
         # GENERATOR_OUT_STREAM_IDX
@@ -98,7 +95,7 @@ def jrtc_start_app(capsule):
             JrtcStreamIdCfg_t(
                 JRTC_ROUTER_REQ_DEST_ANY, 
                 JRTC_ROUTER_REQ_DEVICE_ID_ANY, 
-                b"FirstExample://jbpf_agent/data_generator_codeletset/codelet", 
+                b"SecondExample://jbpf_agent/data_generator_codeletset/codelet", 
                 b"ringbuf"),
             True,   # is_rx
             None    # No AppChannelCfg 
@@ -108,7 +105,7 @@ def jrtc_start_app(capsule):
             JrtcStreamIdCfg_t(
                 JRTC_ROUTER_REQ_DEST_NONE, 
                 1, 
-                b"FirstExample://jbpf_agent/simple_input_codeletset/codelet", 
+                b"SecondExample://jbpf_agent/simple_input_codeletset/codelet", 
                 b"input_map"),
             False,  # is_rx
             None    # No AppChannelCfg 
@@ -116,7 +113,7 @@ def jrtc_start_app(capsule):
     ]
 
     app_cfg = JrtcAppCfg_t(
-        b"FirstExample",                               # context
+        b"SecondExample",                               # context
         100,                                           # q_size
         len(streams),                                  # num_streams
         (JrtcStreamCfg_t * len(streams))(*streams),    # streams

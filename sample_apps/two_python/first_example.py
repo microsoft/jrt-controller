@@ -86,6 +86,7 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
 # Main function to start the app (converted from jrtc_start_app)
 def jrtc_start_app(capsule):
     print("FirstExample: jrtc_start_app called", flush=True)
+
     streams = [
         # GENERATOR_OUT_STREAM_IDX
         JrtcStreamCfg_t(

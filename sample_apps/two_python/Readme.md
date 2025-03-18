@@ -53,7 +53,7 @@ Steps to run the example.   The followinf examples use "ubuntu2204" as the OS, b
 
 ## 2.3. Build the Jbpf codelets
   ```sh
-  cd $JRTC_PATH/sample_apps/first_example_py
+  cd $JRTC_PATH/sample_apps/two_python
   source ../../setup_jrtc_env.sh
   make -C ../jbpf_codelets/data_generator
   make -C ../jbpf_codelets/simple_input
@@ -61,21 +61,21 @@ Steps to run the example.   The followinf examples use "ubuntu2204" as the OS, b
 
 ## 2.4. Build the Jbpf IPC agent
   ```sh
-  cd $JRTC_PATH/sample_apps/first_example_py
+  cd $JRTC_PATH/sample_apps/two_python
   source ../../setup_jrtc_env.sh
   make -C simple_agent_ipc
   ```
 
 ## 2.5. Open a terminal and run jrtc ..
   ```sh
-  cd $JRTC_PATH/sample_apps/first_example_py
+  cd $JRTC_PATH/sample_apps/two_python
   source ../../setup_jrtc_env.sh
   sudo -E ./run_jrtc.sh
   ```
 
 ## 2.6. Open a separate terminal and run the Jbpf IPC agent
   ```sh
-  cd $JRTC_PATH/sample_apps/first_example_py
+  cd $JRTC_PATH/sample_apps/two_python
   source ../../setup_jrtc_env.sh
   sudo -E ./run_simple_agent_ipc.sh
   ```
@@ -84,28 +84,28 @@ If successful, one of the log messages at the agent side should report `Registra
 
 ## 2.7. Open a separate terminal and run reverse proxy
   ```sh
-  cd $JRTC_PATH/sample_apps/first_example_py
+  cd $JRTC_PATH/sample_apps/two_python
   source ../../setup_jrtc_env.sh
   sudo -E ./run_reverse_proxy.sh
   ```
 
 ## 2.8. Open a separate terminal and run decoder
   ```sh
-  cd $JRTC_PATH/sample_apps/first_example_py
+  cd $JRTC_PATH/sample_apps/two_python
   source ../../setup_jrtc_env.sh
   sudo -E ./run_decoder.sh
   ```
 
 ## 2.9. Open a separate terminal and load the yaml
   ```sh
-  cd $JRTC_PATH/sample_apps/first_example_py
+  cd $JRTC_PATH/sample_apps/two_python
   source ../../setup_jrtc_env.sh
   sudo -E ./load_app.sh
   ```
 
 ## 2.10. To unload the codelets and the application, use the following command:
   ```sh
-  cd $JRTC_PATH/sample_apps/first_example_py
+  cd $JRTC_PATH/sample_apps/two_python
   source ../../setup_jrtc_env.sh
   sudo -E ./unload_app.sh
   ```

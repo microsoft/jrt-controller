@@ -25,6 +25,7 @@ from generated_data import example_msg
 from simple_input import simple_input
 
 
+
 ##########################################################################
 # Define the state variables for the application
 class AppStateVars(ctypes.Structure):
