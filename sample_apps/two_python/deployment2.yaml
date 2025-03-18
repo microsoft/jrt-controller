@@ -11,9 +11,8 @@ decoder:
     
 app:
   - name: app2
-    app: ${JRTC_PATH}/out/lib/libjrtc_pythonapp_loader.so
-    app_params:
-      - ${JRTC_PATH}/sample_apps/two_python/second_example
+    path: ${JRTC_PATH}/sample_apps/two_python/second_example.py
+    type: python
     port: 3001
 
 jbpf:

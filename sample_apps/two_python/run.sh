@@ -58,32 +58,32 @@ trap cleanup EXIT
 trap cleanup SIGINT
 
 # Step 1: Run JRTC
-run_background_command "cd $JRTC_PATH/sample_apps/first_example_py && source ../../setup_jrtc_env.sh && ./run_jrtc.sh"
+run_background_command "cd $JRTC_PATH/sample_apps/two_python && source ../../setup_jrtc_env.sh && ./run_jrtc.sh"
 
 sleep 3
 
 # Step 2: Run Jbpf IPC agent
-run_background_command "cd $JRTC_PATH/sample_apps/first_example_py && source ../../setup_jrtc_env.sh && ./run_simple_agent_ipc.sh"
+run_background_command "cd $JRTC_PATH/sample_apps/two_python && source ../../setup_jrtc_env.sh && ./run_simple_agent_ipc.sh"
 
 sleep 1
 
 # Step 3: Run reverse proxy
-run_background_command "cd $JRTC_PATH/sample_apps/first_example_py && source ../../setup_jrtc_env.sh && ./run_reverse_proxy.sh"
+run_background_command "cd $JRTC_PATH/sample_apps/two_python && source ../../setup_jrtc_env.sh && ./run_reverse_proxy.sh"
 
 sleep 1
 
 # Step 4: Run decoder
-run_background_command "cd $JRTC_PATH/sample_apps/first_example_py && source ../../setup_jrtc_env.sh && ./run_decoder.sh"
+run_background_command "cd $JRTC_PATH/sample_apps/two_python && source ../../setup_jrtc_env.sh && ./run_decoder.sh"
 
 sleep 1
 
 # Step 5: Load YAML (runs in the foreground)
 echo "Running: Load YAML"
-cd $JRTC_PATH/sample_apps/first_example_py && source ../../setup_jrtc_env.sh 
+cd $JRTC_PATH/sample_apps/two_python && source ../../setup_jrtc_env.sh 
 
 ## to test if we can load in any directory
 cd $JRTC_PATH
-sample_apps/first_example_py/load_app.sh
+sample_apps/two_python/load_app.sh
 
 ## Wait to see output
 echo "Waiting for output..."
@@ -91,10 +91,10 @@ sleep 20
 
 # Step 6: Unload YAML (runs in the foreground)
 echo "Running: Unload YAML"
-cd $JRTC_PATH/sample_apps/first_example_py && source ../../setup_jrtc_env.sh
+cd $JRTC_PATH/sample_apps/two_python && source ../../setup_jrtc_env.sh
 
 ## to test if we can unload in any directory
 cd $JRTC_PATH
-sample_apps/first_example_py/unload_app.sh
+sample_apps/two_python/unload_app.sh
 
 echo "Test completed."
