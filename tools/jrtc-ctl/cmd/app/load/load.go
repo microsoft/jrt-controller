@@ -38,6 +38,7 @@ type runOptions struct {
 	sharedLibraryPath string
 	appType           string
 	appParams         map[string]interface{}
+	appModules        []string
 }
 
 func addToFlags(flags *pflag.FlagSet, opts *runOptions) {
@@ -115,7 +116,7 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 			return err
 		}
 
-		req, err := jrtc.NewJrtcAppLoadRequest(opts.sharedLibraryPath, opts.appName, opts.ioqSize, opts.deadline, opts.period, opts.runtime, opts.appType, &opts.appParams)
+		req, err := jrtc.NewJrtcAppLoadRequest(opts.sharedLibraryPath, opts.appName, opts.ioqSize, opts.deadline, opts.period, opts.runtime, opts.appType, &opts.appModules, &opts.appParams)
 		if err != nil {
 			return err
 		}

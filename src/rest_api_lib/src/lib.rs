@@ -43,6 +43,7 @@ pub struct LoadAppRequest {
     pub app_path: *mut c_char,
     pub app_type: *mut c_char,
     pub app_params: [AppParamKeyValuePair; 255], // Fixed-size array
+    pub app_modules: [*mut c_char; 255], // Fixed-size array
 }
 
 type LoadAppCallback = unsafe extern "C" fn(load_req: LoadAppRequest) -> c_int;
@@ -73,6 +74,7 @@ struct JrtcAppLoadRequest {
     app_path: String,
     app_type: String,
     app_params: HashMap<String, String>,
+    app_modules: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
@@ -163,46 +165,6 @@ async fn get_apps(State(state): State<ServerState>) -> impl IntoResponse {
     (StatusCode::OK, Json(apps.as_slice())).into_response()
 }
 
-// Function to expand environment variables
-fn expand_env_vars(input: &str) -> String {
-    let mut result = String::new();
-    let mut start_index = 0;
-    
-    // Search for any environment variable pattern like $VAR or ${VAR}
-    while let Some(dollar_pos) = input[start_index..].find('$') {
-        result.push_str(&input[start_index..start_index + dollar_pos]);
-        let remainder = &input[start_index + dollar_pos + 1..];
-        
-        if remainder.starts_with('{') {
-            // Find closing brace for ${VAR}
-            if let Some(end_pos) = remainder[1..].find('}') {
-                let var_name = &remainder[1..end_pos + 1]; // Extract variable name
-                if let Ok(value) = env::var(var_name.trim_matches(|c| c == '{' || c == '}')) {
-                    result.push_str(&value);
-                }
-                start_index += dollar_pos + end_pos + 3;
-            } else {
-                result.push('$');
-                start_index += dollar_pos + 1;
-            }
-        } else {
-            // Find a simple $VAR pattern
-            if let Some(end_pos) = remainder.find(|c: char| !c.is_alphanumeric()) {
-                let var_name = &remainder[..end_pos];
-                if let Ok(value) = env::var(var_name) {
-                    result.push_str(&value);
-                }
-                start_index += dollar_pos + end_pos;
-            } else {
-                result.push('$');
-                start_index += dollar_pos + 1;
-            }
-        }
-    }
-    result.push_str(&input[start_index..]);
-    result
-}
-
 #[utoipa::path(
     post,
     path = "/app",
@@ -223,6 +185,7 @@ async fn load_app(
     let app_path = payload_cloned.app_path;
     let app_type = payload_cloned.app_type;
     let app_params = payload_cloned.app_params;
+    let app_modules = payload_cloned.app_modules;
 
     let c_app_name = match CString::new(app_name.clone()) {
         Ok(c) => c,
@@ -278,6 +241,15 @@ async fn load_app(
         c_app_params[i] = AppParamKeyValuePair { key: c_key, val: c_val };
     }
 
+    let mut c_app_modules: [*mut c_char; 255] = unsafe { std::mem::zeroed() }; // Initialize
+    for (i, module) in app_modules.iter().enumerate() {
+        if i >= 255 {
+            break; // Prevent overflow
+        }
+        let c_module = CString::new(module.clone()).unwrap().into_raw();
+        c_app_modules[i] = c_module;
+    }
+
     let app_req = LoadAppRequest {
         app: payload.app.as_ptr() as *mut i8,
         app_size: payload.app.len(),
@@ -289,6 +261,7 @@ async fn load_app(
         app_path: c_app_path.into_raw(),
         app_type: c_app_type.into_raw(),
         app_params: c_app_params,
+        app_modules: c_app_modules,
     };
 
     let response: i32;

@@ -24,6 +24,7 @@ using atomic_bool = std::atomic<bool>;
  */
 #define MAX_APP_NAME_SIZE 16
 #define MAX_APP_PARAMS 255
+#define MAX_APP_MODULES 255
 
 typedef pthread_t app_id_t;
 
@@ -60,6 +61,7 @@ struct jrtc_app_env
     jrtc_sched_config_t sched_config;
     char* app_path;
     app_param_key_value_pair_t params[MAX_APP_PARAMS];
+    char* app_modules[MAX_APP_MODULES];
 };
 
 #endif

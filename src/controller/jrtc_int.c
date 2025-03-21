@@ -268,6 +268,12 @@ load_app(load_app_request_t load_req)
         }
     }
 
+    for (int i = 0; i < MAX_APP_MODULES; i++) {
+        if (load_req.app_modules[i] != NULL) {
+            app_env->app_modules[i] = strdup(load_req.app_modules[i]);
+        }
+    }
+
     app_env->sched_config.sched_runtime_us = load_req.runtime_us;
     app_env->sched_config.sched_period_us = load_req.period_us;
     app_env->sched_config.sched_deadline_us = load_req.deadline_us;
@@ -351,6 +357,7 @@ load_default_north_io_app()
     load_req_north_io.deadline_us = 0;
     load_req_north_io.app_name = strdup("north_io_app");
     memset(load_req_north_io.params, 0, sizeof(load_req_north_io.params));
+    memset(load_req_north_io.app_modules, 0, sizeof(load_req_north_io.app_modules));
 
     int res = load_app(load_req_north_io);
     if (res == 0) {
