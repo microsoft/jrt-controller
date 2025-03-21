@@ -116,7 +116,6 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 			return err
 		}
 
-		fmt.Println("**Modules**", opts.appModules)
 		req, err := jrtc.NewJrtcAppLoadRequest(opts.sharedLibraryPath, opts.appName, opts.ioqSize, opts.deadline, opts.period, opts.runtime, opts.appType, &opts.appModules, &opts.appParams)
 		if err != nil {
 			return err

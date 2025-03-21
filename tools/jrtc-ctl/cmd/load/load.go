@@ -146,9 +146,7 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 					return err
 				}
 			}
-			fmt.Printf("App Modules: %v\n", a.AppModules)
-			fmt.Printf("App Params: %v\n", a.AppParams)
-			fmt.Printf("App Type: %s\n", a.AppType)
+
 			req, err := jrtc.NewJrtcAppLoadRequestFromBytes(a.SharedLibraryCode, a.SharedLibraryPath, a.Name, a.IOQSize, a.Deadline, a.Period, a.Runtime, a.AppType, &a.AppModules, &a.AppParams)
 			if err != nil {
 				return err
