@@ -13,10 +13,6 @@ sys.path.append(f"{JRTC_APP_PATH}")
 import jrtc_app
 from jrtc_app import *
 
-JRTC_PATH = f'{os.environ.get("JRTC_PATH")}'
-if JRTC_PATH is None:
-    raise ValueError("JRTC_PATH not set")
-
 generated_data = sys.modules.get('generated_data')
 simple_input = sys.modules.get('simple_input')
 from generated_data import example_msg
