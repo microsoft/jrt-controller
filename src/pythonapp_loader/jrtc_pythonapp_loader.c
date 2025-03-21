@@ -98,6 +98,65 @@ get_file_name_without_py(const char* file_path)
     return result; // Caller must free the allocated memory
 }
 
+PyObject*
+import_python_module(const char* python_path)
+{
+    PyObject* pModule = NULL;
+    if (python_path == NULL) {
+        fprintf(stderr, "Error: Python path is NULL.\n");
+        return NULL;
+    }
+
+    // Extract the module name from the path
+    char* module_name = get_file_name_without_py(python_path);
+    if (module_name == NULL) {
+        fprintf(stderr, "Error: Failed to extract module name from path: %s\n", python_path);
+        return NULL;
+    }
+
+    char* path = get_folder(python_path);
+    if (path == NULL) {
+        fprintf(stderr, "Error: Failed to extract path from: %s\n", python_path);
+        free(module_name);
+        return NULL;
+    }
+
+    // Add the path to sys.path so Python can find the module
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyObject* sys_path = PySys_GetObject("path"); // Borrowed reference, no need to Py_DECREF
+    PyObject* py_path = PyUnicode_DecodeFSDefault(path);
+    if (sys_path && py_path) {
+        if (PyList_Append(sys_path, py_path) < 0) {
+            fprintf(stderr, "Error: Failed to append path to sys.path: %s\n", path);
+        }
+        Py_DECREF(py_path);
+    } else {
+        fprintf(stderr, "Error: Failed to access sys.path or create Python path object.\n");
+        goto exit0;
+    }
+
+    // Import the module
+    PyObject* pName = PyUnicode_DecodeFSDefault(module_name);
+    if (!pName) {
+        fprintf(stderr, "Error: Failed to create Python string for module name: %s\n", module_name);
+        goto exit0;
+    }
+
+    pModule = PyImport_Import(pName);
+    Py_DECREF(pName);
+
+    if (!pModule) {
+        fprintf(stderr, "Error: Failed to import module: %s\n", module_name);
+        PyErr_Print();
+    }
+
+exit0:
+    PyGILState_Release(gstate);
+    free(module_name);
+    free(path);
+    return pModule;
+}
+
 void*
 jrtc_start_app(void* args)
 {
@@ -105,73 +164,54 @@ jrtc_start_app(void* args)
         fprintf(stderr, "Error: App context is NULL.\n");
         return NULL;
     }
+
     struct jrtc_app_env* env_ctx = args;
     char* full_path = env_ctx->params[0].val;
-    printf("Python Full Path: %s\n", full_path);
-    // extract the folder of `full_path`
-    char* folder = get_folder(full_path);
-    printf("Folder: %s\n", folder);
-    // python_script should be the filename without the .py
-    char* python_script = get_file_name_without_py(full_path);
-    printf("Python Script: %s\n", python_script);
 
-    // Initialize the Python interpreter
+    // Initialize the Python interpreter (only once)
     if (!Py_IsInitialized()) {
         Py_Initialize();
         printf("Python interpreter initialized.\n");
     }
 
+    // Acquire GIL (if multi-threaded)
+    PyGILState_STATE gstate = PyGILState_Ensure();
+
     // Create a Python capsule for the `args`
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
     if (!pCapsule) {
         fprintf(stderr, "Error: Failed to create Python capsule.\n");
-        goto exit2;
+        goto cleanup_gil;
     }
 
-    // Add current working directory to the Python path
-    char cwd[PATH_MAX];
-    if (getcwd(cwd, sizeof(cwd)) == NULL) {
-        fprintf(stderr, "Error: Failed to get current working directory.\n");
-        goto exit1;
-    }
-    printf("Current working directory: %s\n", cwd);
-
-    PyObject* sysPath = PySys_GetObject("path");
-    if (!sysPath) {
-        fprintf(stderr, "Error: Failed to get Python sys.path.\n");
-        goto exit1;
-    }
-
-    PyObject* path = PyUnicode_FromString(cwd);
-    if (!path) {
-        fprintf(stderr, "Error: Failed to create Python string for cwd.\n");
-        goto exit1;
-    }
-
-    PyList_Append(sysPath, path);
-    PyList_Append(sysPath, PyUnicode_FromString(folder));
-    Py_DECREF(path);
-
-    // Import the Python module
-    PyObject* pName = PyUnicode_DecodeFSDefault(python_script);
-    if (!pName) {
-        fprintf(stderr, "Error: Failed to create Python string for module name %s.\n", python_script);
-        goto exit1;
+    // Load additional modules
+    for (int i = 0; i < MAX_APP_MODULES; i++) {
+        if (env_ctx->app_modules[i] == NULL) {
+            break;
+        }
+        printf("Loading Module: %s\n", env_ctx->app_modules[i]);
+        PyObject* module = import_python_module(env_ctx->app_modules[i]);
+        if (!module) {
+            fprintf(stderr, "Error: Failed to import module: %s.\n", env_ctx->app_modules[i]);
+            goto cleanup_capsule;
+        }
+        printf("Module loaded: %s\n", env_ctx->app_modules[i]);
+        PyObject* sysModule = PyImport_ImportModule("sys");
+        PyObject* sysDict = PyModule_GetDict(sysModule);
+        PyObject* modules = PyDict_GetItemString(sysDict, "modules");
+        // Inject
+        char* module_name = get_file_name_without_py(env_ctx->app_modules[i]);
+        PyDict_SetItemString(modules, module_name, module);
+        free(module_name);
+        Py_DECREF(sysModule);
+        Py_DECREF(module);
     }
 
-    PyGILState_STATE gstate = PyGILState_Ensure();
-    PyObject* pModule = PyImport_Import(pName);
-    PyGILState_Release(gstate);
-
-    PyErr_Print();
-
-    printf("Importing Python Module: %s\n", python_script);
-    Py_DECREF(pName);
-
+    // Import the main Python module
+    PyObject* pModule = import_python_module(full_path);
     if (!pModule) {
-        fprintf(stderr, "Error: Failed to import module: %s.\n", python_script);
-        PyErr_Print();
-        goto exit1;
+        fprintf(stderr, "Error: Failed to import main module: %s.\n", full_path);
+        goto cleanup_capsule;
     }
 
     // Get the Python function
@@ -179,15 +219,15 @@ jrtc_start_app(void* args)
     if (!pFunc || !PyCallable_Check(pFunc)) {
         fprintf(stderr, "Error: Function 'jrtc_start_app' is not callable.\n");
         PyErr_Print();
-        goto exit0;
+        goto cleanup_module;
     }
 
-    // Prepare arguments and call the Python function
+    // Call the Python function with the capsule
     PyObject* pArgs = PyTuple_Pack(1, pCapsule);
     if (!pArgs) {
         fprintf(stderr, "Error: Failed to create arguments tuple.\n");
         PyErr_Print();
-        goto exit0;
+        goto cleanup_func;
     }
 
     PyObject* pResult = PyObject_CallObject(pFunc, pArgs);
@@ -196,25 +236,22 @@ jrtc_start_app(void* args)
     if (!pResult) {
         fprintf(stderr, "Error: Function call failed.\n");
         PyErr_Print();
-        goto exit0;
     } else {
         Py_DECREF(pResult);
     }
 
-    // Clean up
-exit0:
-    Py_DECREF(pFunc);
-    Py_DECREF(pModule);
-exit1:
+cleanup_func:
+    Py_XDECREF(pFunc);
+cleanup_module:
+    Py_XDECREF(pModule);
+cleanup_capsule:
     Py_XDECREF(pCapsule);
-exit2:
-    // Finalize the Python interpreter
+cleanup_gil:
+    PyGILState_Release(gstate);
+
     if (Py_IsInitialized()) {
         Py_Finalize();
+        printf("Python interpreter finalized.\n");
     }
-
-    // Free the allocated memory
-    free(folder);
-    free(python_script);
     return NULL;
 }

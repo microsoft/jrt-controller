@@ -43,6 +43,13 @@
         "params": {
           "type": "object",
           "description": "params is a dictionary e.g. key value pairs"
+        },
+        "modules": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "description": "modules is a list of strings e.g. [\"module1\", \"module2\"]"
         }
       },
       "additionalProperties": false,

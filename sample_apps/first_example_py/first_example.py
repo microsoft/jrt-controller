@@ -1,11 +1,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-import time
 import os
 import sys
 import ctypes
-from dataclasses import dataclass
 
 JRTC_APP_PATH = os.environ.get("JRTC_APP_PATH")
 if JRTC_APP_PATH is None:
@@ -15,16 +13,10 @@ sys.path.append(f"{JRTC_APP_PATH}")
 import jrtc_app
 from jrtc_app import *
 
-JRTC_PATH = f'{os.environ.get("JRTC_PATH")}'
-if JRTC_PATH is None:
-    raise ValueError("JRTC_PATH not set")
-
-sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/")
-sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/simple_input/")
+generated_data = sys.modules.get('generated_data')
+simple_input = sys.modules.get('simple_input')
 from generated_data import example_msg
 from simple_input import simple_input
-
-
 
 ##########################################################################
 # Define the state variables for the application
