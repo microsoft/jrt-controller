@@ -24,8 +24,6 @@ sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/simple_input/")
 from generated_data import example_msg
 from simple_input import simple_input
 
-
-
 ##########################################################################
 # Define the state variables for the application
 class AppStateVars(ctypes.Structure):
@@ -85,6 +83,14 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
 ##########################################################################
 # Main function to start the app (converted from jrtc_start_app)
 def jrtc_start_app(capsule):
+
+    ## test_module1.py and test_module2.py as specified in the JRTC app config
+    test_module1 = sys.modules.get('test_module1')
+    test_module2 = sys.modules.get('test_module2')
+    assert test_module1.first_example_py_1 == 1234, "first_example_py_1 is not set correctly"
+    assert test_module2.first_example_py_2 == 5678, "first_example_py_2 is not set correctly"
+    assert os.getenv("FIRST_EXAMPLE_PY_1") == "1234", "env FIRST_EXAMPLE_PY_1 is not set correctly"
+    assert os.getenv("FIRST_EXAMPLE_PY_2") == "5678", "env FIRST_EXAMPLE_PY_2 is not set correctly"
 
     streams = [
         # GENERATOR_OUT_STREAM_IDX

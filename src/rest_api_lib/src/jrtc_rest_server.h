@@ -31,6 +31,7 @@ typedef struct load_app_request
     char* app_path;
     char* app_type;
     app_param_key_value_pair_t params[MAX_APP_PARAMS];
+    char* app_modules[MAX_APP_MODULES];
 } load_app_request_t;
 
 /**
