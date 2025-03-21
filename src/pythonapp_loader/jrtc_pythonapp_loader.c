@@ -184,13 +184,6 @@ jrtc_start_app(void* args)
         goto cleanup_gil;
     }
 
-    // Import the main Python module
-    PyObject* pModule = import_python_module(full_path);
-    if (!pModule) {
-        fprintf(stderr, "Error: Failed to import main module: %s.\n", full_path);
-        goto cleanup_capsule;
-    }
-
     // Load additional modules
     for (int i = 0; i < MAX_APP_MODULES; i++) {
         if (env_ctx->app_modules[i] == NULL) {
@@ -200,7 +193,7 @@ jrtc_start_app(void* args)
         PyObject* module = import_python_module(env_ctx->app_modules[i]);
         if (!module) {
             fprintf(stderr, "Error: Failed to import module: %s.\n", env_ctx->app_modules[i]);
-            goto cleanup_module;
+            goto cleanup_capsule;
         }
         PyObject* sysModule = PyImport_ImportModule("sys");
         PyObject* sysDict = PyModule_GetDict(sysModule);
@@ -211,6 +204,14 @@ jrtc_start_app(void* args)
         free(module_name);
         Py_DECREF(sysModule);
         Py_DECREF(module);
+        Py_DECREF(sysDict);
+    }
+
+    // Import the main Python module
+    PyObject* pModule = import_python_module(full_path);
+    if (!pModule) {
+        fprintf(stderr, "Error: Failed to import main module: %s.\n", full_path);
+        goto cleanup_capsule;
     }
 
     // Get the Python function

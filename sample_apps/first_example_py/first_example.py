@@ -1,11 +1,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
-import time
 import os
 import sys
 import ctypes
-from dataclasses import dataclass
 
 JRTC_APP_PATH = os.environ.get("JRTC_APP_PATH")
 if JRTC_APP_PATH is None:
@@ -19,8 +17,8 @@ JRTC_PATH = f'{os.environ.get("JRTC_PATH")}'
 if JRTC_PATH is None:
     raise ValueError("JRTC_PATH not set")
 
-sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/")
-sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/simple_input/")
+generated_data = sys.modules.get('generated_data')
+simple_input = sys.modules.get('simple_input')
 from generated_data import example_msg
 from simple_input import simple_input
 
@@ -83,14 +81,6 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
 ##########################################################################
 # Main function to start the app (converted from jrtc_start_app)
 def jrtc_start_app(capsule):
-
-    ## test_module1.py and test_module2.py as specified in the JRTC app config
-    test_module1 = sys.modules.get('test_module1')
-    test_module2 = sys.modules.get('test_module2')
-    assert test_module1.first_example_py_1 == 1234, "first_example_py_1 is not set correctly"
-    assert test_module2.first_example_py_2 == 5678, "first_example_py_2 is not set correctly"
-    assert os.getenv("FIRST_EXAMPLE_PY_1") == "1234", "env FIRST_EXAMPLE_PY_1 is not set correctly"
-    assert os.getenv("FIRST_EXAMPLE_PY_2") == "5678", "env FIRST_EXAMPLE_PY_2 is not set correctly"
 
     streams = [
         # GENERATOR_OUT_STREAM_IDX
