@@ -195,6 +195,7 @@ jrtc_start_app(void* args)
             fprintf(stderr, "Error: Failed to import module: %s.\n", env_ctx->app_modules[i]);
             goto cleanup_capsule;
         }
+        printf("Module loaded: %s\n", env_ctx->app_modules[i]);
         PyObject* sysModule = PyImport_ImportModule("sys");
         PyObject* sysDict = PyModule_GetDict(sysModule);
         PyObject* modules = PyDict_GetItemString(sysDict, "modules");
@@ -204,7 +205,6 @@ jrtc_start_app(void* args)
         free(module_name);
         Py_DECREF(sysModule);
         Py_DECREF(module);
-        Py_DECREF(sysDict);
     }
 
     // Import the main Python module
