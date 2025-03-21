@@ -134,7 +134,7 @@ jrtc_start_app(void* args)
         fprintf(stderr, "Error: Failed to get current working directory.\n");
         goto exit1;
     }
-    printf("Current working directory: %s\n", cwd);
+    printf("Current working directory: %s\n", cwd);    
 
     PyObject* sysPath = PySys_GetObject("path");
     if (!sysPath) {
@@ -164,6 +164,14 @@ jrtc_start_app(void* args)
     PyGILState_Release(gstate);
 
     PyErr_Print();
+
+    printf("Python Module****\n");
+    for (int i = 0; i < MAX_APP_MODULES; i++) {
+        if (env_ctx->app_modules[i] == NULL) {
+            break;
+        }
+        printf("Module %d: %s\n", i, env_ctx->app_modules[i]);
+    }
 
     printf("Importing Python Module: %s\n", python_script);
     Py_DECREF(pName);

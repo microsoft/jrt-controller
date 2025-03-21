@@ -233,6 +233,12 @@
           },
           "app_params": {
             "type": "object"
+          },
+          "app_modules": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         }
       },

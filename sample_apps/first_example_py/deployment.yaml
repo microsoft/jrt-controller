@@ -14,6 +14,9 @@ app:
     path: ${JRTC_PATH}/sample_apps/first_example_py/first_example.py
     type: python
     port: 3001
+    modules:
+      - ${JRTC_PATH}/sample_apps/first_example_py/test_module1.py
+      - ${JRTC_PATH}/sample_apps/first_example_py/test_module2.py
 
 jbpf:
   device:
