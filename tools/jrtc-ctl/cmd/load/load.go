@@ -137,7 +137,7 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 				a.AppModules = make([]string, 0)
 			}
 			if a.AppType == "python" || a.AppType == "python_single_app" {
-				a.AppParams["python"] = a.SharedLibraryPath
+				a.AppParams[a.AppType] = a.SharedLibraryPath
 				a.SharedLibraryPath = os.ExpandEnv("${JRTC_PATH}/out/lib/libjrtc_pythonapp_loader.so")
 				logger.Infof("Using python app loader: %s", a.SharedLibraryPath)
 				logger.Infof("Python Type: %s", a.AppType)
