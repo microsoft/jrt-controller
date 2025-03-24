@@ -64,6 +64,8 @@ type App struct {
 	AppType           string        `json:"type" jsonschema:"required"` // type is a string e.g. "c" or "python" or "python_single_app"
 	// params is a dictionary e.g. key value pairs
 	AppParams map[string]interface{} `json:"params,omitempty"`
+	// modules is a list of strings e.g. ["module1", "module2"]
+	AppModules []string `json:"modules,omitempty"`
 }
 
 // JBPFCodelet represents a JBPF codelet
@@ -244,8 +246,24 @@ func (c *CLIConfig) setDefaults() (err error) {
 func (c *CLIConfig) expandEnvVars() {
 	for _, app := range c.Apps {
 		app.SharedLibraryPath = os.ExpandEnv(app.SharedLibraryPath)
+		for i := range app.AppModules {
+			app.AppModules[i] = os.ExpandEnv(app.AppModules[i])
+		}
+		for k, v := range app.AppParams {
+			switch v := v.(type) {
+			case string:
+				app.AppParams[k] = os.ExpandEnv(v)
+			case []string:
+				for i := range v {
+					v[i] = os.ExpandEnv(v[i])
+				}
+				app.AppParams[k] = v
+			}
+		}
+		for i := range app.AppModules {
+			app.AppModules[i] = os.ExpandEnv(app.AppModules[i])
+		}
 	}
-
 	for _, c := range c.JBPF.JBPFCodelets {
 		c.ConfigFile = os.ExpandEnv(c.ConfigFile)
 	}

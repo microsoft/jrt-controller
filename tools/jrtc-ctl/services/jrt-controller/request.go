@@ -17,6 +17,7 @@ func NewJrtcAppLoadRequest(
 	ioqSize int32,
 	deadline, period, runtime time.Duration,
 	appType string,
+	appModules *[]string,
 	appParams *map[string]interface{},
 ) (*JrtcAppLoadRequest, error) {
 	fi, err := os.Stat(sharedLibraryPath)
@@ -42,6 +43,7 @@ func NewJrtcAppLoadRequest(
 		RuntimeUs:  int32(runtime.Microseconds()),
 		AppPath:    &sharedLibraryPath,
 		AppType:    &appType,
+		AppModules: appModules,
 		AppParams:  appParams,
 	}, nil
 }
@@ -52,6 +54,7 @@ func NewJrtcAppLoadRequestFromBytes(
 	ioqSize int32,
 	deadline, period, runtime time.Duration,
 	appType string,
+	appModules *[]string,
 	appParams *map[string]interface{},
 ) (*JrtcAppLoadRequest, error) {
 	var f openapi_types.File
@@ -66,6 +69,7 @@ func NewJrtcAppLoadRequestFromBytes(
 		RuntimeUs:  int32(runtime.Microseconds()),
 		AppPath:    &sharedLibraryPath,
 		AppType:    &appType,
+		AppModules: appModules,
 		AppParams:  appParams,
 	}, nil
 }

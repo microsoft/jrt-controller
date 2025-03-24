@@ -34,6 +34,7 @@ class JrtcAppEnv(ctypes.Structure):
         ("app_exit", ctypes.c_int),
         ("sched_config", jrtc_bindings.struct_jrtc_sched_config),
         ("app_params",ctypes.c_char_p * 255),
+        ("app_modules", ctypes.c_char_p * 255),
     ]
 
 def get_ctx_from_capsule(capsule):

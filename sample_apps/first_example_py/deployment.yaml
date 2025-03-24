@@ -14,6 +14,9 @@ app:
     path: ${JRTC_PATH}/sample_apps/first_example_py/first_example.py
     type: python_single_app
     port: 3001
+    modules:
+      - ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/generated_data.py
+      - ${JRTC_PATH}/sample_apps/jbpf_codelets/simple_input/simple_input.py
 
 jbpf:
   device:
