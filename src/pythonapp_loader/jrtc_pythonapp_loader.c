@@ -174,10 +174,12 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
         fprintf(stderr, "Error: Received NULL argument for PyCapsule_New\n");
         return;
     }
-    PyObject* pFunc = NULL;
+
+    // Ensure GIL for the current thread
     PyGILState_STATE gstate = PyGILState_Ensure();
     PyThreadState* ts = NULL;
 
+    // Create sub-interpreter only if needed
     if (interp) {
         ts = PyThreadState_New(interp);
         if (!ts) {
@@ -185,10 +187,14 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
             PyGILState_Release(gstate);
             return;
         }
-        PyThreadState_Swap(ts);
     }
 
-    PyObject* pModule = import_python_module(python_script);
+    PyObject* pModule = NULL;
+    PyObject* pFunc = NULL;
+    PyObject* pArgs = NULL;
+    PyObject* pCapsule = NULL;
+
+    pModule = import_python_module(python_script);
     if (!pModule) {
         fprintf(stderr, "Error: Failed to import module: %s.\n", python_script);
         PyErr_Print();
@@ -202,13 +208,13 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
         goto cleanup;
     }
 
-    PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
+    pCapsule = PyCapsule_New(args, "void*", NULL);
     if (!pCapsule) {
         fprintf(stderr, "Error: PyCapsule_New failed.\n");
         goto cleanup;
     }
 
-    PyObject* pArgs = PyTuple_Pack(1, pCapsule);
+    pArgs = PyTuple_Pack(1, pCapsule);
     if (!pArgs) {
         fprintf(stderr, "Error: PyTuple_Pack failed.\n");
         Py_XDECREF(pCapsule);
@@ -216,26 +222,26 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
     }
 
     PyObject_CallObject(pFunc, pArgs);
+
+cleanup:
+    Py_XDECREF(pFunc);
+    Py_XDECREF(pModule);
     Py_XDECREF(pArgs);
     Py_XDECREF(pCapsule);
 
-cleanup:
     if (PyErr_Occurred()) {
         PyErr_Print();
         fprintf(stderr, "Error: Exception occurred while running Python script.\n");
     }
-    if (pFunc) {
-        Py_XDECREF(pFunc);
-    }
-    Py_XDECREF(pModule);
 
+    // Release GIL and cleanup
+    PyGILState_Release(gstate);
+
+    // Clean up thread state
     if (ts) {
-        PyThreadState_Swap(NULL);
         PyThreadState_Clear(ts);
         PyThreadState_Delete(ts);
     }
-
-    PyGILState_Release(gstate);
 }
 
 void*
@@ -268,6 +274,7 @@ jrtc_start_app(void* args)
 
     // Acquire GIL (if multi-threaded)
     PyGILState_STATE gstate = PyGILState_Ensure();
+    PyThreadState* ts1 = NULL;
 
     // Create a Python capsule for the `args`
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
@@ -293,7 +300,7 @@ jrtc_start_app(void* args)
 
     // === Create and switch to sub-interpreter ===
     PyThreadState* main_ts = PyThreadState_Get();
-    PyThreadState* ts1 = Py_NewInterpreter(); // Create a sub-interpreter
+    ts1 = Py_NewInterpreter(); // Create a sub-interpreter
     if (!ts1) {
         fprintf(stderr, "Error: Failed to create sub-interpreter.\n");
         goto cleanup_capsule;
@@ -304,8 +311,6 @@ jrtc_start_app(void* args)
     PyObject* sysModule = PyImport_ImportModule("sys");
     if (!sysModule) {
         fprintf(stderr, "Error: Failed to import 'sys' in sub-interpreter.\n");
-        PyThreadState_Swap(main_ts);
-        Py_EndInterpreter(ts1);
         goto cleanup_capsule;
     }
 
@@ -315,8 +320,6 @@ jrtc_start_app(void* args)
     if (!modules) {
         fprintf(stderr, "Error: Failed to get 'sys.modules' in sub-interpreter.\n");
         Py_DECREF(sysModule);
-        PyThreadState_Swap(main_ts);
-        Py_EndInterpreter(ts1);
         goto cleanup_capsule;
     }
 
@@ -348,15 +351,17 @@ jrtc_start_app(void* args)
     struct python_state pstate = {.full_python_path = full_path, .ts = ts1->interp, .args = args};
     run_subinterpreter(&pstate);
 
-    // === Clean up Sub-interpreter ===
-    PyThreadState_Swap(main_ts);
-    Py_EndInterpreter(ts1);
-
 cleanup_capsule:
     Py_XDECREF(pCapsule);
 
 cleanup_gil:
     PyGILState_Release(gstate);
+
+    if (ts1) {
+        // === Clean up Sub-interpreter ===
+        PyThreadState_Swap(main_ts);
+        Py_EndInterpreter(ts1);
+    }
 
     if (Py_IsInitialized()) {
         Py_Finalize();
