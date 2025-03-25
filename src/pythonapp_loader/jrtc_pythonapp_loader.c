@@ -129,7 +129,9 @@ import_python_module(const char* python_path)
     }
 
     // Add the path to sys.path so Python can find the module
-    PyGILState_STATE gstate = PyGILState_Ensure();
+    // PyGILState_STATE gstate = PyGILState_Ensure();
+    // PyThreadState* tstate = PyThreadState_Get();
+    // PyEval_RestoreThread(tstate);
     PyObject* sys_path = PySys_GetObject("path"); // Borrowed reference, no need to Py_DECREF
     PyObject* py_path = PyUnicode_DecodeFSDefault(path);
     if (sys_path && py_path) {
@@ -158,7 +160,8 @@ import_python_module(const char* python_path)
     }
 
 exit0:
-    PyGILState_Release(gstate);
+    // PyGILState_Release(gstate);
+    // PyEval_SaveThread();
     free(module_name);
     free(path);
     return pModule;
@@ -330,6 +333,7 @@ jrtc_start_app(void* args)
         }
 
         char* module_name = get_file_name_without_py(env_ctx->app_modules[i]);
+        printf("Injecting Module: %s\n", module_name);
         PyObject* module = import_python_module(env_ctx->app_modules[i]);
 
         if (!module) {
