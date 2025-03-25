@@ -314,7 +314,7 @@ jrtc_start_app(void* args)
     }
 
     // Check if we need to use the subinterpreter
-    if (strcmp(python_type, "python_single_app") == 0) {
+    if (strcmp(python_type, "python_single_app") != 0) {
         PyThreadState* main_ts = PyThreadState_Get();
         PyThreadState* ts1 = Py_NewInterpreter(); // Create a sub-interpreter
         if (!ts1) {
@@ -337,6 +337,7 @@ jrtc_start_app(void* args)
 
     // Import the main Python module
     printf("Importing main module: %s\n", full_path);
+    fflush(stdout);
     PyObject* pModule = import_python_module(full_path);
     if (!pModule) {
         fprintf(stderr, "Error: Failed to import main module: %s.\n", full_path);
