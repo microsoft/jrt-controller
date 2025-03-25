@@ -175,16 +175,12 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
         return;
     }
 
-    // Ensure GIL for the current thread
-    PyGILState_STATE gstate = PyGILState_Ensure();
-    PyThreadState* ts = NULL;
-
     // Create sub-interpreter only if needed
+    PyThreadState* ts = NULL;
     if (interp) {
         ts = PyThreadState_New(interp);
         if (!ts) {
             fprintf(stderr, "Error: Failed to create new thread state.\n");
-            PyGILState_Release(gstate);
             return;
         }
     }
@@ -193,6 +189,13 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
     PyObject* pFunc = NULL;
     PyObject* pArgs = NULL;
     PyObject* pCapsule = NULL;
+
+    // Ensure we are using the correct thread state
+    PyThreadState* mainThreadState = PyThreadState_Get(); // Save the main thread state
+    if (ts) {
+        // Swap to sub-interpreter's thread state
+        PyThreadState_Swap(ts);
+    }
 
     pModule = import_python_module(python_script);
     if (!pModule) {
@@ -234,11 +237,9 @@ cleanup:
         fprintf(stderr, "Error: Exception occurred while running Python script.\n");
     }
 
-    // Release GIL and cleanup
-    PyGILState_Release(gstate);
-
-    // Clean up thread state
+    // Clean up: Swap back to the main interpreter's thread state
     if (ts) {
+        PyThreadState_Swap(mainThreadState);
         PyThreadState_Clear(ts);
         PyThreadState_Delete(ts);
     }
@@ -358,6 +359,10 @@ cleanup_gil:
     PyGILState_Release(gstate);
 
     if (ts1) {
+        if (main_ts != ts1) {
+            fprintf(stderr, "Error: Current thread does not match the sub-interpreter thread.\n");
+            return NULL;
+        }
         // === Clean up Sub-interpreter ===
         PyThreadState_Swap(main_ts);
         Py_EndInterpreter(ts1);

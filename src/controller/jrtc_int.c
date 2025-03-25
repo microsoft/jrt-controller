@@ -311,6 +311,7 @@ unload_app(int app_id)
 
     jrtc_logger(JRTC_INFO, "Shutting down app %s\n", app_envs[app_id]->app_name);
     atomic_store(&app_envs[app_id]->app_exit, true);
+    jrtc_logger(JRTC_INFO, "Waiting for app %s to exit\n", app_envs[app_id]->app_name);
     clock_gettime(CLOCK_REALTIME, &timeout);
     timeout.tv_sec += 2;
     pthread_timedjoin_np(app_envs[app_id]->app_tid, NULL, &timeout);
