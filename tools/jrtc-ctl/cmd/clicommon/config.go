@@ -61,7 +61,7 @@ type App struct {
 	Runtime           time.Duration `json:"-"`
 	SharedLibraryCode []byte        `json:"-"`
 	SharedLibraryPath string        `json:"path" jsonschema:"required"`
-	AppType           string        `json:"type" jsonschema:"required"` // type is a string e.g. "c" or "python" or "python_single_app"
+	AppType           string        `json:"type" jsonschema:"required"` // type is a string e.g. "c" or "python"
 	// params is a dictionary e.g. key value pairs
 	AppParams map[string]interface{} `json:"params,omitempty"`
 	// modules is a list of strings e.g. ["module1", "module2"]

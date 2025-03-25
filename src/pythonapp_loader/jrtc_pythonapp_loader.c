@@ -170,85 +170,71 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
     printf("Running Python script: %s\n", python_script);
     fflush(stdout);
 
-    // Acquire GIL just once when interacting with Python
-    PyGILState_STATE gstate = PyGILState_Ensure();
-
     if (args == NULL) {
         fprintf(stderr, "Error: Received NULL argument for PyCapsule_New\n");
-        PyGILState_Release(gstate);
         return;
     }
+    PyObject* pFunc = NULL;
+    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyThreadState* ts = NULL;
 
-    // We use the provided interpreter state for single-threaded mode, no additional thread state needed.
-    PyThreadState* ts = PyThreadState_New(interp);
-    if (!ts) {
-        fprintf(stderr, "Error: Failed to create new thread state.\n");
-        PyGILState_Release(gstate);
-        return;
+    if (interp) {
+        ts = PyThreadState_New(interp);
+        if (!ts) {
+            fprintf(stderr, "Error: Failed to create new thread state.\n");
+            PyGILState_Release(gstate);
+            return;
+        }
+        PyThreadState_Swap(ts);
     }
-
-    PyThreadState_Swap(ts);
 
     PyObject* pModule = import_python_module(python_script);
     if (!pModule) {
         fprintf(stderr, "Error: Failed to import module: %s.\n", python_script);
         PyErr_Print();
-        PyGILState_Release(gstate);
-        PyThreadState_Swap(NULL);
-        PyThreadState_Clear(ts);
-        PyThreadState_Delete(ts);
-        return;
+        goto cleanup;
     }
 
-    // Get the function reference
-    PyObject* pFunc = PyObject_GetAttrString(pModule, PYTHON_ENTRYPOINT);
+    pFunc = PyObject_GetAttrString(pModule, PYTHON_ENTRYPOINT);
     if (!pFunc || !PyCallable_Check(pFunc)) {
         fprintf(stderr, "Error: Cannot find function '%s' in module '%s'.\n", PYTHON_ENTRYPOINT, python_script);
         PyErr_Print();
-        Py_XDECREF(pModule);
-        PyGILState_Release(gstate);
-        PyThreadState_Swap(NULL);
-        PyThreadState_Clear(ts);
-        PyThreadState_Delete(ts);
-        return;
+        goto cleanup;
     }
 
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
     if (!pCapsule) {
         fprintf(stderr, "Error: PyCapsule_New failed.\n");
-        Py_XDECREF(pModule);
-        PyGILState_Release(gstate);
-        PyThreadState_Swap(NULL);
-        PyThreadState_Clear(ts);
-        PyThreadState_Delete(ts);
-        return;
+        goto cleanup;
     }
 
     PyObject* pArgs = PyTuple_Pack(1, pCapsule);
     if (!pArgs) {
         fprintf(stderr, "Error: PyTuple_Pack failed.\n");
         Py_XDECREF(pCapsule);
-        Py_XDECREF(pModule);
-        PyGILState_Release(gstate);
-        PyThreadState_Swap(NULL);
-        PyThreadState_Clear(ts);
-        PyThreadState_Delete(ts);
-        return;
+        goto cleanup;
     }
 
-    // Call the function
     PyObject_CallObject(pFunc, pArgs);
     Py_XDECREF(pArgs);
     Py_XDECREF(pCapsule);
-    Py_XDECREF(pFunc);
+
+cleanup:
+    if (PyErr_Occurred()) {
+        PyErr_Print();
+        fprintf(stderr, "Error: Exception occurred while running Python script.\n");
+    }
+    if (pFunc) {
+        Py_XDECREF(pFunc);
+    }
     Py_XDECREF(pModule);
 
-    // Clean up thread state
-    PyThreadState_Swap(NULL);
-    PyThreadState_Clear(ts);
-    PyThreadState_Delete(ts);
+    if (ts) {
+        PyThreadState_Swap(NULL);
+        PyThreadState_Clear(ts);
+        PyThreadState_Delete(ts);
+    }
 
-    // Release GIL
     PyGILState_Release(gstate);
 }
 
@@ -290,7 +276,7 @@ jrtc_start_app(void* args)
         goto cleanup_gil;
     }
 
-    // Load additional modules
+    // === Load additional modules in the main interpreter ===
     for (int i = 0; i < MAX_APP_MODULES; i++) {
         if (env_ctx->app_modules[i] == NULL) {
             break;
@@ -301,82 +287,74 @@ jrtc_start_app(void* args)
             fprintf(stderr, "Error: Failed to import module: %s.\n", env_ctx->app_modules[i]);
             goto cleanup_capsule;
         }
-        printf("Module loaded: %s\n", env_ctx->app_modules[i]);
-        PyObject* sysModule = PyImport_ImportModule("sys");
-        PyObject* sysDict = PyModule_GetDict(sysModule);
-        PyObject* modules = PyDict_GetItemString(sysDict, "modules");
-        // Inject
-        char* module_name = get_file_name_without_py(env_ctx->app_modules[i]);
-        PyDict_SetItemString(modules, module_name, module);
-        free(module_name);
-        Py_DECREF(sysModule);
         Py_DECREF(module);
+        printf("Module loaded: %s\n", env_ctx->app_modules[i]);
     }
 
-    // Check if we need to use the subinterpreter
-    if (strcmp(python_type, "python_single_app") != 0) {
-        PyThreadState* main_ts = PyThreadState_Get();
-        PyThreadState* ts1 = Py_NewInterpreter(); // Create a sub-interpreter
-        if (!ts1) {
-            fprintf(stderr, "Error: Failed to create sub-interpreter.\n");
-            goto cleanup_capsule;
-        }
-        // Swap to the new interpreter state for execution
-        PyThreadState_Swap(ts1);
+    // === Create and switch to sub-interpreter ===
+    PyThreadState* main_ts = PyThreadState_Get();
+    PyThreadState* ts1 = Py_NewInterpreter(); // Create a sub-interpreter
+    if (!ts1) {
+        fprintf(stderr, "Error: Failed to create sub-interpreter.\n");
+        goto cleanup_capsule;
+    }
+    PyThreadState_Swap(ts1);
 
-        // Set the interpreter state in the python_state struct
-        struct python_state pstate = {.full_python_path = full_path, .ts = ts1->interp, .args = args};
-        run_subinterpreter(&pstate);
-        // Clean up the sub-interpreter state
-        PyThreadState_Swap(ts1);
-        Py_EndInterpreter(ts1);
-
+    // Inject modules directly into the subinterpreter's sys.modules
+    PyObject* sysModule = PyImport_ImportModule("sys");
+    if (!sysModule) {
+        fprintf(stderr, "Error: Failed to import 'sys' in sub-interpreter.\n");
         PyThreadState_Swap(main_ts);
+        Py_EndInterpreter(ts1);
         goto cleanup_capsule;
     }
 
-    // Import the main Python module
-    printf("Importing main module: %s\n", full_path);
-    fflush(stdout);
-    PyObject* pModule = import_python_module(full_path);
-    if (!pModule) {
-        fprintf(stderr, "Error: Failed to import main module: %s.\n", full_path);
+    PyObject* sysDict = PyModule_GetDict(sysModule);
+    PyObject* modules = PyDict_GetItemString(sysDict, "modules");
+
+    if (!modules) {
+        fprintf(stderr, "Error: Failed to get 'sys.modules' in sub-interpreter.\n");
+        Py_DECREF(sysModule);
+        PyThreadState_Swap(main_ts);
+        Py_EndInterpreter(ts1);
         goto cleanup_capsule;
     }
-    printf("Main module imported: %s\n", full_path);
 
-    // Get the Python function
-    PyObject* pFunc = PyObject_GetAttrString(pModule, PYTHON_ENTRYPOINT);
-    if (!pFunc || !PyCallable_Check(pFunc)) {
-        fprintf(stderr, "Error: Function 'jrtc_start_app' is not callable.\n");
-        PyErr_Print();
-        goto cleanup_module;
+    for (int i = 0; i < MAX_APP_MODULES; i++) {
+        if (env_ctx->app_modules[i] == NULL) {
+            break;
+        }
+
+        char* module_name = get_file_name_without_py(env_ctx->app_modules[i]);
+        PyObject* module = import_python_module(env_ctx->app_modules[i]);
+
+        if (!module) {
+            fprintf(stderr, "Error: Failed to import module '%s' in sub-interpreter.\n", env_ctx->app_modules[i]);
+            free(module_name);
+            continue;
+        }
+
+        // Inject module into sub-interpreter's sys.modules
+        PyDict_SetItemString(modules, module_name, module);
+        printf("Module injected into sub-interpreter: %s\n", module_name);
+
+        Py_DECREF(module);
+        free(module_name);
     }
 
-    // Call the Python function with the capsule
-    PyObject* pArgs = PyTuple_Pack(1, pCapsule);
-    if (!pArgs) {
-        fprintf(stderr, "Error: Failed to create arguments tuple.\n");
-        PyErr_Print();
-        goto cleanup_func;
-    }
+    Py_DECREF(sysModule);
 
-    PyObject* pResult = PyObject_CallObject(pFunc, pArgs);
-    Py_DECREF(pArgs);
+    // === Execute in Sub-interpreter ===
+    struct python_state pstate = {.full_python_path = full_path, .ts = ts1->interp, .args = args};
+    run_subinterpreter(&pstate);
 
-    if (!pResult) {
-        fprintf(stderr, "Error: Function call failed.\n");
-        PyErr_Print();
-    } else {
-        Py_DECREF(pResult);
-    }
+    // === Clean up Sub-interpreter ===
+    PyThreadState_Swap(main_ts);
+    Py_EndInterpreter(ts1);
 
-cleanup_func:
-    Py_XDECREF(pFunc);
-cleanup_module:
-    Py_XDECREF(pModule);
 cleanup_capsule:
     Py_XDECREF(pCapsule);
+
 cleanup_gil:
     PyGILState_Release(gstate);
 
@@ -386,5 +364,6 @@ cleanup_gil:
     } else {
         fprintf(stderr, "Error: Python interpreter was not initialized.\n");
     }
+
     return NULL;
 }

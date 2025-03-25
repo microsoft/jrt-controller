@@ -38,7 +38,7 @@
         },
         "type": {
           "type": "string",
-          "description": "type is a string e.g. \"c\" or \"python\" or \"python_single_app\""
+          "description": "type is a string e.g. \"c\" or \"python\""
         },
         "params": {
           "type": "object",

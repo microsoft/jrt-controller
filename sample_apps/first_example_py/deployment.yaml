@@ -12,7 +12,7 @@ decoder:
 app:
   - name: app1
     path: ${JRTC_PATH}/sample_apps/first_example_py/first_example.py
-    type: python_single_app
+    type: python
     port: 3001
     modules:
       - ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/generated_data.py

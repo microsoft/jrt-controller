@@ -5,7 +5,6 @@ import time
 import os
 import sys
 import ctypes
-from dataclasses import dataclass
 
 JRTC_APP_PATH = os.environ.get("JRTC_APP_PATH")
 if JRTC_APP_PATH is None:
@@ -15,13 +14,7 @@ sys.path.append(f"{JRTC_APP_PATH}")
 import jrtc_app
 from jrtc_app import *
 
-JRTC_PATH = f'{os.environ.get("JRTC_PATH")}'
-if JRTC_PATH is None:
-    raise ValueError("JRTC_PATH not set")
-
-sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/data_generator2/")
-sys.path.append(f"{JRTC_PATH}/sample_apps/jbpf_codelets/simple_input2/")
-#from generated_data import example_msg
+from generated_data import example_msg
 from simple_input import simple_input
 
 from jrtc_router_lib import jrtc_router_input_channel_exists
@@ -42,7 +35,6 @@ class AppStateVars(ctypes.Structure):
 ##########################################################################
 # Handler callback function (this function gets called by the C library)
 def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(struct_jrtc_router_data_entry), state_ptr: int):
-    print("SecondExample: app_handler called", flush=True)
 
     GENERATOR_OUT_STREAM_IDX = 0
     SIMPLE_INPUT_IN_STREAM_IDX = 1
