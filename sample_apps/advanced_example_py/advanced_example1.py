@@ -13,10 +13,10 @@ sys.path.append(f"{JRTC_APP_PATH}")
 import jrtc_app
 from jrtc_app import *
 
-generated_data_pb = sys.modules.get("generated_data_pb")
+generated_data = sys.modules.get('generated_data')
 simple_input_pb = sys.modules.get("simple_input_pb")
 
-from generated_data_pb import example_msg_pb
+from generated_data import example_msg
 from simple_input_pb import simple_input_pb
 
 ##########################################################################
@@ -51,7 +51,7 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
 
         if stream_idx == GENERATOR_OUT_STREAM_IDX:
             # Extract data from the received entry
-            data = ctypes.cast(data_entry.data, ctypes.POINTER(example_msg_pb)).contents
+            data = ctypes.cast(data_entry.data, ctypes.POINTER(example_msg)).contents
             state.agg_cnt += data.cnt
             print(f"App1: Aggregate counter from codelet is {state.agg_cnt}", flush=True)
 
@@ -65,12 +65,12 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
 
         elif stream_idx == APP2_OUT_STREAM_IDX:
             # Data received from App2 output channel
-            appdata = ctypes.cast(data_entry.data, ctypes.POINTER(simple_input_pb)).contents
+            appdata = ctypes.cast(data_entry.data, ctypes.POINTER(simple_input)).contents
             print(f"App1: Received aggregate counter {appdata.aggregate_counter} from output channel of App2", flush=True)
 
         elif stream_idx == APP1_IN_STREAM_IDX:
             # Data received from App1 input channel (by App2)
-            appdata = ctypes.cast(data_entry.data, ctypes.POINTER(simple_input_pb)).contents
+            appdata = ctypes.cast(data_entry.data, ctypes.POINTER(simple_input)).contents
             print(f"App1: Received aggregate counter {appdata.aggregate_counter} from input channel of App1", flush=True)
 
         else:

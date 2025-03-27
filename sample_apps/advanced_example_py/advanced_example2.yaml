@@ -15,7 +15,7 @@ app:
     type: python
     port: 3001
     modules:
-      - ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator_protobuf/generated_data_pb.py
+      - ${JRTC_PATH}/sample_apps/jbpf_codelets/data_generator/generated_data.py
       - ${JRTC_PATH}/sample_apps/jbpf_codelets/simple_input_protobuf/simple_input_pb.py
 
 jbpf:

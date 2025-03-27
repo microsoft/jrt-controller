@@ -13,10 +13,10 @@ sys.path.append(f"{JRTC_APP_PATH}")
 import jrtc_app
 from jrtc_app import *
 
-generated_data_pb = sys.modules.get("generated_data_pb")
+generated_data = sys.modules.get('generated_data')
 simple_input_pb = sys.modules.get("simple_input_pb")
 
-from generated_data_pb import example_msg_pb
+from generated_data import example_msg
 from simple_input_pb import simple_input_pb
 
 ##########################################################################
