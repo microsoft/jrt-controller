@@ -65,12 +65,12 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
 
         elif stream_idx == APP2_OUT_STREAM_IDX:
             # Data received from App2 output channel
-            appdata = ctypes.cast(data_entry.data, ctypes.POINTER(simple_input)).contents
+            appdata = ctypes.cast(data_entry.data, ctypes.POINTER(simple_input_pb)).contents
             print(f"App1: Received aggregate counter {appdata.aggregate_counter} from output channel of App2", flush=True)
 
         elif stream_idx == APP1_IN_STREAM_IDX:
             # Data received from App1 input channel (by App2)
-            appdata = ctypes.cast(data_entry.data, ctypes.POINTER(simple_input)).contents
+            appdata = ctypes.cast(data_entry.data, ctypes.POINTER(simple_input_pb)).contents
             print(f"App1: Received aggregate counter {appdata.aggregate_counter} from input channel of App1", flush=True)
 
         else:
