@@ -92,6 +92,8 @@ init_jrtc_config(jrtc_config_t* config)
     config->jrtc_router_config.io_config.ipc_name[JBPF_IO_IPC_MAX_NAMELEN - 1] = '\0';
     strncpy(config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, DEFAULT_JRTC_NAME, JBPF_IO_IPC_MAX_NAMELEN - 1);
     config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name[JBPF_IO_IPC_MAX_NAMELEN - 1] = '\0';
+
+    config->port = DEFAULT_PORT;
 }
 
 int
@@ -186,6 +188,8 @@ set_config_values(const char* filename, jrtc_config_t* config)
                             config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name,
                             expanded_value,
                             sizeof(config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name) - 1);
+                    } else if (strcmp(key, "port") == 0) {
+                        config->port = atoi(expanded_value);
                     }
                 }
 
