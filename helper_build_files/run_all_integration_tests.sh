@@ -12,7 +12,7 @@ if ! pushd "$JRTC_PATH/helper_build_files"; then
     exit 2
 fi
 
-TEST_CASES=("first_example" "first_example_c" "first_example_py" "advanced_example" "advanced_example_c")
+TEST_CASES=("advanced_example_py" "first_example_py" "first_example" "first_example_c" "advanced_example" "advanced_example_c")
 JRTC_TESTS_OUTPUT=/tmp/jrtc_tests_output.log
 
 for TEST in "${TEST_CASES[@]}"; do

@@ -163,6 +163,7 @@ JrtcApp::Init()
 void
 JrtcApp::CleanUp()
 {
+    std::cout << app_cfg->context << "::  Cleaning up app" << std::endl;
     for (auto& si : stream_items) {
         if (si.registered) {
             jrtc_router_channel_deregister_stream_id_req(env_ctx->dapp_ctx, si.sid);
