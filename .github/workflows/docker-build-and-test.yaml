@@ -36,6 +36,9 @@ jobs:
 
       - name: Build Docker Image
         run: |
+          set -ex
+          source setup_jrtc_env.sh
+          ./init_submodules.sh          
           docker build \
             -t ${{ env.ACR }}/jrtc-${{ matrix.dockerType.id }}:${{ env.IMAGE_TAG }} \
             -f deploy/${{ matrix.dockerType.value }}.Dockerfile .
