@@ -66,7 +66,7 @@ jobs:
             -e JRTC_PATH=/jrtc \
             -v /tmp:/tmp \
             -v "$(pwd)":/jrtc_out_lib -v "$(pwd)"/build:/jrtc/build \
-            -v "$(pwd)"/3p:/jrtc/3p \
+            -v "$(pwd)"/jbpf-protobuf:/jrtc/jbpf-protobuf \
             -e INITIALIZE_SUBMODULES=0 \
             ${{ matrix.testCase.sanitizerBuildParam }} \
             -e RUN_TESTS=1 jrtc
@@ -85,7 +85,7 @@ jobs:
             -e JRTC_PATH=/jrtc \
             -v /tmp:/tmp \
             -v "$(pwd)":/jrtc_out_lib -v "$(pwd)"/build:/jrtc/build \
-            -v "$(pwd)"/3p:/jrtc/3p \
+            -v "$(pwd)"/jbpf-protobuf:/jrtc/jbpf-protobuf \
             -e INITIALIZE_SUBMODULES=0 \
             ${{ matrix.testCase.sanitizerBuildParam }} \
             --entrypoint=/jrtc/helper_build_files/run_all_integration_tests.sh \
