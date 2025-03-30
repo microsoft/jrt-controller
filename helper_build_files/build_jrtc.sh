@@ -16,8 +16,6 @@ rm -rf /jrtc/build
 mkdir /jrtc/build
 
 cd /jrtc
-source setup_jrtc_env.sh
-./init_submodules.sh
 
 ## check clang-format
 ## please note that different versions of clang-format may have different output
