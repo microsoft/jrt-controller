@@ -66,8 +66,7 @@ jobs:
             --mount type=tmpfs,destination=/dev/shm \
             -e VERBOSE=1 \
             -e JRTC_PATH=/jrtc \
-            -v /tmp:/tmp \
-            -v "$(pwd)":/jrtc_out_lib -v "$(pwd)"/build:/jrtc/build \
+            -v "$(pwd)":/jrtc_out_lib \
             -v "$(pwd)"/jbpf-protobuf:/jrtc/jbpf-protobuf \
             -e INITIALIZE_SUBMODULES=0 \
             ${{ matrix.testCase.sanitizerBuildParam }} \
@@ -86,7 +85,7 @@ jobs:
             -e VERBOSE=1 \
             -e JRTC_PATH=/jrtc \
             -v /tmp:/tmp \
-            -v "$(pwd)":/jrtc_out_lib -v "$(pwd)"/build:/jrtc/build \
+            -v "$(pwd)":/jrtc_out_lib \
             -v "$(pwd)"/jbpf-protobuf:/jrtc/jbpf-protobuf \
             -e INITIALIZE_SUBMODULES=0 \
             ${{ matrix.testCase.sanitizerBuildParam }} \
