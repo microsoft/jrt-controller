@@ -47,7 +47,7 @@ jobs:
           source setup_jrtc_env.sh
           ./init_submodules.sh
           docker run \
-            -v "$(pwd)"/3p:/jrtc/3p \
+            -v "$(pwd)"/jbpf-protobuf:/jrtc/jbpf-protobuf \
             -v "$(pwd)":/jrtc_out_lib \
             -e INITIALIZE_SUBMODULES=0 \
             ${{ matrix.testCase.sanitizerBuildParam }} jrtc
