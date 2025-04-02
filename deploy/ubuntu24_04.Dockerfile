@@ -2,6 +2,11 @@
 # Licensed under the MIT license.
 FROM mcr.microsoft.com/mirror/docker/library/ubuntu:24.04
 
+LABEL org.opencontainers.image.source="https://github.com/microsoft/jrt-controller"
+LABEL org.opencontainers.image.authors="Microsoft Corporation"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.description="jrt-controller for Ubuntu 24.04"
+
 ENV DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-c"]
 ENV CLANG_FORMAT_CHECK=1
