@@ -52,4 +52,7 @@ RUN pip3 install -r /jrtc/jbpf-protobuf/3p/nanopb/requirements.txt --break-syste
 RUN apt install -y cargo
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+## build the jrtc and doxygen
+RUN DOXYGEN=1 /jrtc/helper_build_files/build_jrtc.sh
+
 ENTRYPOINT [ "/jrtc/helper_build_files/build_jrtc.sh" ]
