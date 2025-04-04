@@ -2,6 +2,11 @@
 # Licensed under the MIT license.
 FROM mcr.microsoft.com/azurelinux/base/core:3.0
 
+LABEL org.opencontainers.image.source="https://github.com/microsoft/jrt-controller"
+LABEL org.opencontainers.image.authors="Microsoft Corporation"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.description="jrt-controller for Azure Linux"
+
 RUN echo "*** Installing packages"
 RUN tdnf upgrade tdnf --refresh -y
 RUN tdnf -y update
