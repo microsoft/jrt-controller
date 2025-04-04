@@ -53,6 +53,7 @@ test_yaml_parsing()
         assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jrtc") == 0);
         assert(strcmp(config.jbpf_io_config.jbpf_path, "/var/run/jrtc") == 0);
         assert(strcmp(config.jrtc_router_config.io_config.ipc_name, "aaaaa") == 0);
+        assert(config.port == 1234);
         assert(
             strcmp(
                 config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, config.jrtc_router_config.io_config.ipc_name) ==
@@ -78,6 +79,7 @@ test_yaml_parsing()
         assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jbpf") == 0);
         assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);
         assert(strcmp(config.jrtc_router_config.io_config.ipc_name, DEFAULT_JRTC_NAME) == 0);
+        assert(config.port == DEFAULT_PORT);
         assert(
             strcmp(
                 config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, config.jrtc_router_config.io_config.ipc_name) ==
@@ -100,6 +102,7 @@ test_yaml_parsing()
         assert(config.jrtc_router_config.thread_config.sched_config.sched_runtime == 10000000);
         assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);
         assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
+        assert(config.port == DEFAULT_PORT);
         assert(strcmp(config.jbpf_io_config.jbpf_namespace, "jbpf") == 0);
         assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);
         assert(strcmp(config.jrtc_router_config.io_config.ipc_name, DEFAULT_JRTC_NAME) == 0);
@@ -129,6 +132,7 @@ test_yaml_parsing()
         assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);
         assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
         assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);
+        assert(config.port == DEFAULT_PORT);
         assert(strcmp(config.jrtc_router_config.io_config.ipc_name, DEFAULT_JRTC_NAME) == 0);
         assert(
             strcmp(
@@ -157,6 +161,7 @@ test_yaml_parsing()
         assert(config.jrtc_router_config.thread_config.sched_config.sched_period == 30000000);
         assert(config.jrtc_router_config.thread_config.sched_config.sched_priority == 99);
         assert(strcmp(config.jbpf_io_config.jbpf_path, "/tmp") == 0);
+        assert(config.port == DEFAULT_PORT);
         assert(strcmp(config.jrtc_router_config.io_config.ipc_name, DEFAULT_JRTC_NAME) == 0);
         assert(
             strcmp(
