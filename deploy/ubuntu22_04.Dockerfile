@@ -51,4 +51,10 @@ RUN apt install -y python3-dev zip
 RUN apt install -y cargo
 ENV PATH="/root/.cargo/bin:${PATH}"
 
+## build the jrtc and doxygen
+RUN DOXYGEN=1 /jrtc/helper_build_files/build_jrtc.sh
+
+## check if /jrtc/out/bin/jrtc exists
+RUN if [ ! -f /jrtc/out/bin/jrtc ]; then echo "build error: jrtc not found"; exit 1; fi
+
 ENTRYPOINT [ "/jrtc/helper_build_files/build_jrtc.sh" ]
