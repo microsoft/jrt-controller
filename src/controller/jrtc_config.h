@@ -6,6 +6,7 @@
 #include "jrtc_config_int.h"
 
 #define DEFAULT_JRTC_NAME "jrt_controller"
+#define DEFAULT_PORT 3001
 
 /**
  * @brief Expands environment variables in a given string (e.g., "Path: ${HOME}/test")

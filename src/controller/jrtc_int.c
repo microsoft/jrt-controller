@@ -386,12 +386,15 @@ ctrlc_handler(int signo)
     }
 }
 
+typedef struct _rest_server_args
+{
+    void* args;
+    unsigned int port;
+} rest_server_args_t;
+
 void*
 _start_rest_server(void* args)
 {
-
-    unsigned int port = 3001;
-
     if (pthread_setname_np(pthread_self(), "jrtc_rest")) {
         jrtc_logger(JRTC_CRITICAL, "Error in setting app name to %s\n", "jrtc_rest");
     } else {
@@ -402,7 +405,9 @@ _start_rest_server(void* args)
     callbacks.load_app = load_app;
     callbacks.unload_app = unload_app;
 
-    jrtc_start_rest_server(args, port, &callbacks);
+    rest_server_args_t* rest_server_args = (rest_server_args_t*)args;
+    jrtc_logger(JRTC_INFO, "Starting REST server on port %d\n", rest_server_args->port);
+    jrtc_start_rest_server(rest_server_args->args, rest_server_args->port, &callbacks);
 
     return NULL;
 }
@@ -422,15 +427,26 @@ start_jrtc(const char* config_file)
 
     sem_init(&jrtc_stop, 0, 0);
 
-    rest_server_handle = jrtc_create_rest_server();
-    pthread_create(&rest_server, NULL, _start_rest_server, rest_server_handle);
-
     jrtc_config_t jrtc_config = {0};
     res = set_config_values(config_file, &jrtc_config);
     if (res != 0) {
         jrtc_logger(JRTC_ERROR, "Failed to read thread config from YAML file: %s (%d)\n", config_file, res);
         return -2;
     }
+    rest_server_handle = jrtc_create_rest_server();
+    if (rest_server_handle == NULL) {
+        jrtc_logger(JRTC_CRITICAL, "Failed to create rest server\n");
+        return -1;
+    }
+    rest_server_args_t* rest_server_handle_args = malloc(sizeof(rest_server_args_t));
+    if (rest_server_handle_args == NULL) {
+        jrtc_logger(JRTC_CRITICAL, "Failed to allocate memory for rest server args\n");
+        return -1;
+    }
+    rest_server_handle_args->args = rest_server_handle;
+    rest_server_handle_args->port = jrtc_config.port;
+    pthread_create(&rest_server, NULL, _start_rest_server, (void*)rest_server_handle_args);
+
     res = jrtc_router_init(&jrtc_config);
 
     if (res < 0) {
@@ -479,6 +495,7 @@ start_jrtc(const char* config_file)
     jrtc_logger(JRTC_INFO, "jrt-controller stopped.\n");
 
     sem_destroy(&jrtc_stop);
+    free(rest_server_handle_args);
     return res;
 }
 
