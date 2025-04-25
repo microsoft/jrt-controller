@@ -28,6 +28,8 @@
 
 #include "jrtc_rest_server.h"
 #include "jrtc_logging.h"
+#include "jrtc_config_int.h"
+#include "jrtc_config.h"
 
 /* Compiler magic to make address sanitizer ignore
 memory leaks originating from libpython */
@@ -255,11 +257,20 @@ load_app(load_app_request_t load_req)
     app_env->app_handle = app_handle;
     app_env->app_exit = false;
     app_env->io_queue_size = load_req.ioq_size;
-    memset(app_env->app_params, 0, sizeof(app_env->app_params));
+    memset(app_env->params, 0, sizeof(app_env->params));
 
     for (int i = 0; i < MAX_APP_PARAMS; i++) {
-        if (load_req.app_params[i] != NULL) {
-            app_env->app_params[i] = strdup(load_req.app_params[i]);
+        if (load_req.params[i].key != NULL) {
+            app_env->params[i].key = strdup(load_req.params[i].key);
+        }
+        if (load_req.params[i].val != NULL) {
+            app_env->params[i].val = strdup(load_req.params[i].val);
+        }
+    }
+
+    for (int i = 0; i < MAX_APP_MODULES; i++) {
+        if (load_req.app_modules[i] != NULL) {
+            app_env->app_modules[i] = strdup(load_req.app_modules[i]);
         }
     }
 
@@ -300,6 +311,7 @@ unload_app(int app_id)
 
     jrtc_logger(JRTC_INFO, "Shutting down app %s\n", app_envs[app_id]->app_name);
     atomic_store(&app_envs[app_id]->app_exit, true);
+    jrtc_logger(JRTC_INFO, "Waiting for app %s to exit\n", app_envs[app_id]->app_name);
     clock_gettime(CLOCK_REALTIME, &timeout);
     timeout.tv_sec += 2;
     pthread_timedjoin_np(app_envs[app_id]->app_tid, NULL, &timeout);
@@ -345,7 +357,8 @@ load_default_north_io_app()
 
     load_req_north_io.deadline_us = 0;
     load_req_north_io.app_name = strdup("north_io_app");
-    memset(load_req_north_io.app_params, 0, sizeof(load_req_north_io.app_params));
+    memset(load_req_north_io.params, 0, sizeof(load_req_north_io.params));
+    memset(load_req_north_io.app_modules, 0, sizeof(load_req_north_io.app_modules));
 
     int res = load_app(load_req_north_io);
     if (res == 0) {
@@ -373,12 +386,15 @@ ctrlc_handler(int signo)
     }
 }
 
+typedef struct _rest_server_args
+{
+    void* args;
+    unsigned int port;
+} rest_server_args_t;
+
 void*
 _start_rest_server(void* args)
 {
-
-    unsigned int port = 3001;
-
     if (pthread_setname_np(pthread_self(), "jrtc_rest")) {
         jrtc_logger(JRTC_CRITICAL, "Error in setting app name to %s\n", "jrtc_rest");
     } else {
@@ -389,13 +405,15 @@ _start_rest_server(void* args)
     callbacks.load_app = load_app;
     callbacks.unload_app = unload_app;
 
-    jrtc_start_rest_server(args, port, &callbacks);
+    rest_server_args_t* rest_server_args = (rest_server_args_t*)args;
+    jrtc_logger(JRTC_INFO, "Starting REST server on port %d\n", rest_server_args->port);
+    jrtc_start_rest_server(rest_server_args->args, rest_server_args->port, &callbacks);
 
     return NULL;
 }
 
 int
-start_jrtc(int argc, char* argv[])
+start_jrtc(const char* config_file)
 {
     if (signal(SIGINT, ctrlc_handler) == SIG_ERR) {
         perror("signal");
@@ -405,26 +423,31 @@ start_jrtc(int argc, char* argv[])
     pthread_t rest_server;
     void* rest_server_handle;
 
-    struct jrtc_router_config config = {0};
     int res;
 
     sem_init(&jrtc_stop, 0, 0);
 
+    jrtc_config_t jrtc_config = {0};
+    res = set_config_values(config_file, &jrtc_config);
+    if (res != 0) {
+        jrtc_logger(JRTC_ERROR, "Failed to read thread config from YAML file: %s (%d)\n", config_file, res);
+        return -2;
+    }
     rest_server_handle = jrtc_create_rest_server();
-    pthread_create(&rest_server, NULL, _start_rest_server, rest_server_handle);
+    if (rest_server_handle == NULL) {
+        jrtc_logger(JRTC_CRITICAL, "Failed to create rest server\n");
+        return -1;
+    }
+    rest_server_args_t* rest_server_handle_args = malloc(sizeof(rest_server_args_t));
+    if (rest_server_handle_args == NULL) {
+        jrtc_logger(JRTC_CRITICAL, "Failed to allocate memory for rest server args\n");
+        return -1;
+    }
+    rest_server_handle_args->args = rest_server_handle;
+    rest_server_handle_args->port = jrtc_config.port;
+    pthread_create(&rest_server, NULL, _start_rest_server, (void*)rest_server_handle_args);
 
-    config.thread_config.affinity_mask = 1 << 1;
-    config.thread_config.has_affinity_mask = false;
-    config.thread_config.has_sched_config = false;
-    config.thread_config.sched_config.sched_policy = JRTC_ROUTER_DEADLINE;
-    config.thread_config.sched_config.sched_priority = 99;
-    config.thread_config.sched_config.sched_deadline = 30 * 1000 * 1000;
-    config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
-    config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
-
-    strncpy(config.io_config.ipc_name, "jrtc_controller", 32);
-
-    res = jrtc_router_init(&config);
+    res = jrtc_router_init(&jrtc_config);
 
     if (res < 0) {
         jrtc_logger(JRTC_CRITICAL, "Failed to initialize router\n");
@@ -472,6 +495,7 @@ start_jrtc(int argc, char* argv[])
     jrtc_logger(JRTC_INFO, "jrt-controller stopped.\n");
 
     sem_destroy(&jrtc_stop);
+    free(rest_server_handle_args);
     return res;
 }
 

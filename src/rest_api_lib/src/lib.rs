@@ -1,5 +1,6 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+use std::ffi::CString;
 use axum::{
     extract,
     extract::{Path, State},
@@ -11,7 +12,6 @@ use axum::{
 use axum_server::Handle;
 use chrono::prelude::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::ffi::CString;
 use std::net::SocketAddr;
 use std::os::raw::{c_char, c_int, c_void};
 use std::sync::mpsc::channel;
@@ -23,6 +23,13 @@ use tokio::sync::Mutex;
 use utoipa::{OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
 use std::env;
+use std::collections::HashMap;
+
+#[repr(C)]
+pub struct AppParamKeyValuePair {
+    pub key: *mut i8,
+    pub val: *mut i8,
+}
 
 #[repr(C)]
 pub struct LoadAppRequest {
@@ -33,7 +40,10 @@ pub struct LoadAppRequest {
     pub deadline_us: u32,
     pub period_us: u32,
     pub ioq_size: u32,
-    pub app_params: [*mut c_char; 255], // Fixed-size array
+    pub app_path: *mut c_char,
+    pub app_type: *mut c_char,
+    pub app_params: [AppParamKeyValuePair; 255], // Fixed-size array
+    pub app_modules: [*mut c_char; 255], // Fixed-size array
 }
 
 type LoadAppCallback = unsafe extern "C" fn(load_req: LoadAppRequest) -> c_int;
@@ -61,7 +71,10 @@ struct JrtcAppLoadRequest {
     deadline_us: u32,
     period_us: u32,
     ioq_size: u32,
-    app_params: Vec<String>,
+    app_path: String,
+    app_type: String,
+    app_params: HashMap<String, String>,
+    app_modules: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
@@ -152,46 +165,6 @@ async fn get_apps(State(state): State<ServerState>) -> impl IntoResponse {
     (StatusCode::OK, Json(apps.as_slice())).into_response()
 }
 
-// Function to expand environment variables
-fn expand_env_vars(input: &str) -> String {
-    let mut result = String::new();
-    let mut start_index = 0;
-    
-    // Search for any environment variable pattern like $VAR or ${VAR}
-    while let Some(dollar_pos) = input[start_index..].find('$') {
-        result.push_str(&input[start_index..start_index + dollar_pos]);
-        let remainder = &input[start_index + dollar_pos + 1..];
-        
-        if remainder.starts_with('{') {
-            // Find closing brace for ${VAR}
-            if let Some(end_pos) = remainder[1..].find('}') {
-                let var_name = &remainder[1..end_pos + 1]; // Extract variable name
-                if let Ok(value) = env::var(var_name.trim_matches(|c| c == '{' || c == '}')) {
-                    result.push_str(&value);
-                }
-                start_index += dollar_pos + end_pos + 3;
-            } else {
-                result.push('$');
-                start_index += dollar_pos + 1;
-            }
-        } else {
-            // Find a simple $VAR pattern
-            if let Some(end_pos) = remainder.find(|c: char| !c.is_alphanumeric()) {
-                let var_name = &remainder[..end_pos];
-                if let Ok(value) = env::var(var_name) {
-                    result.push_str(&value);
-                }
-                start_index += dollar_pos + end_pos;
-            } else {
-                result.push('$');
-                start_index += dollar_pos + 1;
-            }
-        }
-    }
-    result.push_str(&input[start_index..]);
-    result
-}
-
 #[utoipa::path(
     post,
     path = "/app",
@@ -209,7 +182,10 @@ async fn load_app(
 ) -> impl IntoResponse {
     let payload_cloned = payload.clone();
     let app_name = payload_cloned.app_name;
+    let app_path = payload_cloned.app_path;
+    let app_type = payload_cloned.app_type;
     let app_params = payload_cloned.app_params;
+    let app_modules = payload_cloned.app_modules;
 
     let c_app_name = match CString::new(app_name.clone()) {
         Ok(c) => c,
@@ -225,21 +201,53 @@ async fn load_app(
         }
     };
 
-    let mut c_app_params: [*mut c_char; 255] = [std::ptr::null_mut(); 255]; // Initialize with NULLs
+    let c_app_path = match CString::new(app_path.clone()) {
+        Ok(c) => c,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(JrtcAppError::Details(format!(
+                    "app_path cannot be converted into c string = {}",
+                    app_path.clone()
+                ))),
+            )
+            .into_response();
+        }
+    };
 
-    let c_strings: Vec<CString> = app_params
-    .iter()
-    .map(|s| {
-        let expanded_str = expand_env_vars(s.as_str()); // Expand environment variables in the string
-        CString::new(expanded_str).unwrap() // Convert the expanded string to CString
-    })
-    .collect();
+    let c_app_type = match CString::new(app_type.clone()) {
+        Ok(c) => c,
+        Err(_) => {
+            return (
+                StatusCode::BAD_REQUEST,
+                Json(JrtcAppError::Details(format!(
+                    "app_type cannot be converted into c string = {}",
+                    app_type.clone()
+                ))),
+            )
+            .into_response();
+        }
+    };
 
-    for (i, cstr) in c_strings.iter().enumerate() {
+    let mut c_app_params: [AppParamKeyValuePair; 255] = unsafe { std::mem::zeroed() }; // Initialize
+
+    for (i, (key, value)) in app_params.iter().enumerate() {
         if i >= 255 {
             break; // Prevent overflow
         }
-        c_app_params[i] = cstr.as_ptr() as *mut i8; // Cast to *mut i8
+        let c_key = CString::new(key.clone()).unwrap().into_raw();
+        let c_val = CString::new(value.clone()).unwrap().into_raw();
+
+        c_app_params[i] = AppParamKeyValuePair { key: c_key, val: c_val };
+    }
+
+    let mut c_app_modules: [*mut c_char; 255] = unsafe { std::mem::zeroed() }; // Initialize
+    for (i, module) in app_modules.iter().enumerate() {
+        if i >= 255 {
+            break; // Prevent overflow
+        }
+        let c_module = CString::new(module.clone()).unwrap().into_raw();
+        c_app_modules[i] = c_module;
     }
 
     let app_req = LoadAppRequest {
@@ -250,11 +258,17 @@ async fn load_app(
         deadline_us: payload.deadline_us,
         period_us: payload.period_us,
         ioq_size: payload.ioq_size,
+        app_path: c_app_path.into_raw(),
+        app_type: c_app_type.into_raw(),
         app_params: c_app_params,
+        app_modules: c_app_modules,
     };
 
     let response: i32;
     let app_name_ptr = app_req.app_name;
+    let app_path_ptr = app_req.app_path;
+    let app_type_ptr = app_req.app_type;
+
     unsafe {
         response = match state.callbacks.load_app {
             Some(load_app_cbk) => load_app_cbk(app_req),
@@ -272,7 +286,10 @@ async fn load_app(
 
         // Free app_name memory after callback
         unsafe {
+            // Free app_name memory after callback
             let _ = CString::from_raw(app_name_ptr);
+            let _ = CString::from_raw(app_path_ptr);
+            let _ = CString::from_raw(app_type_ptr);
         }
     }
 
@@ -396,7 +413,7 @@ pub extern "C" fn jrtc_stop_rest_server(ptr: *mut c_void) {
 
 #[no_mangle]
 pub extern "C" fn jrtc_start_rest_server(ptr: *mut c_void, port: u16, cbs: *mut Callbacks) {
-    println!("Starting REST server");
+    println!("Starting REST server at port {}", port);
 
     // Check for null pointers and handle errors
     if ptr.is_null() || cbs.is_null() {

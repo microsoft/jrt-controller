@@ -6,6 +6,8 @@ cmake_minimum_required(VERSION 3.16)
 project(controller)
 
 find_package(Python COMPONENTS Interpreter Development REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(YAML REQUIRED yaml-0.1)
 
 include_directories(${Python_INCLUDE_DIRS})
 
@@ -21,6 +23,7 @@ Jrtc::router_stream_id_lib_static
 Jrtc::router_lib
 Jrtc::logger_lib
 m
+${YAML_LIBRARIES}
 ${Python_LIBRARIES})
 
 ### jrtc_lib
@@ -29,18 +32,23 @@ set(JRTC_LIB jrtc_lib)
 set(JRTC_LIB_SRC_DIR ${PROJECT_SOURCE_DIR})
 
 set(JRTC_LIB_SOURCES ${JRTC_LIB_SRC_DIR}/jrtc_sched.c
-                              ${JRTC_LIB_SRC_DIR}/jrtc.c
-                              ${JRTC_LIB_SRC_DIR}/jrtc_int.c)
+  ${JRTC_LIB_SRC_DIR}/jrtc.c
+  ${JRTC_LIB_SRC_DIR}/jrtc_int.c
+  ${JRTC_LIB_SRC_DIR}/jrtc_config.c
+)
 
 set(JRTC_LIB_HEADER_FILES ${JRTC_LIB_SOURCES})
 
 add_library(${JRTC_LIB} SHARED ${JRTC_LIB_SOURCES})
 
 target_include_directories(${JRTC_LIB} PUBLIC PUBLIC ${JRTC_CONTROLLER_HEADER_FILES}
-                                                        ${JRTC_COMMON_INCLUDE_DIR})
+  ${JRTC_COMMON_INCLUDE_DIR}
+  ${YAML_INCLUDE_DIRS}
+)
 
 target_link_options(${JRTC_LIB} PUBLIC ${Python3_LINK_OPTIONS} "-lpthread" "-ldl" "-lrt")
 
+target_compile_options(${JRTC_LIB} PRIVATE ${YAML_CFLAGS_OTHER})
 target_link_libraries(${JRTC_LIB} PUBLIC
                        debug ${JRTC_REST_API_LIB_DEBUG}
                        optimized ${JRTC_REST_API_LIB}

@@ -225,7 +225,16 @@
             "format": "int32",
             "minimum": 0
           },
+          "app_path": {
+            "type": "string"
+          },
+          "app_type": {
+            "type": "string"
+          },
           "app_params": {
+            "type": "object"
+          },
+          "app_modules": {
             "type": "array",
             "items": {
               "type": "string"

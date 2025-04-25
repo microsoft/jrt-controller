@@ -16,6 +16,8 @@
  * deadline_us: The deadline in microseconds
  * period_us: The period in microseconds
  * ioq_size: The io queue size
+ * app_path: The application path
+ * params: The application parameters
  */
 typedef struct load_app_request
 {
@@ -26,7 +28,10 @@ typedef struct load_app_request
     uint32_t deadline_us;
     uint32_t period_us;
     uint32_t ioq_size;
-    char* app_params[MAX_APP_PARAMS];
+    char* app_path;
+    char* app_type;
+    app_param_key_value_pair_t params[MAX_APP_PARAMS];
+    char* app_modules[MAX_APP_MODULES];
 } load_app_request_t;
 
 /**

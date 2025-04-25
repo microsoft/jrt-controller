@@ -12,12 +12,16 @@
 #include "jbpf_io_hash.h"
 #include "jbpf_io_utils.h"
 
+// Forward declaration
+struct jrtc_config;
+
 #include "jrtc_router.h"
 #include "jrtc_router_app_api.h"
 #include "jrtc_router_int.h"
 
 #include "jrtc_logging.h"
 #include "jbpf_mempool.h"
+#include "jrtc_config_int.h"
 
 struct jrtc_router_ctx g_router_ctx;
 
@@ -300,10 +304,9 @@ jrtc_router_thread_start(void* args)
 }
 
 int
-jrtc_router_init(struct jrtc_router_config* config)
+jrtc_router_init(struct jrtc_config* config)
 {
 
-    struct jbpf_io_config io_config = {0};
     struct router_thread_args* thread_args;
     unsigned int bytes;
 
@@ -313,16 +316,14 @@ jrtc_router_init(struct jrtc_router_config* config)
         return -1;
     }
 
-    io_config.type = JBPF_IO_IPC_PRIMARY;
-    io_config.ipc_config.mem_cfg.memory_size = 1024 * 1024 * 1024;
+    jrtc_logger(
+        JRTC_INFO,
+        "Initializing router with namespace %s and path %s, ipc_name %s\n",
+        config->jbpf_io_config.jbpf_namespace,
+        config->jbpf_io_config.jbpf_path,
+        config->jrtc_router_config.io_config.ipc_name);
 
-    strncpy(io_config.ipc_config.addr.jbpf_io_ipc_name, config->io_config.ipc_name, JBPF_IO_IPC_MAX_NAMELEN);
-    strncpy(io_config.jbpf_path, JBPF_DEFAULT_RUN_PATH, JBPF_RUN_PATH_LEN - 1);
-    io_config.jbpf_path[JBPF_RUN_PATH_LEN - 1] = '\0';
-    strncpy(io_config.jbpf_namespace, JBPF_DEFAULT_NAMESPACE, JBPF_NAMESPACE_LEN - 1);
-    io_config.jbpf_namespace[JBPF_NAMESPACE_LEN - 1] = '\0';
-
-    g_router_ctx.io_ctx = jbpf_io_init(&io_config);
+    g_router_ctx.io_ctx = jbpf_io_init(&config->jbpf_io_config);
     if (g_router_ctx.io_ctx == NULL) {
         jrtc_logger(JRTC_ERROR, "Could not initialize IO successfully\n");
         goto error_io_init;
@@ -336,7 +337,7 @@ jrtc_router_init(struct jrtc_router_config* config)
         goto error_router_thread;
     }
 
-    thread_args->config = config;
+    thread_args->config = &config->jrtc_router_config;
     thread_args->router_ctx = &g_router_ctx;
 
     // Initialize the request tables and the app metadata
@@ -1018,7 +1019,16 @@ jrtc_router_input_channel_exists(struct jrtc_router_stream_id stream_id)
 
     router_ctx = jrtc_router_get_ctx();
 
-    if (jbpf_io_find_channel(router_ctx->io_ctx, *(struct jbpf_io_stream_id*)&stream_id, false)) {
+    if (!router_ctx) {
+        jrtc_logger(JRTC_ERROR, "Failed to get router context.\n");
+        return 0;
+    }
+    if (!router_ctx->io_ctx) {
+        jrtc_logger(JRTC_ERROR, "IO context is null.\n");
+        return 0;
+    }
+    struct jbpf_io_stream_id _stream_id = *(struct jbpf_io_stream_id*)&stream_id;
+    if (jbpf_io_find_channel(router_ctx->io_ctx, _stream_id, false)) {
         return 1;
     }
     return 0;

@@ -25,6 +25,8 @@
 #include "jbpf_io.h"
 #include "jbpf_io_channel.h"
 #include "jrtc_logging.h"
+#include "jrtc_config.h"
+#include "jrtc_config_int.h"
 
 struct test_struct
 {
@@ -160,21 +162,21 @@ int
 router_test()
 {
 
-    struct jrtc_router_config config = {0};
+    struct jrtc_config config = {0};
+    init_jrtc_config(&config);
     pthread_t test_app_tid, test_app2_tid;
     int res;
 
-    config.thread_config.affinity_mask = 1 << 1;
-    config.thread_config.has_affinity_mask = false;
-    config.thread_config.has_sched_config = false;
-    config.thread_config.sched_config.sched_policy = JRTC_ROUTER_DEADLINE;
-    config.thread_config.sched_config.sched_priority = 99;
-    config.thread_config.sched_config.sched_deadline = 30 * 1000 * 1000;
-    config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
+    config.jrtc_router_config.thread_config.affinity_mask = 1 << 1;
+    config.jrtc_router_config.thread_config.has_affinity_mask = false;
+    config.jrtc_router_config.thread_config.has_sched_config = false;
+    config.jrtc_router_config.thread_config.sched_config.sched_policy = JRTC_ROUTER_DEADLINE;
+    config.jrtc_router_config.thread_config.sched_config.sched_priority = 99;
+    config.jrtc_router_config.thread_config.sched_config.sched_deadline = 30 * 1000 * 1000;
+    config.jrtc_router_config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
+    config.jrtc_router_config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
 
-    config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
-
-    strncpy(config.io_config.ipc_name, "jrtc_router_test", 32);
+    strncpy(config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, "jrtc_router_test", JBPF_IO_IPC_MAX_NAMELEN);
 
     res = jrtc_router_init(&config);
 

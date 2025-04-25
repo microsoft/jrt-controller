@@ -3,9 +3,9 @@ module jrtcjsonschema
 go 1.23.2
 
 require (
-	jrtc-ctl v0.0.0-00010101000000-000000000000
 	github.com/invopop/jsonschema v0.12.0
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
+	jrtc-ctl v0.0.0-00010101000000-000000000000
 )
 
 require (

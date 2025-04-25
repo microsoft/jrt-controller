@@ -7,7 +7,8 @@ import os
 import sys
 import ctypes
 from ctypes import c_int, c_float, c_char_p, c_void_p, c_bool
-from dataclasses import dataclass#rom typing import List, Callable, Optional, Any
+from dataclasses import dataclass
+from typing import Any
 
 # Retrieve the JRTC application path from environment variables
 JRTC_APP_PATH = os.environ.get("JRTC_APP_PATH")
@@ -78,6 +79,7 @@ class JrtcAppCfg_t(ctypes.Structure):
         ("q_size", c_int),
         ("num_streams", c_int),
         ("streams", ctypes.POINTER(JrtcStreamCfg_t)),
+        ("initialization_timeout_secs", c_float),
         ("sleep_timeout_secs", c_float),
         ("inactivity_timeout_secs", c_float)
     ]
@@ -89,7 +91,7 @@ JrtcAppHandler = ctypes.CFUNCTYPE(None, c_bool, c_int, ctypes.POINTER(struct_jrt
 # Function prototypes
 
 lib.jrtc_app_create.argtypes = [ctypes.POINTER(JrtcAppEnv), ctypes.POINTER(JrtcAppCfg_t), JrtcAppHandler, c_void_p]
-lib.jrtc_app_create.restype = ctypes.POINTER(JrtcApp) #c_void_p
+lib.jrtc_app_create.restype = ctypes.POINTER(JrtcApp) 
 
 #lib.jrtc_app_destroy.argtypes = [c_void_p]
 lib.jrtc_app_destroy.argtypes = [ctypes.POINTER(JrtcApp)]
@@ -98,17 +100,17 @@ lib.jrtc_app_destroy.restype = None
 lib.jrtc_app_run.argtypes = [ctypes.POINTER(JrtcApp)]
 lib.jrtc_app_run.restype = None
 
-lib.jrtc_app_get_stream.argtypes = [ctypes.POINTER(JrtcApp), c_int]
-lib.jrtc_app_get_stream.restype = struct_jrtc_router_stream_id
+lib.jrtc_app_router_channel_send_input_msg.argtypes = [ctypes.POINTER(JrtcApp), c_int, c_void_p, c_int]
+lib.jrtc_app_router_channel_send_input_msg.restype = c_int
 
-lib.jrtc_app_get_channel_context.argtypes = [ctypes.POINTER(JrtcApp), c_int]
-lib.jrtc_app_get_channel_context.restype = struct_dapp_channel_ctx
+lib.jrtc_app_router_channel_send_output_msg.argtypes = [ctypes.POINTER(JrtcApp), c_int, c_void_p, c_int]
+lib.jrtc_app_router_channel_send_output_msg.restype = c_int
 
 
 
 #######################################################################
 # Python wrapper to call jrtc_app_create C function
-def jrtc_app_create(capsule, app_cfg, app_handler, app_state):
+def jrtc_app_create(capsule, app_cfg: JrtcAppCfg_t, app_handler: JrtcAppHandler, app_state: Any) -> None :
 
     env_ctx = get_ctx_from_capsule(capsule)
     app_handler_c =  JrtcAppHandler(app_handler)
@@ -125,26 +127,27 @@ def jrtc_app_create(capsule, app_cfg, app_handler, app_state):
     
 #######################################################################
 # Python wrapper to call jrtc_app_run C function
-def jrtc_app_run(app):
+def jrtc_app_run(app: ctypes.POINTER(JrtcApp)) -> None:
     lib.jrtc_app_run(app)
 
 
 #######################################################################
 # Python wrapper to call jrtc_app_destroy 
-def jrtc_app_destroy(app):
+def jrtc_app_destroy(app: ctypes.POINTER(JrtcApp)) -> None:
     lib.jrtc_app_destroy(app)
 
 
 #######################################################################
-# Python wrapper to call jrtc_app_get_stream 
-def jrtc_app_get_stream(app, stream_idx):
-    return lib.jrtc_app_get_stream(app, stream_idx)
+# Python wrapper to call jrtc_router_channel_send_input_msg 
+def jrtc_app_router_channel_send_input_msg(app: ctypes.POINTER(JrtcApp), stream_idx: int, data: bytes, data_len: int) -> int:
+    return lib.jrtc_app_router_channel_send_input_msg(app, stream_idx, data, data_len)
 
 
 #######################################################################
-# Python wrapper to call jrtc_app_get_channel_context 
-def jrtc_app_get_channel_context(app, stream_idx):
-    return lib.jrtc_app_get_channel_context(app, stream_idx)
+# Python wrapper to call jrtc_router_channel_send_input_msg 
+def jrtc_app_router_channel_send_output_msg(app: ctypes.POINTER(JrtcApp), stream_idx: int, data: bytes, data_len: int) -> int:
+    return lib.jrtc_app_router_channel_send_output_msg(app, stream_idx, data, data_len)
+
 
 
 
@@ -159,19 +162,17 @@ __all__ = [
     'JRTC_ROUTER_REQ_STREAM_PATH_ANY',
     'JRTC_ROUTER_REQ_STREAM_NAME_ANY',
     'struct_jrtc_router_data_entry',
-    'jrtc_app_get_stream', 
-    'jrtc_app_get_channel_context',
-    'jrtc_router_channel_send_input_msg',
-    'jrtc_router_channel_send_output_msg',
 
     'JrtcStreamIdCfg_t',
     'JrtcAppChannelCfg_t',
     'JrtcStreamCfg_t',
     'JrtcAppCfg_t',
     
+    'JrtcApp',
     'jrtc_app_create',
     'jrtc_app_run',
     'jrtc_app_destroy',
-    'JrtcApp',
+    'jrtc_app_router_channel_send_input_msg',
+    'jrtc_app_router_channel_send_output_msg',
 
     ]
