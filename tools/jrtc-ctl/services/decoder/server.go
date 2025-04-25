@@ -6,10 +6,10 @@ package decoder
 import (
 	context "context"
 	"crypto/sha1"
-	"jrtc-ctl/services/cache"
 	"encoding/base64"
 	"encoding/hex"
 	"errors"
+	"jrtc-ctl/services/cache"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -42,7 +42,7 @@ type Server struct {
 	ctx            context.Context
 	logger         *logrus.Logger
 	opts           *ServerOptions
-	outQ           chan<- *RecData
+	OutQ           chan *RecData
 	Schemas        *cache.Store[string, RecordedProtoDescriptor]
 	StreamToSchema *cache.Store[[]byte, RecordedStreamToSchema]
 }
@@ -66,7 +66,7 @@ type RecordedStreamToSchema struct {
 }
 
 // NewServer returns a new Server
-func NewServer(parentCtx context.Context, logger *logrus.Logger, opts *ServerOptions, cacheClient *cache.Client, outQ chan<- *RecData, streamIDTransform func([]byte) (string, error)) (*Server, error) {
+func NewServer(parentCtx context.Context, logger *logrus.Logger, opts *ServerOptions, cacheClient *cache.Client, qSize int, streamIDTransform func([]byte) (string, error)) (*Server, error) {
 	ctx, cancelFunc := context.WithCancel(parentCtx)
 	stopper := make(chan os.Signal, 1)
 	signal.Notify(stopper, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
@@ -88,8 +88,8 @@ func NewServer(parentCtx context.Context, logger *logrus.Logger, opts *ServerOpt
 		ctx:            ctx,
 		logger:         logger,
 		opts:           opts,
+		OutQ:           make(chan *RecData, qSize),
 		Schemas:        schemas,
-		outQ:           outQ,
 		StreamToSchema: streamToSchema,
 	}, nil
 }
