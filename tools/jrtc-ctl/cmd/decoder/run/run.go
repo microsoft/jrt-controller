@@ -113,7 +113,7 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 		for {
 			select {
 			case recData, ok := <-srv.OutQ:
-				if !ok {
+				if !ok || !activeServices[0] {
 					activeServices[0] = false
 					if !activeServices[0] && !activeServices[1] {
 						return nil
@@ -130,8 +130,8 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 					logger.WithError(err).Error("error handling rec data")
 				}
 			case buf, ok := <-udpServer.OutQ:
-				if !ok {
-					activeServices[0] = false
+				if !ok || !activeServices[1] {
+					activeServices[1] = false
 					if !activeServices[0] && !activeServices[1] {
 						return nil
 					} else {

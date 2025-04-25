@@ -115,7 +115,9 @@ func (s *Server) Serve() error {
 		})
 	}
 
-	return g.Wait()
+	err := g.Wait()
+	close(s.OutQ)
+	return err
 }
 
 // UpsertProtoPackage registers a proto package with the server
