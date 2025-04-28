@@ -117,9 +117,8 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 					activeServices[0] = false
 					if !activeServices[0] && !activeServices[1] {
 						return nil
-					} else {
-						continue
 					}
+					continue
 				}
 				buf, err := attemptDecode(logger, srv, recData)
 				if err != nil {
@@ -134,9 +133,8 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 					activeServices[1] = false
 					if !activeServices[0] && !activeServices[1] {
 						return nil
-					} else {
-						continue
 					}
+					continue
 				}
 				if err := validateJSON(logger, buf); err != nil {
 					logger.WithError(err).Error("received invalid JSON data")
