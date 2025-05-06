@@ -54,6 +54,11 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
             "timestamp": 0,
             "stream_idx": stream_idx,
         }
+        print("BEFORE")
+        a = 10000 * [0]
+        for i in range(10000):
+            a[i] = 100 * [1]
+        print("AFTER")             
         print(f"Testing json.dumps: {json.dumps(output, indent=2)}")
 
         if stream_idx == GENERATOR_OUT_STREAM_IDX:
