@@ -50,7 +50,7 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
         output = {
             "dummy": 0,
             "timestamp": 0,
-            "data_entry": type(data_entry),
+            "stream_idx": stream_idx,
         }
         print(f"Testing json.dumps: {json.dumps(output, indent=2)}")        
 
