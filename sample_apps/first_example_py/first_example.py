@@ -47,6 +47,13 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
         state = ctypes.cast(state_ptr, ctypes.POINTER(AppStateVars)).contents        
         data_entry = data_entry_ptr.contents
 
+        output = {
+            "dummy": 0,
+            "timestamp": 0,
+            "data_entry": type(data_entry),
+        }
+        print(f"Testing json.dumps: {json.dumps(output, indent=2)}")
+
         if stream_idx == GENERATOR_OUT_STREAM_IDX:
 
             state.received_counter += 1
