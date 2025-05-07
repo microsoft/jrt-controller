@@ -222,7 +222,16 @@ func attemptDecode(logger *logrus.Logger, srv *decoder.Server, data *decoder.Rec
 		return nil, err
 	}
 
-	return res, nil
+	var extendedMsg map[string]interface{}
+	if err := json.Unmarshal([]byte(res), &extendedMsg); err != nil {
+		return nil, err
+	}
+
+	extendedMsg["_schema_proto_msg"] = schema.ProtoMsg
+	extendedMsg["_schema_proto_package"] = schema.ProtoPackage
+	extendedMsg["_stream_id"] = streamUUID.String()
+
+	return json.Marshal(extendedMsg)
 }
 
 func validateJSON(logger *logrus.Logger, res []byte) error {
