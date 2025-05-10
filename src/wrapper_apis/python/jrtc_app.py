@@ -121,15 +121,21 @@ class JrtcApp:
                 stream.sid.stream_source,
                 stream.sid.io_map,
             )
-            print(3)
             if res != 1:
                 print(f"{self.c_struct.app_cfg.context}:: Failed to generate stream ID for stream {i}")
                 return -1
+            _sid = si.sid
             si.sid = si.sid.convert_to_struct_jrtc_router_stream_id()
 
             if stream.appChannel:
                 si.chan_ctx = jrtc_router_channel_create(
-                    self.c_struct.env_ctx.dapp_ctx, stream.appChannel, si.sid
+                    self.c_struct.env_ctx.dapp_ctx,
+                    stream.appChannel.contents.is_output,
+                    stream.appChannel.contents.num_elems,
+                    stream.appChannel.contents.elem_size,
+                    _sid,
+                    None,
+                    0,
                 )
                 if not si.chan_ctx:
                     print(f"{self.c_struct.app_cfg.context}:: Failed to create channel for stream {i}")
@@ -209,24 +215,24 @@ class JrtcApp:
         self.cleanup()
 
     def get_stream(self, stream_idx: int) -> Optional[JrtcRouterStreamId]:
-        if 0 <= stream_idx < len(self.stream_items):
-            return self.stream_items[stream_idx].sid
+        if stream_id < 0 or stream_idx >= len(self.stream_items):
+            return
+        return self.stream_items[stream_idx].sid
 
     def get_chan_ctx(self, stream_idx: int) -> Optional[ChannelCtx]:
-        if 0 <= stream_idx < len(self.stream_items):
-            return self.stream_items[stream_idx].chan_ctx
+        if stream_idx < 0 or stream_idx >= len(self.stream_items):
+            return
+        return self.stream_items[stream_idx].chan_ctx
 
 def jrtc_app_create(capsule, app_cfg: JrtcAppCfg_t, app_handler: JrtcAppHandler, app_state):
     env_ctx = get_ctx_from_capsule(capsule)
     app_handler_c = JrtcAppHandler(app_handler)
-    print(f"jrtc_app_create()")
     app_instance = JrtcApp(
         env_ctx=env_ctx, 
         app_cfg=app_cfg, 
         app_handler=app_handler_c, 
         app_state=ctypes.cast(ctypes.pointer(app_state), ctypes.c_void_p)
     )
-    #return ctypes.POINTER(JrtcApp)(app_instance)    
     return app_instance
 
 def jrtc_app_run(app) -> None:
