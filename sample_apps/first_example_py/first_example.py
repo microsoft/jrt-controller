@@ -22,7 +22,7 @@ from simple_input import simple_input
 # Define the state variables for the application
 class AppStateVars(ctypes.Structure):
     _fields_ = [
-        ("app", ctypes.POINTER(JrtcApp)),
+        ("app", ctypes.py_object),
         
         # add custom fields below
         ("agg_cnt", ctypes.c_int),
@@ -128,6 +128,7 @@ def jrtc_start_app(capsule):
     state.app = jrtc_app_create(capsule, app_cfg, app_handler, state)
 
     # run the app - This is blocking until the app exists
+    print(f"type(state.app) = {type(state.app)}")
     jrtc_app_run(state.app)
 
     # clean up app resources
