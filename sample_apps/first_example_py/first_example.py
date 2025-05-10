@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
-import json
 import os
 import sys
 import ctypes
@@ -47,17 +46,11 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
         state = ctypes.cast(state_ptr, ctypes.POINTER(AppStateVars)).contents        
         data_entry = data_entry_ptr.contents
 
-        output = {
-            "dummy": 0,
-            "timestamp": 0,
-            "stream_idx": stream_idx,
-        }
         print("BEFORE")
         a = 10000 * [0]
         for i in range(10000):
             a[i] = 100 * [1]
         print("AFTER")        
-        print(f"Testing json.dumps: {json.dumps(output, indent=2)}")
 
         if stream_idx == GENERATOR_OUT_STREAM_IDX:
 
@@ -128,7 +121,6 @@ def jrtc_start_app(capsule):
     state.app = jrtc_app_create(capsule, app_cfg, app_handler, state)
 
     # run the app - This is blocking until the app exists
-    print(f"type(state.app) = {type(state.app)}")
     jrtc_app_run(state.app)
 
     # clean up app resources

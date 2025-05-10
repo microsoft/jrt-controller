@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
-import json
 import os
 import sys
 import ctypes
@@ -23,7 +22,7 @@ from simple_input_pb import simple_input_pb
 # Define the state variables for the application
 class AppStateVars(ctypes.Structure):
     _fields_ = [
-        ("app", ctypes.POINTER(JrtcApp)),
+         ("app", ctypes.py_object),
         
         # add custom fields below
         ("agg_cnt", ctypes.c_int32)
@@ -49,17 +48,11 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
         state = ctypes.cast(state_ptr, ctypes.POINTER(AppStateVars)).contents        
         data_entry = data_entry_ptr.contents
 
-        output = {
-            "dummy": 0,
-            "timestamp": 0,
-            "stream_idx": stream_idx,
-        }
         print("BEFORE")
         a = 10000 * [0]
         for i in range(10000):
             a[i] = 100 * [1]
         print("AFTER")             
-        print(f"Testing json.dumps: {json.dumps(output, indent=2)}")
 
         if stream_idx == GENERATOR_OUT_STREAM_IDX:
             # Extract data from the received entry
