@@ -215,7 +215,7 @@ class JrtcApp:
         self.cleanup()
 
     def get_stream(self, stream_idx: int) -> Optional[JrtcRouterStreamId]:
-        if stream_id < 0 or stream_idx >= len(self.stream_items):
+        if stream_idx < 0 or stream_idx >= len(self.stream_items):
             return
         return self.stream_items[stream_idx].sid
 
