@@ -413,7 +413,7 @@ pub extern "C" fn jrtc_stop_rest_server(ptr: *mut c_void) {
 
 #[no_mangle]
 pub extern "C" fn jrtc_start_rest_server(ptr: *mut c_void, port: u16, cbs: *mut Callbacks) {
-    println!("Starting REST server");
+    println!("Starting REST server at port {}", port);
 
     // Check for null pointers and handle errors
     if ptr.is_null() || cbs.is_null() {

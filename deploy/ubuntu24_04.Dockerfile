@@ -2,6 +2,11 @@
 # Licensed under the MIT license.
 FROM mcr.microsoft.com/mirror/docker/library/ubuntu:24.04
 
+LABEL org.opencontainers.image.source="https://github.com/microsoft/jrt-controller"
+LABEL org.opencontainers.image.authors="Microsoft Corporation"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.description="jrt-controller for Ubuntu 24.04"
+
 ENV DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-c"]
 ENV CLANG_FORMAT_CHECK=1
@@ -46,5 +51,11 @@ RUN pip3 install -r /jrtc/jbpf-protobuf/3p/nanopb/requirements.txt --break-syste
 # install rust
 RUN apt install -y cargo
 ENV PATH="/root/.cargo/bin:${PATH}"
+
+## build the jrtc and doxygen
+RUN DOXYGEN=1 /jrtc/helper_build_files/build_jrtc.sh
+
+## check if /jrtc/out/bin/jrtc exists
+RUN if [ ! -f /jrtc/out/bin/jrtc ]; then echo "build error: jrtc not found"; exit 1; fi
 
 ENTRYPOINT [ "/jrtc/helper_build_files/build_jrtc.sh" ]

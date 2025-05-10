@@ -1,17 +1,59 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
-package decoder
+
+package udp
 
 import (
-	"context"
-	"encoding/hex"
+	context "context"
 	"errors"
 	"fmt"
 	"net"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
-func (s *Server) serveData(ctx context.Context) error {
+const (
+	dataReadDeadline = 1 * time.Second
+	decoderChanSize  = 100
+)
+
+// Server is a basic UDP server that listens for incoming data
+type Server struct {
+	ctx    context.Context
+	logger *logrus.Logger
+	opts   *ServerOptions
+	OutQ   chan []byte
+}
+
+// NewServer returns a new Server
+func NewServer(parentCtx context.Context, logger *logrus.Logger, opts *ServerOptions, qSize int) (*Server, error) {
+	ctx, cancelFunc := context.WithCancel(parentCtx)
+	stopper := make(chan os.Signal, 1)
+	signal.Notify(stopper, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	go func() {
+		sig := <-stopper
+		logger.WithField("sig", sig).Info("cancelling context due to signal")
+		cancelFunc()
+	}()
+
+	return &Server{
+		ctx:    ctx,
+		logger: logger,
+		opts:   opts,
+		OutQ:   make(chan []byte, qSize),
+	}, nil
+}
+
+// Serve starts the server
+func (s *Server) Serve() error {
+	if !s.opts.dataEnabled {
+		return nil
+	}
+
 	data, err := net.ListenPacket(dataScheme, fmt.Sprintf("%s:%d", s.opts.dataIP, s.opts.dataPort))
 	if err != nil {
 		return err
@@ -26,7 +68,8 @@ func (s *Server) serveData(ctx context.Context) error {
 
 	for {
 		select {
-		case <-ctx.Done():
+		case <-s.ctx.Done():
+			close(s.OutQ)
 			return nil
 		default:
 			buffer := make([]byte, s.opts.dataBufferSize)
@@ -41,19 +84,8 @@ func (s *Server) serveData(ctx context.Context) error {
 				return errors.Join(err, fmt.Errorf("error reading from UDP socket"))
 			}
 
-			bufferHex := hex.EncodeToString(buffer[:n])
-			fmt.Printf("recv \"%s\"(%d)\n", bufferHex, n)
-
-			if n < 16 {
-				s.logger.Warn("received data is less than 18 bytes, skipping")
-				continue
-			}
-			streamUUID := [16]byte{}
-			copy(streamUUID[:], buffer[:16])
-			payload := buffer[16:n]
-
 			select {
-			case s.OutQ <- &RecData{Payload: payload, StreamUUID: streamUUID}:
+			case s.OutQ <- buffer[:n]:
 			default:
 				s.logger.Warn("outQ is full, dropping data")
 			}

@@ -4,6 +4,7 @@
 package decoder
 
 import (
+	"jrtc-ctl/cmd/decoder/collectjson"
 	"jrtc-ctl/cmd/decoder/load"
 	"jrtc-ctl/cmd/decoder/run"
 	"jrtc-ctl/cmd/decoder/unload"
@@ -20,9 +21,10 @@ func Command(opts *common.GeneralOptions) *cobra.Command {
 		Short: "Execute a decoder subcommand",
 	}
 	cmd.AddCommand(
+		collectjson.Command(opts),
 		load.Command(opts),
-		unload.Command(opts),
 		run.Command(opts),
+		unload.Command(opts),
 	)
 	return cmd
 }

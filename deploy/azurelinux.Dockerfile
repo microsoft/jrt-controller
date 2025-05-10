@@ -2,6 +2,11 @@
 # Licensed under the MIT license.
 FROM mcr.microsoft.com/azurelinux/base/core:3.0
 
+LABEL org.opencontainers.image.source="https://github.com/microsoft/jrt-controller"
+LABEL org.opencontainers.image.authors="Microsoft Corporation"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.description="jrt-controller for Azure Linux"
+
 RUN echo "*** Installing packages"
 RUN tdnf upgrade tdnf --refresh -y
 RUN tdnf -y update
@@ -39,5 +44,11 @@ RUN pip3 install -r /jrtc/jbpf-protobuf/3p/nanopb/requirements.txt
 RUN tdnf install -y procps-ng
 
 RUN pip3 install ctypesgen
+
+## build the jrtc and doxygen
+RUN DOXYGEN=1 /jrtc/helper_build_files/build_jrtc.sh
+
+## check if /jrtc/out/bin/jrtc exists
+RUN if [ ! -f /jrtc/out/bin/jrtc ]; then echo "build error: jrtc not found"; exit 1; fi
 
 ENTRYPOINT [ "/jrtc/helper_build_files/build_jrtc.sh" ]
