@@ -22,7 +22,7 @@ from simple_input_pb import simple_input_pb
 # Define the state variables for the application
 class AppStateVars(ctypes.Structure):
     _fields_ = [
-         ("app", ctypes.py_object),
+        ("app", ctypes.py_object),
         
         # add custom fields below
         ("agg_cnt", ctypes.c_int32)
