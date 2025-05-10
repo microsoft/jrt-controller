@@ -1,6 +1,5 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
-
 import os
 import sys
 import ctypes
@@ -22,7 +21,7 @@ from simple_input import simple_input
 # Define the state variables for the application
 class AppStateVars(ctypes.Structure):
     _fields_ = [
-        ("app", ctypes.POINTER(JrtcApp)),
+        ("app", ctypes.py_object),
         
         # add custom fields below
         ("agg_cnt", ctypes.c_int),
@@ -46,6 +45,12 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
         # Dereference the pointer arguments
         state = ctypes.cast(state_ptr, ctypes.POINTER(AppStateVars)).contents        
         data_entry = data_entry_ptr.contents
+
+        print("BEFORE")
+        a = 10000 * [0]
+        for i in range(10000):
+            a[i] = 100 * [1]
+        print("AFTER")        
 
         if stream_idx == GENERATOR_OUT_STREAM_IDX:
 
