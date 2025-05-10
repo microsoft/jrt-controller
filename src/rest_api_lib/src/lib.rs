@@ -22,7 +22,6 @@ use tokio::runtime::Runtime;
 use tokio::sync::Mutex;
 use utoipa::{OpenApi, ToSchema};
 use utoipa_swagger_ui::SwaggerUi;
-use std::env;
 use std::collections::HashMap;
 
 #[repr(C)]
@@ -285,12 +284,9 @@ async fn load_app(
         };
 
         // Free app_name memory after callback
-        unsafe {
-            // Free app_name memory after callback
-            let _ = CString::from_raw(app_name_ptr);
-            let _ = CString::from_raw(app_path_ptr);
-            let _ = CString::from_raw(app_type_ptr);
-        }
+        let _ = CString::from_raw(app_name_ptr);
+        let _ = CString::from_raw(app_path_ptr);
+        let _ = CString::from_raw(app_type_ptr);
     }
 
     match response {
@@ -428,6 +424,6 @@ pub extern "C" fn jrtc_start_rest_server(ptr: *mut c_void, port: u16, cbs: *mut 
         spawn_server((*handle).clone(), port, callbacks);
 
         // Convert back into raw pointer to avoid premature drop
-        Arc::into_raw(handle);
+        let _ = Arc::into_raw(handle);
     }
 }
