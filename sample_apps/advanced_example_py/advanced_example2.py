@@ -46,12 +46,6 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
         state = ctypes.cast(state_ptr, ctypes.POINTER(AppStateVars)).contents        
         data_entry = data_entry_ptr.contents
 
-        print("BEFORE")
-        a = 10000 * [0]
-        for i in range(10000):
-            a[i] = 100 * [1]
-        print("AFTER")             
-
         if stream_idx == GENERATOR_PB_OUT_STREAM_IDX:
 
             state.received_counter += 1
