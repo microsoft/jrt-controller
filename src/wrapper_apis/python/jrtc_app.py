@@ -5,6 +5,7 @@ import time
 import os
 import sys
 import ctypes
+from dataclasses import dataclass
 from ctypes import (
     c_int, c_float, c_char_p, c_void_p, c_bool,
     POINTER, Structure, c_uint16, c_uint64
@@ -73,48 +74,43 @@ class JrtcAppCfg_t(Structure):
         ("inactivity_timeout_secs", c_float),
     ]
 
-# Opaque types
 class ChannelCtx(ctypes.Structure): pass
-class RouterDataEntry(ctypes.Structure): pass
-
-# Callback type definition
-JrtcAppHandler = ctypes.CFUNCTYPE(
-    None, c_bool, c_int, POINTER(struct_jrtc_router_data_entry), c_void_p
-)
+class AppStateVars: pass
 
 class StreamItem(ctypes.Structure):
     sid: Optional[JrtcRouterStreamId] = None
     registered: bool = False
     chan_ctx: Optional[ChannelCtx] = None
 
-class AppStateVars(ctypes.Structure):
-    pass
-
-class JrtcAppCStruct(Structure):
-    _fields_ = [
-        ("env_ctx", JrtcAppEnv),
-        ("app_cfg", JrtcAppCfg_t),
-        ("app_handler", JrtcAppHandler),
-        ("app_state", ctypes.c_void_p),
-        ("last_received_time", ctypes.c_float),
-    ]
+@dataclass
+class JrtcAppData:
+    env_ctx: JrtcAppEnv
+    app_cfg: JrtcAppCfg_t
+    app_handler: Any
+    app_state: AppStateVars
+    last_received_time: float
+    def __init__(self, env_ctx, app_cfg, app_handler, app_state, last_received_time):
+        self.env_ctx = env_ctx
+        self.app_cfg = app_cfg
+        self.app_handler = app_handler
+        self.app_state = app_state
+        self.last_received_time = last_received_time
 
 class JrtcApp:
     def __init__(self, env_ctx, app_cfg, app_handler, app_state):
         super().__init__()
-        self.c_struct = JrtcAppCStruct(env_ctx, app_cfg, app_handler, app_state, time.monotonic())
+        self.data = JrtcAppData(env_ctx, app_cfg, app_handler, app_state, time.monotonic())
         self.stream_items: list[StreamItem] = []
 
     def init(self) -> int:
         start_time = time.monotonic()
         self.last_received_time = start_time
 
-        for i in range(self.c_struct.app_cfg.num_streams):
-            stream = self.c_struct.app_cfg.streams[i]
+        for i in range(self.data.app_cfg.num_streams):
+            stream = self.data.app_cfg.streams[i]
             si = StreamItem()
             si.sid = JrtcRouterStreamId()
 
-            ## res = jrtc_router_generate_stream_id(&sid, s.sid.destination, s.sid.device_id, s.sid.stream_source, s.sid.io_map);
             res = si.sid.generate_id(
                 stream.sid.destination,
                 stream.sid.device_id,
@@ -122,14 +118,14 @@ class JrtcApp:
                 stream.sid.io_map,
             )
             if res != 1:
-                print(f"{self.c_struct.app_cfg.context}:: Failed to generate stream ID for stream {i}")
+                print(f"{self.data.app_cfg.context}:: Failed to generate stream ID for stream {i}")
                 return -1
             _sid = si.sid
             si.sid = si.sid.convert_to_struct_jrtc_router_stream_id()
 
             if stream.appChannel:
                 si.chan_ctx = jrtc_router_channel_create(
-                    self.c_struct.env_ctx.dapp_ctx,
+                    self.data.env_ctx.dapp_ctx,
                     stream.appChannel.contents.is_output,
                     stream.appChannel.contents.num_elems,
                     stream.appChannel.contents.elem_size,
@@ -138,46 +134,46 @@ class JrtcApp:
                     0,
                 )
                 if not si.chan_ctx:
-                    print(f"{self.c_struct.app_cfg.context}:: Failed to create channel for stream {i}")
+                    print(f"{self.data.app_cfg.context}:: Failed to create channel for stream {i}")
                     return -1
 
             if stream.is_rx:
-                if not jrtc_router_channel_register_stream_id_req(self.c_struct.env_ctx.dapp_ctx, si.sid):
-                    print(f"{self.c_struct.app_cfg.context}:: Failed to register stream {i}")
+                if not jrtc_router_channel_register_stream_id_req(self.data.env_ctx.dapp_ctx, si.sid):
+                    print(f"{self.data.app_cfg.context}:: Failed to register stream {i}")
                     return -1
                 si.registered = True
 
             self.stream_items.append(si)
 
-            if self.c_struct.app_cfg.initialization_timeout_secs > 0:
-                if time.monotonic() - start_time > self.c_struct.app_cfg.initialization_timeout_secs:
-                    print(f"{self.c_struct.app_cfg.context}:: Initialization timeout")
+            if self.data.app_cfg.initialization_timeout_secs > 0:
+                if time.monotonic() - start_time > self.data.app_cfg.initialization_timeout_secs:
+                    print(f"{self.data.app_cfg.context}:: Initialization timeout")
                     return -1
 
-        for i in range(self.c_struct.app_cfg.num_streams):
-            stream = self.c_struct.app_cfg.streams[i]
+        for i in range(self.data.app_cfg.num_streams):
+            stream = self.data.app_cfg.streams[i]
             si = self.stream_items[i]
             if not stream.is_rx and not si.chan_ctx:
                 k = 0
                 while not jrtc_router_input_channel_exists(si.sid):
                     time.sleep(0.1)
                     if k == 10:
-                        print(f"{self.c_struct.app_cfg.context}:: Waiting for creation of stream {i}")
+                        print(f"{self.data.app_cfg.context}:: Waiting for creation of stream {i}")
                         k = 0
                     else:
                         k += 1
 
-                    if self.c_struct.app_cfg.initialization_timeout_secs > 0:
-                        if time.monotonic() - start_time > self.c_struct.app_cfg.initialization_timeout_secs:
-                            print(f"{self.c_struct.app_cfg.context}:: Timeout waiting for stream {i}")
+                    if self.data.app_cfg.initialization_timeout_secs > 0:
+                        if time.monotonic() - start_time > self.data.app_cfg.initialization_timeout_secs:
+                            print(f"{self.data.app_cfg.context}:: Timeout waiting for stream {i}")
                             return -1
         return 0
 
     def cleanup(self):
-        print(f"{self.c_struct.app_cfg.context}:: Cleaning up app")
+        print(f"{self.data.app_cfg.context}:: Cleaning up app")
         for si in self.stream_items:
             if si.registered:
-                jrtc_router_channel_deregister_stream_id_req(self.c_struct.env_ctx.dapp_ctx, si.sid)
+                jrtc_router_channel_deregister_stream_id_req(self.data.env_ctx.dapp_ctx, si.sid)
             if si.chan_ctx:
                 jrtc_router_channel_destroy(si.chan_ctx)
 
@@ -185,32 +181,32 @@ class JrtcApp:
         if self.init() != 0:
             return
 
-        data_entries = get_data_entry_array_ptr(self.c_struct.app_cfg.q_size)
-        while not self.c_struct.env_ctx.app_exit:
+        data_entries = get_data_entry_array_ptr(self.data.app_cfg.q_size)
+        while not self.data.env_ctx.app_exit:
             now = time.monotonic()
             if (
-                self.c_struct.app_cfg.inactivity_timeout_secs > 0
-                and now - self.c_struct.last_received_time > self.c_struct.app_cfg.inactivity_timeout_secs
+                self.data.app_cfg.inactivity_timeout_secs > 0
+                and now - self.data.last_received_time > self.data.app_cfg.inactivity_timeout_secs
             ):
-                self.c_struct.app_handler(True, -1, None, self.c_struct.app_state)
+                self.data.app_handler(True, -1, None, self.data.app_state)
                 self.last_received_time = now
 
-            num_rcv = jrtc_router_receive(self.c_struct.env_ctx.dapp_ctx, data_entries, self.c_struct.app_cfg.q_size)
+            num_rcv = jrtc_router_receive(self.data.env_ctx.dapp_ctx, data_entries, self.data.app_cfg.q_size)
             for i in range(num_rcv):
                 data_entry = data_entries[i]
                 if not data_entry:
                     continue
-                for sidx in range(self.c_struct.app_cfg.num_streams):
-                    stream = self.c_struct.app_cfg.streams[sidx]
+                for sidx in range(self.data.app_cfg.num_streams):
+                    stream = self.data.app_cfg.streams[sidx]
                     si = self.stream_items[sidx]
                     if stream.is_rx and jrtc_router_stream_id_matches_req(data_entry.stream_id, si.sid):
-                        self.c_struct.app_handler(False, sidx, data_entry, self.c_struct.app_state)
+                        self.data.app_handler(False, sidx, data_entry, self.data.app_state)
                         break
                 jrtc_router_channel_release_buf(data_entry.data)
-                self.c_struct.last_received_time = time.monotonic()
+                self.data.last_received_time = time.monotonic()
 
-            if self.c_struct.app_cfg.sleep_timeout_secs > 0:
-                time.sleep(max(self.c_struct.app_cfg.sleep_timeout_secs, 1e-9))
+            if self.data.app_cfg.sleep_timeout_secs > 0:
+                time.sleep(max(self.data.app_cfg.sleep_timeout_secs, 1e-9))
 
         self.cleanup()
 
@@ -224,14 +220,13 @@ class JrtcApp:
             return
         return self.stream_items[stream_idx].chan_ctx
 
-def jrtc_app_create(capsule, app_cfg: JrtcAppCfg_t, app_handler: JrtcAppHandler, app_state):
+def jrtc_app_create(capsule, app_cfg: JrtcAppCfg_t, app_handler, app_state):
     env_ctx = get_ctx_from_capsule(capsule)
-    app_handler_c = JrtcAppHandler(app_handler)
     app_instance = JrtcApp(
         env_ctx=env_ctx, 
         app_cfg=app_cfg, 
-        app_handler=app_handler_c, 
-        app_state=ctypes.cast(ctypes.pointer(app_state), ctypes.c_void_p)
+        app_handler=app_handler, 
+        app_state=app_state,
     )
     return app_instance
 
