@@ -49,10 +49,7 @@ RUN pip3 install -r /jrtc/jbpf-protobuf/3p/nanopb/requirements.txt --break-syste
 ## RUN apt install -y python3-protobuf python3-grpcio
 
 # install rust
-RUN curl https://sh.rustup.rs -sSf | sh -s -- -y --default-toolchain 1.82 \
- && . "$HOME/.cargo/env" \
- && rustc --version
-
+RUN apt install -y cargo
 ENV PATH="/root/.cargo/bin:${PATH}"
 
 ## build the jrtc and doxygen
