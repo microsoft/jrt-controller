@@ -5,6 +5,8 @@ package jrtc
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -91,7 +93,11 @@ func logResponse[T someResponse](logger *logrus.Logger, resp T, rawResp *http.Re
 	l := logger.WithFields(logrus.Fields{
 		"address": rawResp.Request.URL.String(),
 	})
-	l.Info("new http request")
+
+	hash := sha256.Sum256([]byte(fmt.Sprintf("%s", rawResp.Request.URL.String())))
+	reqHash := hex.EncodeToString(hash[:])
+
+	l.WithField("hash", reqHash).Info("new http request")
 	l = l.WithFields(logrus.Fields{
 		"code":   rawResp.StatusCode,
 		"method": rawResp.Request.Method,
@@ -99,13 +105,13 @@ func logResponse[T someResponse](logger *logrus.Logger, resp T, rawResp *http.Re
 	})
 
 	if err != nil {
-		l.WithError(err).Error("failed to send http request")
+		l.WithError(err).WithField("hash", reqHash).Error("failed to send http request")
 		return resp, err
 	}
 	if resp.StatusCode() < 200 || resp.StatusCode() > 299 {
-		l.Error("failed to send http request with non 2XX status code")
+		l.WithField("hash", reqHash).Error("failed to send http request with non 2XX status code")
 		return resp, fmt.Errorf("failed to send http request with non 2XX status code: %s", resp.Status())
 	}
-	l.Info("successfully sent http request")
+	l.WithField("hash", reqHash).Info("successfully sent http request")
 	return resp, err
 }

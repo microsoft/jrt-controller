@@ -6,6 +6,8 @@ package jbpf
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -46,13 +48,16 @@ func (c *Client) doPost(relativeURL string, body any) error {
 	}
 	req.Header.Set("Content-Type", "application/json")
 
+	hash := sha256.Sum256([]byte(fmt.Sprintf("%s%s%s", c.opts.addr.String(), relativeURL, bodyB)))
+	reqHash := hex.EncodeToString(hash[:])
+
 	l := c.logger.WithFields(logrus.Fields{"method": req.Method, "url": req.URL.String()})
-	l.WithField("body", string(bodyB)).Trace("sending http request")
+	l.WithField("body", string(bodyB)).WithField("hash", reqHash).Trace("sending http request")
 	resp, err := c.inner.Do(req)
 	if err != nil {
 		return err
 	}
-	l.WithField("statusCode", resp.StatusCode).Trace("http request completed")
+	l.WithField("statusCode", resp.StatusCode).WithField("hash", reqHash).Trace("http request completed")
 	if resp.StatusCode != http.StatusCreated {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
@@ -68,13 +73,16 @@ func (c *Client) doDelete(relativeURL string) error {
 		return err
 	}
 
+	hash := sha256.Sum256([]byte(fmt.Sprintf("%s%s", c.opts.addr.String(), relativeURL)))
+	reqHash := hex.EncodeToString(hash[:])
+
 	l := c.logger.WithFields(logrus.Fields{"method": req.Method, "url": req.URL.String()})
-	l.Trace("sending http request")
+	l.WithField("hash", reqHash).Trace("sending http request")
 	resp, err := c.inner.Do(req)
 	if err != nil {
 		return err
 	}
-	l.WithField("statusCode", resp.StatusCode).Trace("http request completed")
+	l.WithField("statusCode", resp.StatusCode).WithField("hash", reqHash).Trace("http request completed")
 	if resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}

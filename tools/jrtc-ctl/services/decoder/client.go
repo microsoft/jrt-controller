@@ -127,7 +127,6 @@ func (c *Client) doPut(relativeURL string, body any) (*Response, error) {
 		return nil, err
 	}
 
-	// Compute SHA256 hash of the request body
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s%s%s", c.baseURL, relativeURL, bodyB)))
 	reqHash := hex.EncodeToString(hash[:])
 
