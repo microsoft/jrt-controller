@@ -360,7 +360,6 @@ cleanup_capsule:
     Py_XDECREF(pCapsule);
 
 cleanup_gil:
-    PyGILState_Release(gstate);
 
     if (ts1) {
         if (main_ts != ts1) {
@@ -371,6 +370,7 @@ cleanup_gil:
         PyThreadState_Swap(main_ts);
         Py_EndInterpreter(ts1);
     }
+    PyGILState_Release(gstate);
 
     if (Py_IsInitialized()) {
         Py_Finalize();
