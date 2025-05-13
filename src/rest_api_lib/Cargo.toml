@@ -24,4 +24,3 @@ litemap = "=0.7.4"
 [lib]
 name = "jrtc_rest_api_lib"
 crate-type = ["staticlib"]
-
