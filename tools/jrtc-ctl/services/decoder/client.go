@@ -128,7 +128,7 @@ func (c *Client) doPut(relativeURL string, body any) (*Response, error) {
 	}
 
 	// Compute SHA256 hash of the request body
-	hash := sha256.Sum256(bodyB)
+	hash := sha256.Sum256([]byte(fmt.Sprintf("%s%s%s", c.baseURL, relativeURL, bodyB)))
 	reqHash := hex.EncodeToString(hash[:])
 
 	req, err := http.NewRequestWithContext(childCtx, "PUT", fmt.Sprintf("%s%s", c.baseURL, relativeURL), bytes.NewBuffer(bodyB))
@@ -138,19 +138,18 @@ func (c *Client) doPut(relativeURL string, body any) (*Response, error) {
 	req.Header.Set("Content-Type", "application/json")
 
 	l := c.logger.WithFields(logrus.Fields{
-		"method":  req.Method,
-		"url":     req.URL.String(),
-		"reqHash": reqHash,
+		"method": req.Method,
+		"url":    req.URL.String(),
 	})
 
-	l.WithField("body", string(bodyB)).Trace("sending http request")
+	l.WithField("body", string(bodyB)).WithField("hash", reqHash).Trace("sending http request")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	l.WithField("statusCode", resp.StatusCode).Trace("http request completed")
+	l.WithField("statusCode", resp.StatusCode).WithField("hash", reqHash).Trace("http request completed")
 
 	return c.httpResponseParser(l, resp)
 }
@@ -159,7 +158,6 @@ func (c *Client) doDelete(relativeURL string) (*Response, error) {
 	childCtx, cancel := context.WithCancel(c.ctx)
 	defer cancel()
 
-	// Generate SHA256 hash for the URL (or URL + other components if needed)
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s%s", c.baseURL, relativeURL)))
 	reqHash := hex.EncodeToString(hash[:])
 
@@ -169,19 +167,18 @@ func (c *Client) doDelete(relativeURL string) (*Response, error) {
 	}
 
 	l := c.logger.WithFields(logrus.Fields{
-		"method":  req.Method,
-		"url":     req.URL.String(),
-		"reqHash": reqHash,
+		"method": req.Method,
+		"url":    req.URL.String(),
 	})
 
-	l.Trace("sending http request")
+	l.WithField("hash", reqHash).Trace("sending http request")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	l.WithField("statusCode", resp.StatusCode).Trace("http request completed")
+	l.WithField("statusCode", resp.StatusCode).WithField("hash", reqHash).Trace("http request completed")
 
 	return c.httpResponseParser(l, resp)
 }
