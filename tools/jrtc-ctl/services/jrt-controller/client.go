@@ -94,7 +94,7 @@ func logResponse[T someResponse](logger *logrus.Logger, resp T, rawResp *http.Re
 		"address": rawResp.Request.URL.String(),
 	})
 
-	hash := sha256.Sum256([]byte(fmt.Sprintf("%s", rawResp.Request.URL.String())))
+	hash := sha256.Sum256([]byte(rawResp.Request.URL.String()))
 	reqHash := hex.EncodeToString(hash[:])
 
 	l.WithField("hash", reqHash).Info("new http request")
