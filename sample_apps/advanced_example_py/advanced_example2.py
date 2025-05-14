@@ -1,9 +1,9 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
-
 import os
 import sys
 import ctypes
+from dataclasses import dataclass
 
 JRTC_APP_PATH = os.environ.get("JRTC_APP_PATH")
 if JRTC_APP_PATH is None:
@@ -21,18 +21,14 @@ from simple_input_pb import simple_input_pb
 
 ##########################################################################
 # Define the state variables for the application
-class AppStateVars(ctypes.Structure):
-    _fields_ = [
-        ("app", ctypes.POINTER(JrtcApp)),
-        
-        # add custom fields below
-        ("agg_cnt", ctypes.c_int32),
-        ("received_counter", ctypes.c_int)
-    ]        
+@dataclass
+class AppStateVars:
+    app: JrtcApp
+    agg_cnt: int
+    received_counter: int    
 
 ##########################################################################
-# Handler callback function (this function gets called by the C library)
-def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(struct_jrtc_router_data_entry), state_ptr: int):
+def app_handler(timeout: bool, stream_idx: int, data_entry: struct_jrtc_router_data_entry, state: AppStateVars):
 
     GENERATOR_PB_OUT_STREAM_IDX = 0
     APP2_OUT_STREAM_IDX = 1
@@ -43,9 +39,6 @@ def app_handler(timeout: bool, stream_idx: int, data_entry_ptr: ctypes.POINTER(s
         pass
 
     else:
-        # Dereference the pointer arguments
-        state = ctypes.cast(state_ptr, ctypes.POINTER(AppStateVars)).contents        
-        data_entry = data_entry_ptr.contents
 
         if stream_idx == GENERATOR_PB_OUT_STREAM_IDX:
 
@@ -135,7 +128,7 @@ def jrtc_start_app(capsule):
     )
 
     # Initialize the app
-    state = AppStateVars(agg_cnt=0, received_counter=0)
+    state = AppStateVars(agg_cnt=0, received_counter=0, app=None)
     state.app = jrtc_app_create(capsule, app_cfg, app_handler, state)
 
     # run the app - This is blocking until the app exists

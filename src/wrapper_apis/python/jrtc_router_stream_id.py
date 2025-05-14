@@ -53,10 +53,8 @@ class JrtcRouterStreamId(Structure):
         b_stream_path = None
         b_stream_name = None
         if stream_path != None:
-            stream_path = stream_path.encode("utf-8")
             b_stream_path = ctypes.create_string_buffer(stream_path)
         if stream_name != None:
-            stream_name = stream_name.encode("utf-8")
             b_stream_name = ctypes.create_string_buffer(stream_name)
 
         res = stream_id_lib.jrtc_router_generate_stream_id(
