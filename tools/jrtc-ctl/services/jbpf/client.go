@@ -52,12 +52,12 @@ func (c *Client) doPost(relativeURL string, body any) error {
 	reqHash := hex.EncodeToString(hash[:])
 
 	l := c.logger.WithFields(logrus.Fields{"method": req.Method, "url": req.URL.String()})
-	l.WithField("body", string(bodyB)).WithField("hash", reqHash).Trace("sending http request")
+	l.WithField("body", string(bodyB)).WithField("request_id", reqHash).Trace("sending http request")
 	resp, err := c.inner.Do(req)
 	if err != nil {
 		return err
 	}
-	l.WithField("statusCode", resp.StatusCode).WithField("hash", reqHash).Trace("http request completed")
+	l.WithField("statusCode", resp.StatusCode).WithField("request_id", reqHash).Trace("http request completed")
 	if resp.StatusCode != http.StatusCreated {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
@@ -77,12 +77,12 @@ func (c *Client) doDelete(relativeURL string) error {
 	reqHash := hex.EncodeToString(hash[:])
 
 	l := c.logger.WithFields(logrus.Fields{"method": req.Method, "url": req.URL.String()})
-	l.WithField("hash", reqHash).Trace("sending http request")
+	l.WithField("request_id", reqHash).Trace("sending http request")
 	resp, err := c.inner.Do(req)
 	if err != nil {
 		return err
 	}
-	l.WithField("statusCode", resp.StatusCode).WithField("hash", reqHash).Trace("http request completed")
+	l.WithField("statusCode", resp.StatusCode).WithField("request_id", reqHash).Trace("http request completed")
 	if resp.StatusCode != http.StatusNoContent {
 		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
 	}
