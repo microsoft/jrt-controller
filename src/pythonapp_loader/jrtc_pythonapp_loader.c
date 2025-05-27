@@ -309,7 +309,7 @@ jrtc_start_app(void* args)
         fprintf(stderr, "Error: Failed to create sub-interpreter.\n");
         goto cleanup_capsule;
     }
-    PyThreadState_Swap(ts1);
+    // PyThreadState_Swap(ts1);
 
     // Inject modules directly into the subinterpreter's sys.modules
     PyObject* sysModule = PyImport_ImportModule("sys");
@@ -362,13 +362,9 @@ cleanup_capsule:
 cleanup_gil:
 
     if (ts1) {
-        if (main_ts != ts1) {
-            fprintf(stderr, "Error: Current thread does not match the sub-interpreter thread.\n");
-            return NULL;
-        }
         // === Clean up Sub-interpreter ===
-        PyThreadState_Swap(main_ts);
         Py_EndInterpreter(ts1);
+        PyThreadState_Swap(main_ts);
     }
     PyGILState_Release(gstate);
 
