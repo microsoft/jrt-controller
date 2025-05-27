@@ -309,7 +309,6 @@ jrtc_start_app(void* args)
         fprintf(stderr, "Error: Failed to create sub-interpreter.\n");
         goto cleanup_capsule;
     }
-    // PyThreadState_Swap(ts1);
 
     // Inject modules directly into the subinterpreter's sys.modules
     PyObject* sysModule = PyImport_ImportModule("sys");
