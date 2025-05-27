@@ -362,6 +362,7 @@ cleanup_gil:
 
     if (ts1) {
         // === Clean up Sub-interpreter ===
+        PyThreadState_Swap(ts1);
         Py_EndInterpreter(ts1);
         PyThreadState_Swap(main_ts);
     }
