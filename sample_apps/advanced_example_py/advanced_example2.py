@@ -30,6 +30,8 @@ class AppStateVars:
 ##########################################################################
 def app_handler(timeout: bool, stream_idx: int, data_entry: struct_jrtc_router_data_entry, state: AppStateVars):
 
+    print(f"App2: Received data on stream index {stream_idx}", flush=True)
+
     GENERATOR_PB_OUT_STREAM_IDX = 0
     APP2_OUT_STREAM_IDX = 1
     APP1_IN_STREAM_IDX = 2

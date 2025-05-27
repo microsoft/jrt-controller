@@ -1,6 +1,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
+import copy
 import time
 import os
 import sys
@@ -96,6 +97,9 @@ class JrtcAppData:
         self.app_state = app_state
         self.last_received_time = last_received_time
 
+def dump_stream_id(data):
+    return " ".join(f"{b:02x}" for b in bytearray(data))
+
 class JrtcApp:
     def __init__(self, env_ctx, app_cfg, app_handler, app_state):
         super().__init__()
@@ -103,6 +107,7 @@ class JrtcApp:
         self.stream_items: list[StreamItem] = []
 
     def init(self) -> int:
+        print(f"{self.data.app_cfg.context}:: App initialization started", flush=True)
         start_time = time.monotonic()
         self.last_received_time = start_time
 
@@ -111,6 +116,7 @@ class JrtcApp:
             si = StreamItem()
             si.sid = JrtcRouterStreamId()
 
+            print(f"Inputs for stream {i}: dst={stream.sid.destination}, dev={stream.sid.device_id}, source={stream.sid.stream_source}, map={stream.sid.io_map}")
             res = si.sid.generate_id(
                 stream.sid.destination,
                 stream.sid.device_id,
@@ -120,8 +126,15 @@ class JrtcApp:
             if res != 1:
                 print(f"{self.data.app_cfg.context}:: Failed to generate stream ID for stream {i}")
                 return -1
+            
+
             _sid = si.sid
             si.sid = si.sid.convert_to_struct_jrtc_router_stream_id()
+
+            if not any(bytes(si.sid)) or not any(bytes(_sid)):
+                print(f"Stream {i} ID is all zeros after generation!", flush=True)
+
+            print(f"{self.data.app_cfg.context}:: Stream {i} ID: {dump_stream_id(_sid)}", flush=True)
 
             if stream.appChannel:
                 si.chan_ctx = jrtc_router_channel_create(
@@ -150,6 +163,7 @@ class JrtcApp:
                     print(f"{self.data.app_cfg.context}:: Initialization timeout")
                     return -1
 
+        print(f"{self.data.app_cfg.context}:: App has {self.data.app_cfg.num_streams} streams", flush=True)
         for i in range(self.data.app_cfg.num_streams):
             stream = self.data.app_cfg.streams[i]
             si = self.stream_items[i]
@@ -158,19 +172,19 @@ class JrtcApp:
                 while not jrtc_router_input_channel_exists(si.sid):
                     time.sleep(0.1)
                     if k == 10:
-                        print(f"{self.data.app_cfg.context}:: Waiting for creation of stream {i}")
+                        print(f"{self.data.app_cfg.context}:: Waiting for creation of stream {i} = {dump_stream_id(si.sid)}")
                         k = 0
                     else:
                         k += 1
 
                     if self.data.app_cfg.initialization_timeout_secs > 0:
                         if time.monotonic() - start_time > self.data.app_cfg.initialization_timeout_secs:
-                            print(f"{self.data.app_cfg.context}:: Timeout waiting for stream {i}")
+                            print(f"{self.data.app_cfg.context}:: Timeout waiting for stream {i} = {dump_stream_id(si.sid)}")
                             return -1
         return 0
 
     def cleanup(self):
-        print(f"{self.data.app_cfg.context}:: Cleaning up app")
+        print(f"{self.data.app_cfg.context}:: Cleaning up app", flush=True)
         for si in self.stream_items:
             if si.registered:
                 jrtc_router_channel_deregister_stream_id_req(self.data.env_ctx.dapp_ctx, si.sid)
@@ -180,6 +194,7 @@ class JrtcApp:
     def run(self):        
         if self.init() != 0:
             return
+        print(f"{self.data.app_cfg.context}:: App started with {self.data.app_cfg.num_streams} streams", flush=True)
 
         data_entries = get_data_entry_array_ptr(self.data.app_cfg.q_size)
         while not self.data.env_ctx.app_exit:
