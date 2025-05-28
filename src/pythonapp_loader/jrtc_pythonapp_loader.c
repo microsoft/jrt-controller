@@ -10,7 +10,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include "jrtc_router_app_api.h"
-#include "jrtc_globals.h"
+#include "jrtc_shared_python_state.h"
 #include "jrtc.h"
 
 #define PYTHON_ENTRYPOINT "jrtc_start_app"
@@ -299,25 +299,36 @@ jrtc_start_app(void* args)
         return NULL;
     }
 
-    printf_and_flush("Thread %p: &active_interpreter_users = %p\n", pthread_self(), (void*)&active_interpreter_users);
-    atomic_fetch_add(&active_interpreter_users, 1);
-
     struct jrtc_app_env* env_ctx = (struct jrtc_app_env*)args;
+    shared_python_state_t* shared_python_state = env_ctx->shared_python_state;
+    if (shared_python_state == NULL) {
+        fprintf_and_flush(stderr, "Error: Shared Python state is NULL.\n");
+        return NULL;
+    }
+    printf_and_flush(
+        "Thread %p: &active_interpreter_users = %p\n",
+        pthread_self(),
+        (void*)&shared_python_state->active_interpreter_users);
+    atomic_fetch_add(&shared_python_state->active_interpreter_users, 1);
+
     char* full_path = env_ctx->params[0].val;
     printf_and_flush("Full path: %s\n", full_path);
     char* python_type = env_ctx->params[0].key;
     printf_and_flush("Python type: %s\n", python_type);
 
-    printf_and_flush("Current active interpreter users %s: %d\n", full_path, atomic_load(&active_interpreter_users));
+    printf_and_flush(
+        "Current active interpreter users %s: %d\n",
+        full_path,
+        atomic_load(&shared_python_state->active_interpreter_users));
 
     // Initialize the Python interpreter (only once)
-    pthread_mutex_lock(&python_lock);
-    if ((atomic_load(&python_initialized) == 0) && (Py_IsInitialized() == 0)) {
+    pthread_mutex_lock(&shared_python_state->python_lock);
+    if ((atomic_load(&shared_python_state->python_initialized) == 0) && (Py_IsInitialized() == 0)) {
         Py_Initialize();
-        atomic_store(&python_initialized, 1);
+        atomic_store(&shared_python_state->python_initialized, 1);
         printf_and_flush("Python interpreter initialized.\n");
     }
-    pthread_mutex_unlock(&python_lock);
+    pthread_mutex_unlock(&shared_python_state->python_lock);
 
     // Acquire GIL (if multi-threaded)
     PyGILState_STATE gstate = PyGILState_Ensure();
@@ -412,7 +423,8 @@ cleanup_capsule:
 cleanup_gil:
 
     printf_and_flush("Cleaning up sub-interpreter: %s...\n", full_path);
-    printf_and_flush("Current active interpreter users: %d\n", atomic_load(&active_interpreter_users));
+    printf_and_flush(
+        "Current active interpreter users: %d\n", atomic_load(&shared_python_state->active_interpreter_users));
 
     if (ts1) {
         // === Clean up Sub-interpreter ===
@@ -425,15 +437,15 @@ cleanup_gil:
     }
     PyGILState_Release(gstate);
 
-    int users_left = atomic_fetch_sub(&active_interpreter_users, 1) - 1;
+    int users_left = atomic_fetch_sub(&shared_python_state->active_interpreter_users, 1) - 1;
 
-    pthread_mutex_lock(&python_lock);
+    pthread_mutex_lock(&shared_python_state->python_lock);
     if ((users_left == 0) && Py_IsInitialized()) {
         Py_FinalizeEx();
-        atomic_store(&python_initialized, 0);
+        atomic_store(&shared_python_state->python_initialized, 0);
         printf_and_flush("Python interpreter finalized.\n");
     }
-    pthread_mutex_unlock(&python_lock);
+    pthread_mutex_unlock(&shared_python_state->python_lock);
 
     return NULL;
 }

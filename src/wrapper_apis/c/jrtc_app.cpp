@@ -116,7 +116,6 @@ JrtcApp::Init()
         }
 
         stream_items.push_back(si);
-        std::cout << app_cfg->context << "::  Created stream item: " << si.sid.id << std::endl;
 
         // Check if the initialisation timeout has been exceeded
         if (app_cfg->initialization_timeout_secs > 0) {
