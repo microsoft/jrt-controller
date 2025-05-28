@@ -43,7 +43,7 @@ set(PYTHON_LOADER_DEPENDENCIES jrtc_router_stream_id jrtc_router jrtc jrtc_logge
 set(PYTHON_BINDING_OUTPUT_FILE "jrtc_bindings.py")
 
 # Source files
-set(PYTHON_LOADER_SRC jrtc_pythonapp_loader.c)
+set(PYTHON_LOADER_SRC jrtc_pythonapp_loader.c jrtc_globals.c)
 
 # Add shared library target
 add_library(${PYTHON_LOADER} SHARED ${PYTHON_LOADER_SRC})
@@ -125,6 +125,7 @@ else()
     ${JRTC_PATH}/src/router/jrtc_router_app_api.h
     ${JRTC_PATH}/src/controller/jrtc.h
     ${JRTC_PATH}/src/router/jrtc_router_int.h
+    ${JRTC_PATH}/src/router/jrtc_router.h
     ${JRTC_PATH}/src/router/jrtc_router.h
     COMMENT "Generating ${PYTHON_BINDING_OUTPUT_FILE}"
   )
