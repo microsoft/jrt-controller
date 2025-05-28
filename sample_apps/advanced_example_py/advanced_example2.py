@@ -82,7 +82,7 @@ def app_handler(
 
     else:
         print(
-            f"App1: Got some unexpected message (stream_index={stream_idx})",
+            f"App2: Got some unexpected message (stream_index={stream_idx})",
             flush=True,
         )
 

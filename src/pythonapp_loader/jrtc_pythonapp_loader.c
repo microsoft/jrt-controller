@@ -250,9 +250,16 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
         goto cleanup;
     }
 
+    printf_and_flush("Calling Python function %s...\n", python_script);
     PyObject_CallObject(pFunc, pArgs);
+    if (PyErr_Occurred()) {
+        PyErr_Print();
+        fprintf_and_flush(stderr, "Error: Exception occurred while calling Python function.\n");
+        goto cleanup;
+    }
 
 cleanup:
+    printf_and_flush("Cleaning up Python script execution %s...\n", python_script);
     Py_XDECREF(pFunc);
     Py_XDECREF(pModule);
     Py_XDECREF(pArgs);
@@ -265,6 +272,7 @@ cleanup:
 
     // Clean up: Swap back to the main interpreter's thread state
     if (ts) {
+        printf_and_flush("Cleaning up sub-interpreter thread state %s...\n", python_script);
         PyThreadState_Swap(mainThreadState);
         PyThreadState_Clear(ts);
         PyThreadState_Delete(ts);

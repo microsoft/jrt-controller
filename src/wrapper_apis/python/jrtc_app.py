@@ -11,12 +11,9 @@ from ctypes import (
     c_int,
     c_float,
     c_char_p,
-    c_void_p,
     c_bool,
     POINTER,
     Structure,
-    c_uint16,
-    c_uint64,
 )
 from dataclasses import dataclass
 from typing import Any, Optional
@@ -37,14 +34,14 @@ from jrtc_wrapper_utils import (
 )
 from jrtc_router_lib import (
     jrtc_router_channel_register_stream_id_req,
-    jrtc_router_channel_deregister_stream_id_req,
+    jrtc_router_channel_create,
+    jrtc_router_input_channel_exists,
     jrtc_router_receive,
+    jrtc_router_channel_deregister_stream_id_req,
+    jrtc_router_channel_destroy,
     jrtc_router_channel_send_input_msg,
     jrtc_router_channel_send_output_msg,
-    jrtc_router_channel_create,
-    jrtc_router_channel_destroy,
     jrtc_router_channel_release_buf,
-    jrtc_router_input_channel_exists,
     JRTC_ROUTER_REQ_DEST_ANY,
     JRTC_ROUTER_REQ_DEVICE_ID_ANY,
     JRTC_ROUTER_REQ_DEST_NONE,
@@ -129,11 +126,15 @@ class JrtcApp:
         )
         self.stream_items: list[StreamItem] = []
         self.logger = logging.getLogger("jrtc_app")
+        log_level = os.environ.get("JRTC_APP_LOG_LEVEL", "DEBUG").upper()
+        logging.basicConfig(
+            level=getattr(logging, log_level, logging.DEBUG),
+            format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+            datefmt="%Y-%m-%d %H:%M:%S",
+        )
 
     def init(self) -> int:
-        self.logger.info(
-            f"{self.data.app_cfg.context}:: App initialization started", flush=True
-        )
+        self.logger.info(f"{self.data.app_cfg.context}:: App initialization started")
         start_time = time.monotonic()
         self.last_received_time = start_time
 
@@ -161,13 +162,10 @@ class JrtcApp:
             si.sid = si.sid.convert_to_struct_jrtc_router_stream_id()
 
             if not any(bytes(si.sid)) or not any(bytes(_sid)):
-                self.logger.error(
-                    f"Stream {i} ID is all zeros after generation!", flush=True
-                )
+                self.logger.error(f"Stream {i} ID is all zeros after generation!")
 
             self.logger.debug(
-                f"{self.data.app_cfg.context}:: Stream {i} ID: {dump_stream_id(_sid)}",
-                flush=True,
+                f"{self.data.app_cfg.context}:: Stream {i} ID: {dump_stream_id(_sid)}"
             )
 
             if stream.appChannel:
@@ -209,8 +207,7 @@ class JrtcApp:
                     return -1
 
         self.logger.debug(
-            f"{self.data.app_cfg.context}:: App has {self.data.app_cfg.num_streams} streams",
-            flush=True,
+            f"{self.data.app_cfg.context}:: App has {self.data.app_cfg.num_streams} streams"
         )
         for i in range(self.data.app_cfg.num_streams):
             stream = self.data.app_cfg.streams[i]
@@ -239,7 +236,7 @@ class JrtcApp:
         return 0
 
     def cleanup(self):
-        self.logger.info(f"{self.data.app_cfg.context}:: Cleaning up app", flush=True)
+        self.logger.info(f"{self.data.app_cfg.context}:: Cleaning up app")
         for si in self.stream_items:
             if si.registered:
                 jrtc_router_channel_deregister_stream_id_req(
@@ -252,12 +249,14 @@ class JrtcApp:
         if self.init() != 0:
             return
         self.logger.debug(
-            f"{self.data.app_cfg.context}:: App started with {self.data.app_cfg.num_streams} streams",
-            flush=True,
+            f"{self.data.app_cfg.context}:: App started with {self.data.app_cfg.num_streams} streams"
         )
 
         data_entries = get_data_entry_array_ptr(self.data.app_cfg.q_size)
         while not self.data.env_ctx.app_exit:
+            self.logger.debug(
+                f"{self.data.app_cfg.context}:: Waiting for data on streams"
+            )
             now = time.monotonic()
             if (
                 self.data.app_cfg.inactivity_timeout_secs > 0
@@ -290,6 +289,7 @@ class JrtcApp:
             if self.data.app_cfg.sleep_timeout_secs > 0:
                 time.sleep(max(self.data.app_cfg.sleep_timeout_secs, 1e-9))
 
+        self.logger.debug(f"{self.data.app_cfg.context}:: App exiting")
         self.cleanup()
 
     def get_stream(self, stream_idx: int) -> Optional[JrtcRouterStreamId]:
