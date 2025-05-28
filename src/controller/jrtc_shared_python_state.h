@@ -4,7 +4,8 @@
 #include <stdatomic.h>
 #include <pthread.h>
 
-typedef struct shared_python_state {
+typedef struct shared_python_state
+{
     pthread_mutex_t python_lock;
     atomic_int active_interpreter_users;
     atomic_int python_initialized;
