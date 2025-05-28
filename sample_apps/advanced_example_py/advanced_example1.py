@@ -140,7 +140,7 @@ def jrtc_start_app(capsule):
         100,  # q_size
         len(streams),  # num_streams
         (JrtcStreamCfg_t * len(streams))(*streams),  # streams
-        10.0,  # initialization_timeout_secs
+        60.0,  # initialization_timeout_secs
         0.1,  # sleep_timeout_secs
         1.0,  # inactivity_timeout_secs
     )
