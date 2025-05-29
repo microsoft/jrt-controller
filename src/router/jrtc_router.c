@@ -906,6 +906,7 @@ jrtc_router_channel_create(
     ck_ht_entry_t channel_entry;
 
     if (!app_ctx) {
+        jrtc_logger(JRTC_ERROR, "Application context is null.\n");
         goto error;
     }
 
@@ -914,12 +915,14 @@ jrtc_router_channel_create(
     router_ctx = jrtc_router_get_ctx();
 
     if (!router_ctx) {
+        jrtc_logger(JRTC_ERROR, "Failed to get router context.\n");
         goto error;
     }
 
     struct dapp_channel_ctx* channel;
     channel = jbpf_malloc(sizeof(struct dapp_channel_ctx));
     if (!channel) {
+        jrtc_logger(JRTC_ERROR, "Error allocating memory for channel context\n");
         goto error;
     }
 
@@ -934,6 +937,7 @@ jrtc_router_channel_create(
     channel->is_output = is_output;
 
     if (!channel->io_channel) {
+        jrtc_logger(JRTC_ERROR, "Error creating IO channel for application %d\n", app_ctx->app_id);
         goto alloc_error;
     }
 
@@ -942,6 +946,7 @@ jrtc_router_channel_create(
         ck_ht_entry_set(&channel_entry, h_req, &stream_id, JRTC_ROUTER_STREAM_ID_BYTE_LEN, channel);
 
         if (!ck_ht_set_spmc(&app_ctx->app_out_channel_list, h_req, &channel_entry)) {
+            jrtc_logger(JRTC_ERROR, "Error adding output channel to application %d\n", app_ctx->app_id);
             goto channel_error;
         } else {
             jrtc_logger(JRTC_INFO, "Added channel to application %d\n", app_ctx->app_id);
@@ -951,6 +956,7 @@ jrtc_router_channel_create(
         ck_ht_entry_set(&channel_entry, h_req, &stream_id, JRTC_ROUTER_STREAM_ID_BYTE_LEN, channel);
 
         if (!ck_ht_set_spmc(&app_ctx->app_in_channel_list, h_req, &channel_entry)) {
+            jrtc_logger(JRTC_ERROR, "Error adding channel to application %d\n", app_ctx->app_id);
             goto channel_error;
         } else {
             jrtc_logger(JRTC_INFO, "Added channel to application %d\n", app_ctx->app_id);
