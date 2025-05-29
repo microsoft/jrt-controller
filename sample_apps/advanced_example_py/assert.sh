@@ -6,6 +6,13 @@ if [[ $count -eq 0 ]]; then
     exit 1
 fi
 
+count=$(grep "App1: Sent aggregate counter" $1 | wc -l)
+echo "The 'App1: Sent aggregate counter' count $2 is $count"
+if [[ $count -eq 0 ]]; then
+    exit 1
+fi
+
+
 ## This checks if the Python interpreter terminates correctly.
 ## We don't have a proper testing framework, so this is a workaround.
 ## https://github.com/microsoft/jrt-controller/issues/56

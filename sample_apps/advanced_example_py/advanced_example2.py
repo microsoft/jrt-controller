@@ -34,15 +34,15 @@ def app_handler(
     data_entry: struct_jrtc_router_data_entry,
     state: AppStateVars,
 ):
+    if timeout:
+        # Timeout processing (not implemented in this example)
+        return
+
     print(f"App2: Received data on stream index {stream_idx}", flush=True)
 
     GENERATOR_PB_OUT_STREAM_IDX = 0
     APP2_OUT_STREAM_IDX = 1
     APP1_IN_STREAM_IDX = 2
-
-    if timeout:
-        # Timeout processing (not implemented in this example)
-        return
 
     if stream_idx == GENERATOR_PB_OUT_STREAM_IDX:
         state.received_counter += 1

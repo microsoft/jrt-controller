@@ -34,14 +34,16 @@ def app_handler(
     data_entry: struct_jrtc_router_data_entry,
     state: AppStateVars,
 ):
+    if timeout:
+        # Timeout processing (not implemented in this example)
+        return
+
+    print(f"App1: Received data on stream index {stream_idx}", flush=True)
+
     GENERATOR_OUT_STREAM_IDX = 0
     APP2_OUT_STREAM_IDX = 1
     SIMPLE_INPUT_CODELET_IN_STREAM_IDX = 2
     APP1_IN_STREAM_IDX = 3
-
-    if timeout:
-        # Timeout processing (not implemented in this example)
-        return
 
     if stream_idx == GENERATOR_OUT_STREAM_IDX:
         # Extract data from the received entry
