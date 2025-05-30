@@ -40,6 +40,7 @@ COPY . /jrtc
 RUN apt install -y nanopb
 
 RUN pip3 install ctypesgen --break-system-packages
+RUN pip3 install requests --break-system-packages
 
 RUN apt install -y python3-dev zip
 

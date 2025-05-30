@@ -43,7 +43,8 @@ RUN pip3 install -r /jrtc/jbpf-protobuf/3p/nanopb/requirements.txt
 ## install pgrep
 RUN tdnf install -y procps-ng
 
-RUN pip3 install ctypesgen
+RUN pip3 install ctypesgen requests 
+
 
 ## build the jrtc and doxygen
 RUN DOXYGEN=1 /jrtc/helper_build_files/build_jrtc.sh

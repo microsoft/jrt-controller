@@ -43,7 +43,7 @@ RUN pip3 install -r /jrtc/jbpf-protobuf/3p/nanopb/requirements.txt
 ## But the protobuf 3.20 is a hard requirement which is not available on ubuntu 22.04 through apt.
 ## RUN apt install -y python3-protobuf python3-grpcio
 
-RUN pip3 install ctypesgen
+RUN pip3 install ctypesgen requests
 
 RUN apt install -y python3-dev zip
 
