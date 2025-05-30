@@ -1,5 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the MIT license.
+#include <pthread.h>
+#include <stdatomic.h>
 #include <Python.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -8,6 +10,7 @@
 #include <limits.h>
 #include <stdio.h>
 #include "jrtc_router_app_api.h"
+#include "jrtc_shared_python_state.h"
 #include "jrtc.h"
 
 #define PYTHON_ENTRYPOINT "jrtc_start_app"
@@ -18,6 +21,26 @@ struct python_state
     PyInterpreterState* ts;
     void* args;
 };
+
+void
+printf_and_flush(const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vprintf(format, args);
+    va_end(args);
+    fflush(stdout);
+}
+
+void
+fprintf_and_flush(FILE* stream, const char* format, ...)
+{
+    va_list args;
+    va_start(args, format);
+    vfprintf(stream, format, args);
+    va_end(args);
+    fflush(stream);
+}
 
 /* Compiler magic to make address sanitizer ignore
 memory leaks originating from libpython */
@@ -110,20 +133,20 @@ import_python_module(const char* python_path)
 {
     PyObject* pModule = NULL;
     if (python_path == NULL) {
-        fprintf(stderr, "Error: Python path is NULL.\n");
+        fprintf_and_flush(stderr, "Error: Python path is NULL.\n");
         return NULL;
     }
 
     // Extract the module name from the path
     char* module_name = get_file_name_without_py(python_path);
     if (module_name == NULL) {
-        fprintf(stderr, "Error: Failed to extract module name from path: %s\n", python_path);
+        fprintf_and_flush(stderr, "Error: Failed to extract module name from path: %s\n", python_path);
         return NULL;
     }
 
     char* path = get_folder(python_path);
     if (path == NULL) {
-        fprintf(stderr, "Error: Failed to extract path from: %s\n", python_path);
+        fprintf_and_flush(stderr, "Error: Failed to extract path from: %s\n", python_path);
         free(module_name);
         return NULL;
     }
@@ -136,18 +159,18 @@ import_python_module(const char* python_path)
     PyObject* py_path = PyUnicode_DecodeFSDefault(path);
     if (sys_path && py_path) {
         if (PyList_Append(sys_path, py_path) < 0) {
-            fprintf(stderr, "Error: Failed to append path to sys.path: %s\n", path);
+            fprintf_and_flush(stderr, "Error: Failed to append path to sys.path: %s\n", path);
         }
         Py_DECREF(py_path);
     } else {
-        fprintf(stderr, "Error: Failed to access sys.path or create Python path object.\n");
+        fprintf_and_flush(stderr, "Error: Failed to access sys.path or create Python path object.\n");
         goto exit0;
     }
 
     // Import the module
     PyObject* pName = PyUnicode_DecodeFSDefault(module_name);
     if (!pName) {
-        fprintf(stderr, "Error: Failed to create Python string for module name: %s\n", module_name);
+        fprintf_and_flush(stderr, "Error: Failed to create Python string for module name: %s\n", module_name);
         goto exit0;
     }
 
@@ -155,7 +178,7 @@ import_python_module(const char* python_path)
     Py_DECREF(pName);
 
     if (!pModule) {
-        fprintf(stderr, "Error: Failed to import module: %s\n", module_name);
+        fprintf_and_flush(stderr, "Error: Failed to import module: %s\n", module_name);
         PyErr_Print();
     }
 
@@ -170,11 +193,10 @@ exit0:
 void
 run_python_using_interpreter(char* python_script, PyInterpreterState* interp, void* args)
 {
-    printf("Running Python script: %s\n", python_script);
-    fflush(stdout);
+    printf_and_flush("Running Python script: %s\n", python_script);
 
     if (args == NULL) {
-        fprintf(stderr, "Error: Received NULL argument for PyCapsule_New\n");
+        fprintf_and_flush(stderr, "Error: Received NULL argument for PyCapsule_New\n");
         return;
     }
 
@@ -183,7 +205,7 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
     if (interp) {
         ts = PyThreadState_New(interp);
         if (!ts) {
-            fprintf(stderr, "Error: Failed to create new thread state.\n");
+            fprintf_and_flush(stderr, "Error: Failed to create new thread state.\n");
             return;
         }
     }
@@ -202,34 +224,42 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
 
     pModule = import_python_module(python_script);
     if (!pModule) {
-        fprintf(stderr, "Error: Failed to import module: %s.\n", python_script);
+        fprintf_and_flush(stderr, "Error: Failed to import module: %s.\n", python_script);
         PyErr_Print();
         goto cleanup;
     }
 
     pFunc = PyObject_GetAttrString(pModule, PYTHON_ENTRYPOINT);
     if (!pFunc || !PyCallable_Check(pFunc)) {
-        fprintf(stderr, "Error: Cannot find function '%s' in module '%s'.\n", PYTHON_ENTRYPOINT, python_script);
+        fprintf_and_flush(
+            stderr, "Error: Cannot find function '%s' in module '%s'.\n", PYTHON_ENTRYPOINT, python_script);
         PyErr_Print();
         goto cleanup;
     }
 
     pCapsule = PyCapsule_New(args, "void*", NULL);
     if (!pCapsule) {
-        fprintf(stderr, "Error: PyCapsule_New failed.\n");
+        fprintf_and_flush(stderr, "Error: PyCapsule_New failed.\n");
         goto cleanup;
     }
 
     pArgs = PyTuple_Pack(1, pCapsule);
     if (!pArgs) {
-        fprintf(stderr, "Error: PyTuple_Pack failed.\n");
+        fprintf_and_flush(stderr, "Error: PyTuple_Pack failed.\n");
         Py_XDECREF(pCapsule);
         goto cleanup;
     }
 
+    printf_and_flush("Calling Python function %s...\n", python_script);
     PyObject_CallObject(pFunc, pArgs);
+    if (PyErr_Occurred()) {
+        PyErr_Print();
+        fprintf_and_flush(stderr, "Error: Exception occurred while calling Python function.\n");
+        goto cleanup;
+    }
 
 cleanup:
+    printf_and_flush("Cleaning up Python script execution %s...\n", python_script);
     Py_XDECREF(pFunc);
     Py_XDECREF(pModule);
     Py_XDECREF(pArgs);
@@ -237,11 +267,12 @@ cleanup:
 
     if (PyErr_Occurred()) {
         PyErr_Print();
-        fprintf(stderr, "Error: Exception occurred while running Python script.\n");
+        fprintf_and_flush(stderr, "Error: Exception occurred while running Python script.\n");
     }
 
     // Clean up: Swap back to the main interpreter's thread state
     if (ts) {
+        printf_and_flush("Cleaning up sub-interpreter thread state %s...\n", python_script);
         PyThreadState_Swap(mainThreadState);
         PyThreadState_Clear(ts);
         PyThreadState_Delete(ts);
@@ -253,6 +284,10 @@ run_subinterpreter(void* state)
 {
     struct python_state* pstate = (struct python_state*)state;
     run_python_using_interpreter(pstate->full_python_path, pstate->ts, pstate->args);
+    if (PyErr_Occurred()) {
+        PyErr_Print();
+        fprintf_and_flush(stderr, "Error: Exception occurred in sub-interpreter.\n");
+    }
     return NULL;
 }
 
@@ -260,21 +295,40 @@ void*
 jrtc_start_app(void* args)
 {
     if (args == NULL) {
-        fprintf(stderr, "Error: App context is NULL.\n");
+        fprintf_and_flush(stderr, "Error: App context is NULL.\n");
         return NULL;
     }
 
     struct jrtc_app_env* env_ctx = (struct jrtc_app_env*)args;
+    shared_python_state_t* shared_python_state = env_ctx->shared_python_state;
+    if (shared_python_state == NULL) {
+        fprintf_and_flush(stderr, "Error: Shared Python state is NULL.\n");
+        return NULL;
+    }
+    printf_and_flush(
+        "Thread %p: &active_interpreter_users = %p\n",
+        pthread_self(),
+        (void*)&shared_python_state->active_interpreter_users);
+    atomic_fetch_add(&shared_python_state->active_interpreter_users, 1);
+
     char* full_path = env_ctx->params[0].val;
-    printf("Full path: %s\n", full_path);
+    printf_and_flush("Full path: %s\n", full_path);
     char* python_type = env_ctx->params[0].key;
-    printf("Python type: %s\n", python_type);
+    printf_and_flush("Python type: %s\n", python_type);
+
+    printf_and_flush(
+        "Current active interpreter users %s: %d\n",
+        full_path,
+        atomic_load(&shared_python_state->active_interpreter_users));
 
     // Initialize the Python interpreter (only once)
-    if (!Py_IsInitialized()) {
+    pthread_mutex_lock(&shared_python_state->python_lock);
+    if ((atomic_load(&shared_python_state->python_initialized) == 0) && (Py_IsInitialized() == 0)) {
         Py_Initialize();
-        printf("Python interpreter initialized.\n");
+        atomic_store(&shared_python_state->python_initialized, 1);
+        printf_and_flush("Python interpreter initialized.\n");
     }
+    pthread_mutex_unlock(&shared_python_state->python_lock);
 
     // Acquire GIL (if multi-threaded)
     PyGILState_STATE gstate = PyGILState_Ensure();
@@ -283,7 +337,8 @@ jrtc_start_app(void* args)
     // Create a Python capsule for the `args`
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
     if (!pCapsule) {
-        fprintf(stderr, "Error: Failed to create Python capsule.\n");
+        fprintf_and_flush(stderr, "Error: Failed to create Python capsule.\n");
+        PyErr_Print();
         goto cleanup_gil;
     }
 
@@ -292,29 +347,29 @@ jrtc_start_app(void* args)
         if (env_ctx->app_modules[i] == NULL) {
             break;
         }
-        printf("Loading Module: %s\n", env_ctx->app_modules[i]);
+        printf_and_flush("Loading Module: %s\n", env_ctx->app_modules[i]);
         PyObject* module = import_python_module(env_ctx->app_modules[i]);
         if (!module) {
-            fprintf(stderr, "Error: Failed to import module: %s.\n", env_ctx->app_modules[i]);
+            fprintf_and_flush(stderr, "Error: Failed to import module: %s.\n", env_ctx->app_modules[i]);
             goto cleanup_capsule;
         }
         Py_DECREF(module);
-        printf("Module loaded: %s\n", env_ctx->app_modules[i]);
+        printf_and_flush("Module loaded: %s\n", env_ctx->app_modules[i]);
     }
 
     // === Create and switch to sub-interpreter ===
     PyThreadState* main_ts = PyThreadState_Get();
     ts1 = Py_NewInterpreter(); // Create a sub-interpreter
     if (!ts1) {
-        fprintf(stderr, "Error: Failed to create sub-interpreter.\n");
+        fprintf_and_flush(stderr, "Error: Failed to create sub-interpreter.\n");
+        PyErr_Print();
         goto cleanup_capsule;
     }
-    PyThreadState_Swap(ts1);
 
     // Inject modules directly into the subinterpreter's sys.modules
     PyObject* sysModule = PyImport_ImportModule("sys");
     if (!sysModule) {
-        fprintf(stderr, "Error: Failed to import 'sys' in sub-interpreter.\n");
+        fprintf_and_flush(stderr, "Error: Failed to import 'sys' in sub-interpreter.\n");
         goto cleanup_capsule;
     }
 
@@ -322,7 +377,7 @@ jrtc_start_app(void* args)
     PyObject* modules = PyDict_GetItemString(sysDict, "modules");
 
     if (!modules) {
-        fprintf(stderr, "Error: Failed to get 'sys.modules' in sub-interpreter.\n");
+        fprintf_and_flush(stderr, "Error: Failed to get 'sys.modules' in sub-interpreter.\n");
         Py_DECREF(sysModule);
         goto cleanup_capsule;
     }
@@ -333,18 +388,23 @@ jrtc_start_app(void* args)
         }
 
         char* module_name = get_file_name_without_py(env_ctx->app_modules[i]);
-        printf("Injecting Module: %s\n", module_name);
+        printf_and_flush("Injecting Module: %s\n", module_name);
         PyObject* module = import_python_module(env_ctx->app_modules[i]);
 
         if (!module) {
-            fprintf(stderr, "Error: Failed to import module '%s' in sub-interpreter.\n", env_ctx->app_modules[i]);
+            fprintf_and_flush(
+                stderr, "Error: Failed to import module '%s' in sub-interpreter.\n", env_ctx->app_modules[i]);
             free(module_name);
             continue;
         }
 
         // Inject module into sub-interpreter's sys.modules
-        PyDict_SetItemString(modules, module_name, module);
-        printf("Module injected into sub-interpreter: %s\n", module_name);
+        if (PyDict_SetItemString(modules, module_name, module) < 0) {
+            PyErr_Print();
+            fprintf_and_flush(stderr, "Failed to inject module: %s\n", module_name);
+        } else {
+            printf_and_flush("Module injected into sub-interpreter: %s\n", module_name);
+        }
 
         Py_DECREF(module);
         free(module_name);
@@ -354,6 +414,7 @@ jrtc_start_app(void* args)
 
     // === Execute in Sub-interpreter ===
     struct python_state pstate = {.full_python_path = full_path, .ts = ts1->interp, .args = args};
+    PyThreadState_Swap(ts1); // Switch to the sub-interpreter's thread state
     run_subinterpreter(&pstate);
 
 cleanup_capsule:
@@ -361,23 +422,31 @@ cleanup_capsule:
 
 cleanup_gil:
 
+    printf_and_flush("Cleaning up sub-interpreter: %s...\n", full_path);
+    printf_and_flush(
+        "Current active interpreter users: %d\n", atomic_load(&shared_python_state->active_interpreter_users));
+
     if (ts1) {
-        if (main_ts != ts1) {
-            fprintf(stderr, "Error: Current thread does not match the sub-interpreter thread.\n");
-            return NULL;
-        }
         // === Clean up Sub-interpreter ===
+        PyThreadState_Swap(ts1);
+        if (PyThreadState_Get() == ts1) {
+            Py_EndInterpreter(ts1);
+        }
         PyThreadState_Swap(main_ts);
-        Py_EndInterpreter(ts1);
+        printf_and_flush("Sub-interpreter cleaned up: %s\n", full_path);
     }
     PyGILState_Release(gstate);
 
-    if (Py_IsInitialized()) {
-        Py_Finalize();
-        printf("Python interpreter finalized.\n");
-    } else {
-        fprintf(stderr, "Error: Python interpreter was not initialized.\n");
-    }
+    int users_left = atomic_fetch_sub(&shared_python_state->active_interpreter_users, 1) - 1;
 
+    pthread_mutex_lock(&shared_python_state->python_lock);
+    if ((users_left == 0) && Py_IsInitialized()) {
+        Py_FinalizeEx();
+        atomic_store(&shared_python_state->python_initialized, 0);
+        printf_and_flush("Python interpreter finalized.\n");
+    }
+    pthread_mutex_unlock(&shared_python_state->python_lock);
+
+    printf_and_flush("Python app terminated: %s\n", full_path);
     return NULL;
 }
