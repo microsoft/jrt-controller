@@ -931,6 +931,12 @@ jrtc_router_channel_create(
 
     channel->app_ctx = app_ctx;
 
+    jrtc_logger(
+        JRTC_INFO,
+        "Creating %s channel for application %d with stream id %s\n",
+        is_output ? "output" : "input",
+        app_ctx->app_id,
+        &stream_id);
     channel->io_channel = jbpf_io_create_channel(
         router_ctx->io_ctx, direction, JBPF_IO_CHANNEL_QUEUE, num_elems, elem_size, *sid, descriptor, descriptor_size);
 

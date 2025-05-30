@@ -169,6 +169,9 @@ class JrtcApp:
             )
 
             if stream.appChannel:
+                self.logger.debug(
+                    f"{self.data.app_cfg.context}:: Creating channel for stream {i} with is_output={stream.appChannel.contents.is_output}, num_elems={stream.appChannel.contents.num_elems}, elem_size={stream.appChannel.contents.elem_size}"
+                )
                 si.chan_ctx = jrtc_router_channel_create(
                     self.data.env_ctx.dapp_ctx,
                     stream.appChannel.contents.is_output,
@@ -184,7 +187,7 @@ class JrtcApp:
                     )
                     return -1
 
-            if stream.is_rx:
+            if stream.is_rx and not si.registered:
                 if not jrtc_router_channel_register_stream_id_req(
                     self.data.env_ctx.dapp_ctx, si.sid
                 ):
@@ -233,6 +236,10 @@ class JrtcApp:
                                 f"{self.data.app_cfg.context}:: Timeout waiting for stream {i} = {dump_stream_id(si.sid)}"
                             )
                             return -1
+
+        self.logger.info(
+            f"{self.data.app_cfg.context}:: App initialization completed successfully"
+        )
         return 0
 
     def cleanup(self):
