@@ -47,6 +47,7 @@ fi
 
 if ! make $MAKE_FLAGS; then
     echo "Error building!"
+    cat /jrtc/build/src/rest_api_lib/rest_api_lib-prefix/src/rest_api_lib-stamp/rest_api_lib-build-*.log || true
     exit 1
 fi
 

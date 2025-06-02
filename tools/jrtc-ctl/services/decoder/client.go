@@ -6,7 +6,9 @@ package decoder
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -125,19 +127,29 @@ func (c *Client) doPut(relativeURL string, body any) (*Response, error) {
 		return nil, err
 	}
 
+	hash := sha256.Sum256([]byte(fmt.Sprintf("%s%s%s", c.baseURL, relativeURL, bodyB)))
+	reqHash := hex.EncodeToString(hash[:])
+
 	req, err := http.NewRequestWithContext(childCtx, "PUT", fmt.Sprintf("%s%s", c.baseURL, relativeURL), bytes.NewBuffer(bodyB))
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	l := c.logger.WithFields(logrus.Fields{"method": req.Method, "url": req.URL.String()})
-	l.WithField("body", string(bodyB)).Trace("sending http request")
+	l := c.logger.WithFields(logrus.Fields{
+		"method": req.Method,
+		"url":    req.URL.String(),
+	})
+
+	l.WithField("body", string(bodyB)).WithField("request_id", reqHash).Trace("sending http request")
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	l.WithField("statusCode", resp.StatusCode).Trace("http request completed")
+
+	l.WithField("statusCode", resp.StatusCode).WithField("request_id", reqHash).Trace("http request completed")
+
 	return c.httpResponseParser(l, resp)
 }
 
@@ -145,18 +157,28 @@ func (c *Client) doDelete(relativeURL string) (*Response, error) {
 	childCtx, cancel := context.WithCancel(c.ctx)
 	defer cancel()
 
+	hash := sha256.Sum256([]byte(fmt.Sprintf("%s%s", c.baseURL, relativeURL)))
+	reqHash := hex.EncodeToString(hash[:])
+
 	req, err := http.NewRequestWithContext(childCtx, "DELETE", fmt.Sprintf("%s%s", c.baseURL, relativeURL), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	l := c.logger.WithFields(logrus.Fields{"method": req.Method, "url": req.URL.String()})
-	l.Trace("sending http request")
+	l := c.logger.WithFields(logrus.Fields{
+		"method": req.Method,
+		"url":    req.URL.String(),
+	})
+
+	l.WithField("request_id", reqHash).Trace("sending http request")
+
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	l.WithField("statusCode", resp.StatusCode).Trace("http request completed")
+
+	l.WithField("statusCode", resp.StatusCode).WithField("request_id", reqHash).Trace("http request completed")
+
 	return c.httpResponseParser(l, resp)
 }
 
