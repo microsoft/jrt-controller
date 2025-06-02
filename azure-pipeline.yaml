@@ -13,10 +13,6 @@ pr:
       - main
       - gh-readonly-queue/main/*
 
-pool:
-  name: agent-pool-onprem-ubuntu
-  # demands: Agent.CPU -equals 8
-
 schedules:
   - cron: "0 0 1 * *"
     displayName: Monthly scheduled build
