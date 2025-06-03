@@ -23,8 +23,9 @@ schedules:
 
 variables:
   acr: jrtc
-  containerRegistry: $(acr).azurecr.io
   ComponentDetection.Timeout: 1200
+  containerRegistry: $[format('{0}.azurecr.io',variables['acr'])]
+  imageTag: "$[format('pipeline-{0}-{1}', replace(variables['build.buildnumber'], '.', '-'), variables['build.sourceversion'])]"
 
 resources:
   repositories:
