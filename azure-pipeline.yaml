@@ -23,6 +23,7 @@ schedules:
 
 variables:
   acr: jrtc
+  containerRegistry: $(acr).azurecr.io
   ComponentDetection.Timeout: 1200
 
 resources:
