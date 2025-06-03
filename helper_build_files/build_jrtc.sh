@@ -29,7 +29,10 @@ if [[ "$CLANG_FORMAT_CHECK" == "1" ]]; then
     echo The clang-format version is $(clang-format --version)
     for i in "${DIRS[@]}"; do
         echo "Checking clang-format in $i"
-        find "$i" -iname "*.c" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.hpp" | xargs clang-format --dry-run --Werror
+        ## ignore .ph.h files
+        find "$i" -iname "*.c" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.hpp" | \
+            grep -v -E '\.ph\.h$' | \
+            xargs clang-format --dry-run --Werror
         if [ $? -ne 0 ]; then
             echo "Error: clang-format check failed."
             exit 1
