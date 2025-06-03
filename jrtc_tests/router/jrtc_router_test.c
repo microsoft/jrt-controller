@@ -171,16 +171,16 @@ router_test()
     pthread_t test_app_tid, test_app2_tid;
     int res;
 
-    config->jrtc_router_config->thread_config->affinity_mask = 1 << 1;
-    config->jrtc_router_config->thread_config->has_affinity_mask = false;
-    config->jrtc_router_config->thread_config->has_sched_config = false;
-    config->jrtc_router_config->thread_config->sched_config->sched_policy = JRTC_ROUTER_DEADLINE;
-    config->jrtc_router_config->thread_config->sched_config->sched_priority = 99;
-    config->jrtc_router_config->thread_config->sched_config->sched_deadline = 30 * 1000 * 1000;
-    config->jrtc_router_config->thread_config->sched_config->sched_runtime = 10 * 1000 * 1000;
-    config->jrtc_router_config->thread_config->sched_config->sched_period = 30 * 1000 * 1000;
+    config->jrtc_router_config.thread_config.affinity_mask = 1 << 1;
+    config->jrtc_router_config.thread_config.has_affinity_mask = false;
+    config->jrtc_router_config.thread_config.has_sched_config = false;
+    config->jrtc_router_config.thread_config.sched_config.sched_policy = JRTC_ROUTER_DEADLINE;
+    config->jrtc_router_config.thread_config.sched_config.sched_priority = 99;
+    config->jrtc_router_config.thread_config.sched_config.sched_deadline = 30 * 1000 * 1000;
+    config->jrtc_router_config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
+    config->jrtc_router_config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
 
-    strncpy(config->jbpf_io_config->ipc_config->addr.jbpf_io_ipc_name, "jrtc_router_test", JBPF_IO_IPC_MAX_NAMELEN);
+    strncpy(config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, "jrtc_router_test", JBPF_IO_IPC_MAX_NAMELEN);
 
     res = jrtc_router_init(config);
 
@@ -208,14 +208,18 @@ int
 agent_test()
 {
     struct jbpf_io_ctx* io_ctx;
-    struct jbpf_io_config io_config = {0};
+    struct jbpf_io_config* io_config = malloc(sizeof(struct jbpf_io_config));
+    if (!io_config) {
+        jrtc_logger(JRTC_ERROR, "Failed to allocate memory for IO config\n");
+        return -1;
+    }
     jbpf_io_channel_t* io_channel;
     struct jbpf_io_stream_id stream_id;
 
     char descriptor[65535] = {0};
     io_config->type = JBPF_IO_IPC_PRIMARY;
-    io_config->ipc_config->mem_cfg.memory_size = 1024 * 1024 * 1024;
-    strncpy(io_config->ipc_config->addr.jbpf_io_ipc_name, "jrtc_router_test", JBPF_IO_IPC_MAX_NAMELEN - 1);
+    io_config->ipc_config.mem_cfg.memory_size = 1024 * 1024 * 1024;
+    strncpy(io_config->ipc_config.addr.jbpf_io_ipc_name, "jrtc_router_test", JBPF_IO_IPC_MAX_NAMELEN - 1);
 
     // Wait until the primary is ready
     sem_wait(router_sem);
@@ -266,6 +270,7 @@ agent_test()
 
     jrtc_logger(JRTC_INFO, "Agent completed successfully\n");
     *done = true;
+    free(io_config);
     return 0;
 }
 
