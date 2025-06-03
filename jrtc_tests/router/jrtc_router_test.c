@@ -25,7 +25,7 @@
 #include "jbpf_io.h"
 #include "jbpf_io_channel.h"
 #include "jrtc_logging.h"
-#include "jrtc_config->h"
+#include "jrtc_config.h"
 #include "jrtc_config_int.h"
 
 struct test_struct
