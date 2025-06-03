@@ -31,7 +31,7 @@ if [[ "$CLANG_FORMAT_CHECK" == "1" ]]; then
         echo "Checking clang-format in $i"
         ## ignore .ph.h files
         find "$i" -iname "*.c" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.hpp" | \
-            grep -v -E '\.ph\.h$' | \
+            grep -v "*.pb.h" | \
             xargs clang-format --dry-run --Werror
         if [ $? -ne 0 ]; then
             echo "Error: clang-format check failed."

@@ -223,7 +223,7 @@ agent_test()
 
     // Wait until the primary is ready
     sem_wait(router_sem);
-    io_ctx = jbpf_io_init(&io_config);
+    io_ctx = jbpf_io_init(io_config);
     if (io_ctx == NULL) {
         jrtc_logger(JRTC_ERROR, "Could not create IO context\n");
         exit(1);
