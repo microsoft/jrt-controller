@@ -66,6 +66,8 @@ stages:
               outputformat: 'text'
               outputfile: '$(System.DefaultWorkingDirectory)/NOTICE'
 
+  - template: pipeline/coverage-tests.yaml
+
   - stage: Doxygen
     dependsOn: []
     displayName: Doxygen
