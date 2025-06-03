@@ -31,23 +31,22 @@ const char channel_name[] = "agent";
 const char stream_path[] = "/tmp/jrtc";
 
 int
-start_router()
+start_router(struct jrtc_config* config)
 {
-    struct jrtc_config config = {0};
-    init_jrtc_config(&config);
+    init_jrtc_config(config);
 
-    config.jrtc_router_config.thread_config.affinity_mask = 1 << 1;
-    config.jrtc_router_config.thread_config.has_affinity_mask = false;
-    config.jrtc_router_config.thread_config.has_sched_config = false;
-    config.jrtc_router_config.thread_config.sched_config.sched_policy = JRTC_ROUTER_DEADLINE;
-    config.jrtc_router_config.thread_config.sched_config.sched_priority = 99;
-    config.jrtc_router_config.thread_config.sched_config.sched_deadline = 30 * 1000 * 1000;
-    config.jrtc_router_config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
-    config.jrtc_router_config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
+    config->jrtc_router_config.thread_config.affinity_mask = 1 << 1;
+    config->jrtc_router_config.thread_config.has_affinity_mask = false;
+    config->jrtc_router_config.thread_config.has_sched_config = false;
+    config->jrtc_router_config.thread_config.sched_config.sched_policy = JRTC_ROUTER_DEADLINE;
+    config->jrtc_router_config.thread_config.sched_config.sched_priority = 99;
+    config->jrtc_router_config.thread_config.sched_config.sched_deadline = 30 * 1000 * 1000;
+    config->jrtc_router_config.thread_config.sched_config.sched_runtime = 10 * 1000 * 1000;
+    config->jrtc_router_config.thread_config.sched_config.sched_period = 30 * 1000 * 1000;
 
-    strncpy(config.jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, channel_name, JBPF_IO_IPC_MAX_NAMELEN);
+    strncpy(config->jbpf_io_config.ipc_config.addr.jbpf_io_ipc_name, channel_name, JBPF_IO_IPC_MAX_NAMELEN);
 
-    int res = jrtc_router_init(&config);
+    int res = jrtc_router_init(config);
 
     if (res < 0) {
         jrtc_logger(JRTC_ERROR, "Failed to initialize router\n");
@@ -80,10 +79,17 @@ test_agent_api()
 int
 main()
 {
+    struct jrtc_config* config = NULL;
+    config = (struct jrtc_config*)malloc(sizeof(struct jrtc_config));
+    if (!config) {
+        fprintf(stderr, "Failed to allocate memory for jrtc_config.\n");
+        return -1;
+    }
     jrtc_logger(JRTC_INFO, "Starting the router...\n");
-    assert(start_router() == 0);
+    assert(start_router(config) == 0);
     jrtc_logger(JRTC_INFO, "Starting test for agent API...\n");
     assert(test_agent_api() == 0);
     jrtc_logger(JRTC_INFO, "Test completed.\n");
+    free(config);
     return 0;
 }
