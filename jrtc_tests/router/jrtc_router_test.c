@@ -203,22 +203,18 @@ int
 agent_test()
 {
     struct jbpf_io_ctx* io_ctx;
-    struct jbpf_io_config* io_config = malloc(sizeof(struct jbpf_io_config));
-    if (!io_config) {
-        jrtc_logger(JRTC_ERROR, "Failed to allocate memory for IO config\n");
-        return -1;
-    }
+    struct jbpf_io_config io_config = {0};
     jbpf_io_channel_t* io_channel;
     struct jbpf_io_stream_id stream_id;
 
     char descriptor[65535] = {0};
-    io_config->type = JBPF_IO_IPC_PRIMARY;
-    io_config->ipc_config.mem_cfg.memory_size = 1024 * 1024 * 1024;
-    strncpy(io_config->ipc_config.addr.jbpf_io_ipc_name, "jrtc_router_test", JBPF_IO_IPC_MAX_NAMELEN - 1);
+    io_config.type = JBPF_IO_IPC_PRIMARY;
+    io_config.ipc_config.mem_cfg.memory_size = 1024 * 1024 * 1024;
+    strncpy(io_config.ipc_config.addr.jbpf_io_ipc_name, "jrtc_router_test", JBPF_IO_IPC_MAX_NAMELEN - 1);
 
     // Wait until the primary is ready
     sem_wait(router_sem);
-    io_ctx = jbpf_io_init(io_config);
+    io_ctx = jbpf_io_init(&io_config);
     if (io_ctx == NULL) {
         jrtc_logger(JRTC_ERROR, "Could not create IO context\n");
         exit(1);
@@ -265,7 +261,7 @@ agent_test()
 
     jrtc_logger(JRTC_INFO, "Agent completed successfully\n");
     *done = true;
-    free(io_config);
+    jrtc_router_stop();
     return 0;
 }
 
