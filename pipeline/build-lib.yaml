@@ -7,8 +7,7 @@ parameters:
     default: ""
 
 steps:
-  - checkout: self
-    submodules: recursive
+  - template: submodules.yaml
 
   - template: images/build.v2.yaml@templates
     parameters:

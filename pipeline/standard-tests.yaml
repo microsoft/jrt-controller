@@ -1,0 +1,77 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
+parameters:
+  - name: dockerType
+    type: string
+  - name: testCase
+    type: object
+
+steps:
+  - bash: |
+      echo ${{ parameters.testCase.description }}
+      echo sanitizerBuildParam: ${{ parameters.testCase.sanitizerBuildParam }}
+    displayName: Display build parameters
+    failOnStderr: true
+    continueOnError: false
+
+  - bash: |
+      if ! docker run --init --privileged \
+        --ulimit memlock=-1 \
+        --network host \
+        --cap-add=SYS_ADMIN \
+        --shm-size=1g \
+        --mount type=tmpfs,destination=/dev/shm \
+        -e VERBOSE=1 \
+        -e RUN_TESTS=1 \
+        -e JRTC_PATH=/jrtc \
+        $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag); then
+        echo Error building and testing
+        exit 1
+      fi
+    displayName: Build and Test
+    continueOnError: false
+
+  - bash: |
+      echo Building: jbpf, jrtc, jbpf codelets, jbpf IPC agent, and JRTC app
+      echo And Running JRTC Tests
+      JRTC_TESTS_OUTPUT=/tmp/jrtc_tests_output.log
+      rm -f $JRTC_TESTS_OUTPUT || true
+      touch $JRTC_TESTS_OUTPUT
+
+      if ! docker run --init --privileged \
+        --ulimit memlock=-1 \
+        --network host \
+        --cap-add=SYS_ADMIN \
+        --shm-size=1g \
+        --mount type=tmpfs,destination=/dev/shm \
+        -e VERBOSE=1 \
+        -e JRTC_PATH=/jrtc \
+        -v /tmp:/tmp \
+        ${{parameters.testCase['sanitizerBuildParam']}} \
+        --entrypoint=/jrtc/helper_build_files/run_all_integration_tests.sh \
+        $(containerRegistry)/jrtc-${{ parameters.dockerType }}:$(imageTag); then
+        echo Error running JRTC tests
+        exit 1
+      fi
+      
+      if [ -f $JRTC_TESTS_OUTPUT ]; then
+        echo ".............................................Output.log: $JRTC_TESTS_OUTPUT ............................................."
+        cat $JRTC_TESTS_OUTPUT
+
+        ## Copy to artifacts
+        cp $JRTC_TESTS_OUTPUT $(Build.ArtifactStagingDirectory)/sample_tests_output_${{ parameters.testCase.id }}_${{ parameters.dockerType }}.log
+      else
+        echo "WARNING: $JRTC_TESTS_OUTPUT does not exist. Skipping log copy." >&2
+        echo "##vso[task.logissue type=warning]$JRTC_TESTS_OUTPUT does not exist. Skipping log copy."
+      fi
+
+    displayName: Integration Tests sample apps
+    continueOnError: false
+
+  # Publish logs as artifacts
+  - task: PublishBuildArtifacts@1
+    displayName: "Publish Logs"
+    inputs:
+      pathToPublish: "$(Build.ArtifactStagingDirectory)"
+      artifactName: "TestLogs"

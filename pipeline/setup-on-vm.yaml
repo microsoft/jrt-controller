@@ -1,0 +1,9 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
+steps:
+  - bash: |
+      set -x
+      sudo usermod -aG docker ${USER}    
+    displayName: "Setup on VM"
+    continueOnError: false
