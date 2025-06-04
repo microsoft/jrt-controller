@@ -13,7 +13,17 @@ pr:
       - main
       - gh-readonly-queue/main/*
 
+pool:
+  name: agent-pool-onprem-ubuntu
+  # demands: Agent.CPU -equals 8
+
 schedules:
+  - cron: "0 0 1 * *"
+    displayName: Monthly scheduled build
+    branches:
+      include:
+        - main
+    always: true
   - cron: "0 0 * * *"
     displayName: Daily scheduled build
     branches:
@@ -25,6 +35,7 @@ variables:
   acr: jrtc
   ComponentDetection.Timeout: 1200
   containerRegistry: $[format('{0}.azurecr.io',variables['acr'])]
+  DOCKER_BUILDKIT: 1
   imageTag: "$[format('pipeline-{0}-{1}', replace(variables['build.buildnumber'], '.', '-'), variables['build.sourceversion'])]"
 
 resources:
@@ -68,7 +79,7 @@ stages:
               outputformat: 'text'
               outputfile: '$(System.DefaultWorkingDirectory)/NOTICE'
 
-  - template: pipeline/coverage-tests.yaml
+  - template: pipeline/build-for-os.yaml
 
   - stage: Doxygen
     dependsOn: []
