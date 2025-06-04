@@ -85,7 +85,8 @@ main()
     jrtc_logger(JRTC_INFO, "Starting test for agent API...\n");
     assert(test_agent_api() == 0);
     jrtc_logger(JRTC_INFO, "Test completed.\n");
-    jrtc_router_stop();
+    // TODO: when jrtc_router_stop() is implemented, uncomment the following line
+    // jrtc_router_stop();
     jrtc_logger(JRTC_INFO, "Router stopped successfully.\n");
     return 0;
 }
