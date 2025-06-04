@@ -9,7 +9,6 @@
 ### env parameter: CLANG_FORMAT_CHECK
 ### env parameter: CPP_CHECK
 ### evn parameter: BUILD_PYTHON_LOADER
-### env parameter: INITIALIZE_SUBMODULES
 get_flags() {
     FLAGS=""
     OUTPUT=""
@@ -38,11 +37,5 @@ get_flags() {
         FLAGS="$FLAGS -DBUILD_PYTHON_LOADER=on"
     else
         OUTPUT="$OUTPUT Skipping Python Loader\n"
-    fi
-    if [[ "$INITIALIZE_SUBMODULES" == "1" || "$INITIALIZE_SUBMODULES" == "" ]]; then
-        OUTPUT="$OUTPUT Initialize Submodules\n"
-        FLAGS="$FLAGS -DINITIALIZE_SUBMODULES=on"
-    else
-        OUTPUT="$OUTPUT Skipping INITIALIZE_SUBMODULES\n"
     fi
 }
