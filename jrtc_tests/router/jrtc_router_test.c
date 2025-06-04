@@ -196,7 +196,7 @@ router_test()
     pthread_join(test_app2_tid, NULL);
 
     // TODO: uncomment when jrtc_router_stop is implemented
-    jrtc_router_stop();
+    // jrtc_router_stop();
     return 0;
 }
 
@@ -263,7 +263,7 @@ agent_test()
     jrtc_logger(JRTC_INFO, "Agent completed successfully\n");
     *done = true;
     // TODO: uncomment when jrtc_router_stop is implemented
-    jrtc_router_stop();
+    // jrtc_router_stop();
     return 0;
 }
 
