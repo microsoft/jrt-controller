@@ -1,5 +1,5 @@
 # Introduction
-[![Build Status](https://belgrade.visualstudio.com/jrt-controller/_apis/build/status%2Fjrtc?repoName=microsoft%2Fjrt-controller&branchName=main)](https://belgrade.visualstudio.com/jrt-controller/_build/latest?definitionId=148&repoName=microsoft%2Fjrt-controller&branchName=main)
+[![Build Status](https://belgrade.visualstudio.com/jrt-controller/_apis/build/status%2Fjrtc?repoName=microsoft%2Fjrt-controller&branchName=main)](https://belgrade.visualstudio.com/jrt-controller/_build/latest?definitionId=148&repoName=microsoft%2Fjrt-controller&branchName=main) [![Docker Build and Test](https://github.com/microsoft/jrt-controller/actions/workflows/docker-build-and-test.yaml/badge.svg)](https://github.com/microsoft/jrt-controller/actions/workflows/docker-build-and-test.yaml)
 
 *jrt-controller* is a real-time controller for network functions instrumented with the [jbpf framework](https://github.com/microsoft/jbpf).
 Like jbpf, the controller is part of [Project Janus](https://www.microsoft.com/en-us/research/project/programmable-ran-platform/) and provides functionalities envisaged by the concept of real-time RIC in O-RAN. 
