@@ -402,7 +402,7 @@ int
 jrtc_router_stop()
 {
     // TODO
-    pthread_join(g_router_ctx.th_ctx.jrtc_router_thread_id, NULL);
+    // pthread_join(g_router_ctx.th_ctx.jrtc_router_thread_id, NULL);
     return 0;
 }
 
