@@ -79,17 +79,13 @@ test_agent_api()
 int
 main()
 {
-    struct jrtc_config* config = NULL;
-    config = (struct jrtc_config*)malloc(sizeof(struct jrtc_config));
-    if (!config) {
-        fprintf(stderr, "Failed to allocate memory for jrtc_config.\n");
-        return -1;
-    }
+    struct jrtc_config config = {0};
     jrtc_logger(JRTC_INFO, "Starting the router...\n");
-    assert(start_router(config) == 0);
+    assert(start_router(&config) == 0);
     jrtc_logger(JRTC_INFO, "Starting test for agent API...\n");
     assert(test_agent_api() == 0);
     jrtc_logger(JRTC_INFO, "Test completed.\n");
-    free(config);
+    jrtc_router_stop();
+    jrtc_logger(JRTC_INFO, "Router stopped successfully.\n");
     return 0;
 }
