@@ -28,6 +28,9 @@ extern "C"
     bool
     __jrtc_router_stream_id_matches_req(const jrtc_router_stream_id_t* sid, const jrtc_router_stream_id_t* sid_req);
 
+    uint16_t
+    __jrtc_router_stream_id_get_device_id(const jrtc_router_stream_id_t* sid);
+
 #ifdef __cplusplus
 }
 #endif
