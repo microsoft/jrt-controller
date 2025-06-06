@@ -310,13 +310,14 @@ class JrtcApp:
         return self.stream_items[stream_idx].chan_ctx
 
 
-def jrtc_app_create(capsule, app_cfg: JrtcAppCfg_t, app_handler, app_state):
+def jrtc_app_create(capsule, app_cfg: JrtcAppCfg_t, app_handler, app_state, log_level="INFO") -> JrtcApp:
     env_ctx = get_ctx_from_capsule(capsule)
     app_instance = JrtcApp(
         env_ctx=env_ctx,
         app_cfg=app_cfg,
         app_handler=app_handler,
         app_state=app_state,
+        log_level=log_level,
     )
     return app_instance
 
