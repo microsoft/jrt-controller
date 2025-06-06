@@ -13,13 +13,7 @@ set(TESTS_BASE ${PROJECT_SOURCE_DIR})
 add_subdirectory(agent)
 add_subdirectory(unit_tests)
 
-
-## TODO: These tests are flakey and need to be fixed
-if(CMAKE_BUILD_TYPE MATCHES AddressSanitizer)
-    message(STATUS "TOFIX: AddressSanitizer enabled, skipping: router, controller flakey tests")
-else()
-    add_subdirectory(router)
-    add_subdirectory(controller)
-endif()
+add_subdirectory(router)
+add_subdirectory(controller)
 
 set(JRTC_TESTS ${JRTC_TESTS} PARENT_SCOPE)

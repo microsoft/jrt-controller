@@ -48,20 +48,17 @@ class JrtcRouterReqType(Enum):
 class JrtcRouterStreamId(Structure):
     _fields_ = [("id", ctypes.c_char * 16)]
 
+    def __str__(self):
+        return bytes(self.id).hex()
+
     def generate_id(self, fwd_dst, device_id, stream_path, stream_name):
         """Generates a stream ID."""
-        b_stream_path = None
-        b_stream_name = None
-        if stream_path != None:
-            b_stream_path = ctypes.create_string_buffer(stream_path)
-        if stream_name != None:
-            b_stream_name = ctypes.create_string_buffer(stream_name)
-
         res = stream_id_lib.jrtc_router_generate_stream_id(
-            ctypes.pointer(self), fwd_dst, device_id, b_stream_path, b_stream_name
+            ctypes.pointer(self), fwd_dst, device_id, stream_path, stream_name
         )
         if res != 1:
             raise RuntimeError("Failed to generate stream ID {}".format(res))
+        print("Generated stream ID: {}".format(self))
         return res
 
     def convert_to_struct_jrtc_router_stream_id(self):
@@ -136,3 +133,9 @@ def jrtc_router_stream_id_get_device_id(s):
     stream_id_lib.__jrtc_router_stream_id_get_device_id.restype = ctypes.c_uint16
     return stream_id_lib.__jrtc_router_stream_id_get_device_id(s)
 
+
+stream_id_lib.jrtc_router_generate_stream_id.argtypes = [
+    ctypes.POINTER(JrtcRouterStreamId),
+    ctypes.c_int, ctypes.c_int, ctypes.c_char_p, ctypes.c_char_p
+]
+stream_id_lib.jrtc_router_generate_stream_id.restype = ctypes.c_int
