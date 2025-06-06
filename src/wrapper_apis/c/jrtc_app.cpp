@@ -106,7 +106,7 @@ JrtcApp::Init()
         }
 
         // Register stream if it is for reception
-        if (s.is_rx) {
+        if (s.is_rx && (!si.registered)) {
             res = jrtc_router_channel_register_stream_id_req(env_ctx->dapp_ctx, si.sid);
             if (res != 1) {
                 std::cout << app_cfg->context << "::  Failure registering stream id for " << s.sid << std::endl;

@@ -62,6 +62,7 @@ struct jrtc_app_env
     char* app_path;
     app_param_key_value_pair_t params[MAX_APP_PARAMS];
     char* app_modules[MAX_APP_MODULES];
+    void* shared_python_state; // Pointer to shared Python state for multi-threaded apps
 };
 
 #endif

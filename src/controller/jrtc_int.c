@@ -30,6 +30,14 @@
 #include "jrtc_logging.h"
 #include "jrtc_config_int.h"
 #include "jrtc_config.h"
+#include "jrtc_shared_python_state.h"
+
+// Global shared Python state, only one instance
+shared_python_state_t shared_python_state = {
+    .python_lock = PTHREAD_MUTEX_INITIALIZER,
+    .active_interpreter_users = ATOMIC_VAR_INIT(0),
+    .python_initialized = ATOMIC_VAR_INIT(0),
+};
 
 /* Compiler magic to make address sanitizer ignore
 memory leaks originating from libpython */
@@ -182,6 +190,7 @@ run_app(void* args)
     app_env = args;
 
     app_env->dapp_ctx = jrtc_router_register_app(app_env->io_queue_size);
+    app_env->shared_python_state = &shared_python_state;
 
     if (app_env->sched_config.sched_deadline_us > 0) {
         jrtc_thread_set_scheduler(app_env->app_tid, &app_env->sched_config);

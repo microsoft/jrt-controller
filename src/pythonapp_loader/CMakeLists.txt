@@ -126,6 +126,7 @@ else()
     ${JRTC_PATH}/src/controller/jrtc.h
     ${JRTC_PATH}/src/router/jrtc_router_int.h
     ${JRTC_PATH}/src/router/jrtc_router.h
+    ${JRTC_PATH}/src/router/jrtc_router.h
     COMMENT "Generating ${PYTHON_BINDING_OUTPUT_FILE}"
   )
 endif()
