@@ -140,7 +140,7 @@ def jrtc_start_app(capsule):
 
     # Initialize the app
     state = AppStateVars(agg_cnt=0, received_counter=0, app=None)
-    state.app = jrtc_app_create(capsule, app_cfg, app_handler, state)
+    state.app = jrtc_app_create(capsule, app_cfg, app_handler, state, log_level="INFO")
 
     # run the app - This is blocking until the app exists
     jrtc_app_run(state.app)
