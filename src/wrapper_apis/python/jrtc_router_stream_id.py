@@ -82,19 +82,19 @@ class JrtcRouterStreamId(Structure):
         return bytearray(ctypes.string_at(ctypes.byref(self), ctypes.sizeof(self)))
 
     def get_version(self):
-        stream_id_lib.jrtc_router_stream_id_set_ver(self)
+        return stream_id_lib.jrtc_router_stream_id_get_ver(self)
 
     def get_fwd_dst(self):
-        stream_id_lib.jrtc_router_stream_id_set_fwd_dst(self)
+        return stream_id_lib.jrtc_router_stream_id_get_fwd_dst(self)
 
     def get_device_id(self):
-        stream_id_lib.jrtc_router_stream_id_set_device_id(self)
+        return stream_id_lib.jrtc_router_stream_id_get_device_id(self)
 
     def get_stream_path(self):
-        stream_id_lib.jrtc_router_stream_id_set_stream_path(self)
+        return stream_id_lib.jrtc_router_stream_id_get_stream_path(self)
 
     def get_stream_name(self):
-        stream_id_lib.jrtc_router_stream_id_set_stream_name(self)
+        return stream_id_lib.jrtc_router_stream_id_get_stream_name(self)
 
     def set_version(self, version):
         stream_id_lib.jrtc_router_stream_id_set_ver(self, version)
@@ -125,6 +125,13 @@ def jrtc_router_stream_id_matches_req(a, b):
     stream_id_lib.__jrtc_router_stream_id_matches_req.restype = ctypes.c_bool
     return stream_id_lib.__jrtc_router_stream_id_matches_req(a, b)
 
+
+def jrtc_router_stream_id_get_device_id(s):
+    stream_id_lib.__jrtc_router_stream_id_get_device_id.argtypes = [
+        ctypes.POINTER(jrtc_bindings.struct_jrtc_router_stream_id),
+    ]
+    stream_id_lib.__jrtc_router_stream_id_get_device_id.restype = ctypes.c_uint16
+    return stream_id_lib.__jrtc_router_stream_id_get_device_id(s)
 
 
 stream_id_lib.jrtc_router_generate_stream_id.argtypes = [
