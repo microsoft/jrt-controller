@@ -119,7 +119,7 @@ def dump_stream_id(data):
 
 
 class JrtcApp:
-    def __init__(self, env_ctx, app_cfg, app_handler, app_state, log_level = "WARNING"):
+    def __init__(self, env_ctx, app_cfg, app_handler, app_state, log_level = "INFO"):
         super().__init__()
         self.data = JrtcAppData(
             env_ctx, app_cfg, app_handler, app_state, time.monotonic()
