@@ -119,14 +119,13 @@ def dump_stream_id(data):
 
 
 class JrtcApp:
-    def __init__(self, env_ctx, app_cfg, app_handler, app_state):
+    def __init__(self, env_ctx, app_cfg, app_handler, app_state, log_level = "WARNING"):
         super().__init__()
         self.data = JrtcAppData(
             env_ctx, app_cfg, app_handler, app_state, time.monotonic()
         )
         self.stream_items: list[StreamItem] = []
         self.logger = logging.getLogger("jrtc_app")
-        log_level = os.environ.get("JRTC_APP_LOG_LEVEL", "DEBUG").upper()
         logging.basicConfig(
             level=getattr(logging, log_level, logging.DEBUG),
             format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
