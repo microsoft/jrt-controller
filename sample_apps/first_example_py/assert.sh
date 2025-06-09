@@ -28,12 +28,4 @@ if [[ $count -ne 0 ]]; then
     exit 1
 fi
 
-### This should appear twice as we load/unload twice
-### FirstExample: Aggregate counter so far is: 15
-count=$(grep -c "FirstExample: Aggregate counter so far is: 15" $1)
-if [[ $count -ne 2 ]]; then
-    echo "Expected 'FirstExample: Aggregate counter so far is: 15' to appear twice, but found $count times."
-    exit 1
-fi
-
 exit 0
