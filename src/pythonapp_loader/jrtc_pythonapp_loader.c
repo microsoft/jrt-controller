@@ -134,20 +134,27 @@ import_python_module(const char* python_path)
     PyObject* pModule = NULL;
     if (python_path == NULL) {
         fprintf_and_flush(stderr, "Error: Python path is NULL.\n");
-        goto exit0;
+        return NULL;
     }
 
-    // Extract the module name from the path
-    char* module_name = get_file_name_without_py(python_path);
+    char* module_name = NULL;
+    char* path = NULL;
+
+    if (python_path == NULL || strlen(python_path) == 0) {
+        fprintf_and_flush(stderr, "Error: Invalid Python path provided.\n");
+        return NULL;
+    }
+    module_name = get_file_name_without_py(python_path);
     if (module_name == NULL) {
         fprintf_and_flush(stderr, "Error: Failed to extract module name from path: %s\n", python_path);
-        goto exit0;
+        return NULL;
     }
 
-    char* path = get_folder(python_path);
+    path = get_folder(python_path);
     if (path == NULL) {
         fprintf_and_flush(stderr, "Error: Failed to extract path from: %s\n", python_path);
-        goto exit0;
+        free(module_name);
+        return NULL;
     }
 
     PyObject* sys_path = PySys_GetObject("path"); // Borrowed reference, no need to Py_DECREF
@@ -178,12 +185,8 @@ import_python_module(const char* python_path)
     }
 
 exit0:
-    if (module_name != NULL) {
-        free(module_name);
-    }
-    if (path != NULL) {
-        free(path);
-    }
+    free(module_name);
+    free(path);
     return pModule;
 }
 
@@ -438,7 +441,15 @@ cleanup_gil:
 
     pthread_mutex_lock(&shared_python_state->python_lock);
     if ((users_left == 0) && Py_IsInitialized()) {
-        Py_FinalizeEx();
+        printf_and_flush("Skipping Python interpreter finalization for %s, users left: %d\n", full_path, users_left);
+        /*
+            Although Python 3.12 supports multiple sub-interpreters, Py_Finalize() followed by another Py_Initialize()
+           is not safe when: Dynamic modules (.so) like _datetime are used. The interpreter is finalized and then
+           reinitialized in the same process. Some C extensions (including _datetime) store global state or use internal
+           APIs that assume a single interpreter lifetime. 🧨 So even if dlclose() is skipped, reinitializing libpython
+           after finalizing will crash unless all modules are cleaned up perfectly — which they typically aren't.
+        */
+        // Py_FinalizeEx();
         atomic_store(&shared_python_state->python_initialized, 0);
         printf_and_flush("Python interpreter finalized.\n");
     }
