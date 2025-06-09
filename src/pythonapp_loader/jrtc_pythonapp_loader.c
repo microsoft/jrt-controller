@@ -134,27 +134,22 @@ import_python_module(const char* python_path)
     PyObject* pModule = NULL;
     if (python_path == NULL) {
         fprintf_and_flush(stderr, "Error: Python path is NULL.\n");
-        return NULL;
+        goto exit0;
     }
 
     // Extract the module name from the path
     char* module_name = get_file_name_without_py(python_path);
     if (module_name == NULL) {
         fprintf_and_flush(stderr, "Error: Failed to extract module name from path: %s\n", python_path);
-        return NULL;
+        goto exit0;
     }
 
     char* path = get_folder(python_path);
     if (path == NULL) {
         fprintf_and_flush(stderr, "Error: Failed to extract path from: %s\n", python_path);
-        free(module_name);
-        return NULL;
+        goto exit0;
     }
 
-    // Add the path to sys.path so Python can find the module
-    // PyGILState_STATE gstate = PyGILState_Ensure();
-    // PyThreadState* tstate = PyThreadState_Get();
-    // PyEval_RestoreThread(tstate);
     PyObject* sys_path = PySys_GetObject("path"); // Borrowed reference, no need to Py_DECREF
     PyObject* py_path = PyUnicode_DecodeFSDefault(path);
     if (sys_path && py_path) {
@@ -183,10 +178,12 @@ import_python_module(const char* python_path)
     }
 
 exit0:
-    // PyGILState_Release(gstate);
-    // PyEval_SaveThread();
-    free(module_name);
-    free(path);
+    if (module_name != NULL) {
+        free(module_name);
+    }
+    if (path != NULL) {
+        free(path);
+    }
     return pModule;
 }
 

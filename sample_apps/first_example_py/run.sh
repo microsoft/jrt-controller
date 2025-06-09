@@ -93,8 +93,27 @@ sleep 20
 echo "Running: Unload YAML"
 cd $JRTC_PATH/sample_apps/first_example_py && source ../../setup_jrtc_env.sh
 
-## to test if we can unload in any directory
 cd $JRTC_PATH
 sample_apps/first_example_py/unload_app.sh
+
+echo "******************Testing Load and Unload Again*******************************"
+sleep 5
+
+### Load and Unload Again
+echo "Running: Load YAML"
+cd $JRTC_PATH/sample_apps/first_example_py && source ../../setup_jrtc_env.sh 
+
+### Load again
+$JRTC_PATH/sample_apps/first_example_py/load_app.sh
+
+## Wait to see output
+echo "Waiting for output..."
+sleep 20
+
+echo "Running: Unload YAML"
+cd $JRTC_PATH/sample_apps/first_example_py && source ../../setup_jrtc_env.sh
+
+## Unload again
+$JRTC_PATH/sample_apps/first_example_py/unload_app.sh
 
 echo "Test completed."
