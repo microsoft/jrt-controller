@@ -8,6 +8,10 @@ on:
     branches:
       - main
 
+### daily cron job to run the workflow
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+
 env:
   ACR: jrtc
   IMAGE_TAG: ${{ github.run_id }}-${{ github.sha }}

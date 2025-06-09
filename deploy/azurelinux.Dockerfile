@@ -10,7 +10,9 @@ LABEL org.opencontainers.image.description="jrt-controller for Azure Linux"
 RUN echo "*** Installing packages"
 RUN tdnf upgrade tdnf --refresh -y
 RUN tdnf -y update
-RUN tdnf -y install build-essential cmake git
+RUN tdnf clean all && tdnf makecache
+RUN tdnf -y install glibc-devel binutils kernel-headers
+RUN tdnf -y install gcc gcc-c++ make cmake git
 RUN tdnf -y install yaml-cpp-devel yaml-cpp-static boost-devel gcovr clang python3
 RUN tdnf -y install doxygen
 RUN tdnf -y install libyaml-devel
