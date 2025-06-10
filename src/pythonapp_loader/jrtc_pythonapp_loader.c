@@ -313,8 +313,6 @@ jrtc_start_app(void* args)
 
     char* full_path = env_ctx->params[0].val;
     printf_and_flush("Full path: %s\n", full_path);
-    char* python_type = env_ctx->params[0].key;
-    printf_and_flush("Python type: %s\n", python_type);
 
     printf_and_flush(
         "Current active interpreter users %s: %d\n",
@@ -450,7 +448,7 @@ cleanup_gil:
            after finalizing will crash unless all modules are cleaned up perfectly — which they typically aren't.
         */
         // Py_FinalizeEx();
-        atomic_store(&shared_python_state->python_initialized, 0);
+        // atomic_store(&shared_python_state->python_initialized, 0);
         printf_and_flush("Python interpreter finalized.\n");
     }
     pthread_mutex_unlock(&shared_python_state->python_lock);
