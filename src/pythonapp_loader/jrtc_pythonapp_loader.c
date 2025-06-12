@@ -309,37 +309,45 @@ jrtc_start_app(void* args)
     char* full_path = env_ctx->params[0].val;
     printf_and_flush("Python App Full path: %s\n", full_path);
 
-    // Initialize the Python interpreter (only once)
+    PyThreadState* my_sub_ts = NULL;
+
+    // Initialize Python interpreter once and create a new sub-interpreter per thread
     pthread_mutex_lock(&shared_python_state->python_lock);
-    if (Py_IsInitialized() == 0) {
-        Py_Initialize();
+    if (!shared_python_state->initialized) {
+        if (!Py_IsInitialized()) {
+            Py_Initialize();
+            shared_python_state->main_ts = PyThreadState_Get();
+        }
+        shared_python_state->initialized = true;
         printf_and_flush("Python interpreter initialized.\n");
     }
+
+    // Create sub-interpreter for this thread
+    my_sub_ts = Py_NewInterpreter();
+    if (!my_sub_ts) {
+        fprintf(stderr, "Failed to create sub-interpreter\n");
+        pthread_mutex_unlock(&shared_python_state->python_lock);
+        return NULL;
+    }
+
+    // Release the thread state so other threads can create theirs
+    PyEval_ReleaseThread(my_sub_ts);
     pthread_mutex_unlock(&shared_python_state->python_lock);
 
     printf_and_flush("Starting Python app: %s\n", full_path);
 
-    // Acquire GIL (if multi-threaded)
-    PyGILState_STATE gstate;
-    if (!PyGILState_Check()) {
-        gstate = PyGILState_Ensure();
-    } else {
-        printf_and_flush("GIL already acquired for Python app: %s\n", full_path);
-        gstate = PyGILState_LOCKED;
-    }
-    PyThreadState* ts1 = NULL;
+    // Acquire the GIL and this thread's sub-interpreter thread state
+    PyEval_AcquireThread(my_sub_ts);
 
-    printf_and_flush("Acquired GIL for Python app: %s\n", full_path);
-
-    // Create a Python capsule for the `args`
+    // Create Python capsule for args
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
     if (!pCapsule) {
         fprintf_and_flush(stderr, "Error: Failed to create Python capsule.\n");
         PyErr_Print();
-        goto cleanup_gil;
+        goto cleanup_thread;
     }
 
-    // === Load additional modules in the main interpreter ===
+    // Load modules in the main interpreter if needed (optional, adjust per your logic)
     for (int i = 0; i < MAX_APP_MODULES; i++) {
         if (env_ctx->app_modules[i] == NULL) {
             break;
@@ -354,16 +362,7 @@ jrtc_start_app(void* args)
         printf_and_flush("Module loaded: %s\n", env_ctx->app_modules[i]);
     }
 
-    // === Create and switch to sub-interpreter ===
-    PyThreadState* main_ts = PyThreadState_Get();
-    ts1 = Py_NewInterpreter(); // Create a sub-interpreter
-    if (!ts1) {
-        fprintf_and_flush(stderr, "Error: Failed to create sub-interpreter.\n");
-        PyErr_Print();
-        goto cleanup_capsule;
-    }
-
-    // Inject modules directly into the subinterpreter's sys.modules
+    // Inject modules into sub-interpreter's sys.modules
     PyObject* sysModule = PyImport_ImportModule("sys");
     if (!sysModule) {
         fprintf_and_flush(stderr, "Error: Failed to import 'sys' in sub-interpreter.\n");
@@ -372,7 +371,6 @@ jrtc_start_app(void* args)
 
     PyObject* sysDict = PyModule_GetDict(sysModule);
     PyObject* modules = PyDict_GetItemString(sysDict, "modules");
-
     if (!modules) {
         fprintf_and_flush(stderr, "Error: Failed to get 'sys.modules' in sub-interpreter.\n");
         Py_DECREF(sysModule);
@@ -387,7 +385,6 @@ jrtc_start_app(void* args)
         char* module_name = get_file_name_without_py(env_ctx->app_modules[i]);
         printf_and_flush("Injecting Module: %s\n", module_name);
         PyObject* module = import_python_module(env_ctx->app_modules[i]);
-
         if (!module) {
             fprintf_and_flush(
                 stderr, "Error: Failed to import module '%s' in sub-interpreter.\n", env_ctx->app_modules[i]);
@@ -395,7 +392,6 @@ jrtc_start_app(void* args)
             continue;
         }
 
-        // Inject module into sub-interpreter's sys.modules
         if (PyDict_SetItemString(modules, module_name, module) < 0) {
             PyErr_Print();
             fprintf_and_flush(stderr, "Failed to inject module: %s\n", module_name);
@@ -406,42 +402,30 @@ jrtc_start_app(void* args)
         Py_DECREF(module);
         free(module_name);
     }
-
     Py_DECREF(sysModule);
 
-    // === Execute in Sub-interpreter ===
-    struct python_state pstate = {.full_python_path = full_path, .ts = ts1->interp, .args = args};
-    PyThreadState_Swap(ts1); // Switch to the sub-interpreter's thread state
+    // Run your sub-interpreter Python code here
+    struct python_state pstate = {.full_python_path = full_path, .ts = my_sub_ts->interp, .args = args};
     run_subinterpreter(&pstate);
 
 cleanup_capsule:
     Py_XDECREF(pCapsule);
 
-cleanup_gil:
-
+cleanup_thread:
     printf_and_flush("Cleaning up sub-interpreter: %s...\n", full_path);
 
-    if (ts1) {
-        // === Clean up Sub-interpreter ===
-        PyThreadState_Swap(ts1);
-        if (PyThreadState_Get() == ts1) {
-            Py_EndInterpreter(ts1);
-        }
-        PyThreadState_Swap(main_ts);
-        printf_and_flush("Sub-interpreter cleaned up: %s\n", full_path);
-    }
-    PyGILState_Release(gstate);
+    // Release GIL and thread state after run_subinterpreter
+    PyEval_ReleaseThread(my_sub_ts);
+
+    // Now reacquire thread state so it's current for Py_EndInterpreter
+    pthread_mutex_lock(&shared_python_state->python_lock);
+    PyEval_AcquireThread(my_sub_ts);
+    Py_EndInterpreter(my_sub_ts);
+    pthread_mutex_unlock(&shared_python_state->python_lock);
 
     printf_and_flush("Skipping Python interpreter finalization for %s\n", full_path);
-    /*
-        Although Python 3.12 supports multiple sub-interpreters, Py_Finalize() followed by another Py_Initialize()
-        is not safe when: Dynamic modules (.so) like _datetime are used. The interpreter is finalized and then
-        reinitialized in the same process. Some C extensions (including _datetime) store global state or use internal
-        APIs that assume a single interpreter lifetime. 🧨 So even if dlclose() is skipped, reinitializing libpython
-        after finalizing will crash unless all modules are cleaned up perfectly — which they typically aren't.
-    */
-    // Py_FinalizeEx();
     printf_and_flush("Python interpreter finalized.\n");
     printf_and_flush("Python app terminated: %s\n", full_path);
+
     return NULL;
 }

@@ -7,7 +7,8 @@
 typedef struct shared_python_state
 {
     pthread_mutex_t python_lock;
-    atomic_int python_initialized;
+    PyThreadState* main_ts; // Store the main interpreter thread state
+    bool initialized;
 } shared_python_state_t;
 
 #endif
