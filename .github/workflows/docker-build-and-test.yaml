@@ -8,6 +8,32 @@ on:
     branches:
       - main
 
+
+  # Manually trigger the workflow
+  workflow_dispatch:
+    inputs:
+      dockerType:
+        description: 'Docker Type'
+        required: true
+        default: 'azurelinux'
+        type: choice
+        options:
+          - azurelinux
+          - ubuntu22_04
+          - ubuntu24_04
+      testCase:
+        description: 'Test Case'
+        required: true
+        default: 'test1'
+        type: choice
+        options:
+          - test1
+          - test2 
+
+### daily cron job to run the workflow
+  schedule:
+    - cron: '0 0 * * *' # Runs daily at midnight UTC
+
 env:
   ACR: jrtc
   IMAGE_TAG: ${{ github.run_id }}-${{ github.sha }}
