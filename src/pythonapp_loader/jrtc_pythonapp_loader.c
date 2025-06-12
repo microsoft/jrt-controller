@@ -423,7 +423,6 @@ cleanup_thread:
     pthread_mutex_unlock(&shared_python_state->python_lock);
 
     printf_and_flush("Skipping Python interpreter finalization for %s\n", full_path);
-    printf_and_flush("Python interpreter finalized.\n");
     printf_and_flush("Python app terminated: %s\n", full_path);
 
     return NULL;
