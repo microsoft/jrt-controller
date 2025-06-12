@@ -28,7 +28,6 @@ if [[ $count -ne 0 ]]; then
     exit 1
 fi
 
-
 ### This should appear twice: Aggregate counter so far is: 15
 count=$(grep -c "Aggregate counter so far is: 15" $1)
 if [[ $count -ne 2 ]]; then

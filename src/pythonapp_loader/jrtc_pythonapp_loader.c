@@ -347,7 +347,6 @@ jrtc_start_app(void* args)
         goto cleanup_thread;
     }
 
-    // Load modules in the main interpreter if needed (optional, adjust per your logic)
     for (int i = 0; i < MAX_APP_MODULES; i++) {
         if (env_ctx->app_modules[i] == NULL) {
             break;
