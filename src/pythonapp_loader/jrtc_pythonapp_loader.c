@@ -305,32 +305,31 @@ jrtc_start_app(void* args)
         fprintf_and_flush(stderr, "Error: Shared Python state is NULL.\n");
         return NULL;
     }
-    printf_and_flush(
-        "Thread %p: &active_interpreter_users = %p\n",
-        pthread_self(),
-        (void*)&shared_python_state->active_interpreter_users);
-    atomic_fetch_add(&shared_python_state->active_interpreter_users, 1);
 
     char* full_path = env_ctx->params[0].val;
-    printf_and_flush("Full path: %s\n", full_path);
-
-    printf_and_flush(
-        "Current active interpreter users %s: %d\n",
-        full_path,
-        atomic_load(&shared_python_state->active_interpreter_users));
+    printf_and_flush("Python App Full path: %s\n", full_path);
 
     // Initialize the Python interpreter (only once)
     pthread_mutex_lock(&shared_python_state->python_lock);
-    if ((atomic_load(&shared_python_state->python_initialized) == 0) && (Py_IsInitialized() == 0)) {
+    if (Py_IsInitialized() == 0) {
         Py_Initialize();
-        atomic_store(&shared_python_state->python_initialized, 1);
         printf_and_flush("Python interpreter initialized.\n");
     }
     pthread_mutex_unlock(&shared_python_state->python_lock);
 
+    printf_and_flush("Starting Python app: %s\n", full_path);
+
     // Acquire GIL (if multi-threaded)
-    PyGILState_STATE gstate = PyGILState_Ensure();
+    PyGILState_STATE gstate;
+    if (!PyGILState_Check()) {
+        gstate = PyGILState_Ensure();
+    } else {
+        printf_and_flush("GIL already acquired for Python app: %s\n", full_path);
+        gstate = PyGILState_LOCKED;
+    }
     PyThreadState* ts1 = NULL;
+
+    printf_and_flush("Acquired GIL for Python app: %s\n", full_path);
 
     // Create a Python capsule for the `args`
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
@@ -421,8 +420,6 @@ cleanup_capsule:
 cleanup_gil:
 
     printf_and_flush("Cleaning up sub-interpreter: %s...\n", full_path);
-    printf_and_flush(
-        "Current active interpreter users: %d\n", atomic_load(&shared_python_state->active_interpreter_users));
 
     if (ts1) {
         // === Clean up Sub-interpreter ===
@@ -435,24 +432,16 @@ cleanup_gil:
     }
     PyGILState_Release(gstate);
 
-    int users_left = atomic_fetch_sub(&shared_python_state->active_interpreter_users, 1) - 1;
-
-    pthread_mutex_lock(&shared_python_state->python_lock);
-    if ((users_left == 0) && Py_IsInitialized()) {
-        printf_and_flush("Skipping Python interpreter finalization for %s, users left: %d\n", full_path, users_left);
-        /*
-            Although Python 3.12 supports multiple sub-interpreters, Py_Finalize() followed by another Py_Initialize()
-           is not safe when: Dynamic modules (.so) like _datetime are used. The interpreter is finalized and then
-           reinitialized in the same process. Some C extensions (including _datetime) store global state or use internal
-           APIs that assume a single interpreter lifetime. 🧨 So even if dlclose() is skipped, reinitializing libpython
-           after finalizing will crash unless all modules are cleaned up perfectly — which they typically aren't.
-        */
-        // Py_FinalizeEx();
-        // atomic_store(&shared_python_state->python_initialized, 0);
-        printf_and_flush("Python interpreter finalized.\n");
-    }
-    pthread_mutex_unlock(&shared_python_state->python_lock);
-
+    printf_and_flush("Skipping Python interpreter finalization for %s\n", full_path);
+    /*
+        Although Python 3.12 supports multiple sub-interpreters, Py_Finalize() followed by another Py_Initialize()
+        is not safe when: Dynamic modules (.so) like _datetime are used. The interpreter is finalized and then
+        reinitialized in the same process. Some C extensions (including _datetime) store global state or use internal
+        APIs that assume a single interpreter lifetime. 🧨 So even if dlclose() is skipped, reinitializing libpython
+        after finalizing will crash unless all modules are cleaned up perfectly — which they typically aren't.
+    */
+    // Py_FinalizeEx();
+    printf_and_flush("Python interpreter finalized.\n");
     printf_and_flush("Python app terminated: %s\n", full_path);
     return NULL;
 }

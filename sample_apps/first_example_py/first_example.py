@@ -74,6 +74,8 @@ def app_handler(
 ##########################################################################
 # Main function to start the app (converted from jrtc_start_app)
 def jrtc_start_app(capsule):
+    print("Starting FirstExample app...", flush=True)
+    
     streams = [
         # GENERATOR_OUT_STREAM_IDX
         JrtcStreamCfg_t(
