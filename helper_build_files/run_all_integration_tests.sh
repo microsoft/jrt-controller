@@ -12,16 +12,7 @@ if ! pushd "$JRTC_PATH/helper_build_files"; then
     exit 2
 fi
 
-
-## check python version, if it is 3.10 then skip _py tests as they are not compatible with python 3.10
-PYTHON_VERSION=$(python3 --version 2>&1 | awk '{print $2}')
-if [[ "$PYTHON_VERSION" == 3.10* ]]; then
-    echo "Python version is 3.10, skipping _py tests."
-    TEST_CASES=("first_example" "first_example_c" "advanced_example" "advanced_example_c")
-else
-    echo "Python version is $PYTHON_VERSION, running all tests."
-    TEST_CASES=("advanced_example_py" "first_example_py" "first_example" "first_example_c" "advanced_example" "advanced_example_c")
-fi
+TEST_CASES=("advanced_example_py" "first_example_py" "first_example" "first_example_c" "advanced_example" "advanced_example_c")
 
 echo "Running integration tests for the following cases: ${TEST_CASES[*]}"
 

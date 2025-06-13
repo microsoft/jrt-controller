@@ -10,8 +10,20 @@ LABEL org.opencontainers.image.description="jrt-controller for Ubuntu 22.04"
 ENV DEBIAN_FRONTEND=noninteractive
 SHELL ["/bin/bash", "-c"]
 
-RUN echo "*** Installing packages"
-RUN apt update --fix-missing
+RUN echo "*** Installing packages" && \
+    apt update --fix-missing && \
+    apt install -y software-properties-common && \
+    add-apt-repository ppa:deadsnakes/ppa && \
+    apt update && \
+    apt install -y python3.12 python3.12-dev python3.12-venv curl && \
+    python3.12 -m ensurepip && \
+    python3.12 -m pip install --upgrade pip && \
+    ln -sfn /usr/bin/python3.12 /usr/bin/python3 && \
+    ln -sfn /usr/local/bin/pip3 /usr/bin/pip3
+
+# Verify Python version
+RUN python3 --version && pip3 --version
+
 RUN apt install -y cmake build-essential libboost-dev git libboost-program-options-dev \
     gcovr doxygen libboost-filesystem-dev libasan6 python3
 
