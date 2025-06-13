@@ -15,14 +15,11 @@ RUN echo "*** Installing packages" && \
     apt install -y software-properties-common && \
     add-apt-repository ppa:deadsnakes/ppa && \
     apt update && \
-    apt install -y python3.12 python3.12-dev python3.12-venv curl && \
+    apt install -y python3.12 python3.12-dev curl && \
     python3.12 -m ensurepip && \
     python3.12 -m pip install --upgrade pip && \
     ln -sfn /usr/bin/python3.12 /usr/bin/python3 && \
     ln -sfn /usr/local/bin/pip3 /usr/bin/pip3
-
-# Verify Python version
-RUN python3 --version && pip3 --version
 
 RUN apt install -y cmake build-essential libboost-dev git libboost-program-options-dev \
     gcovr doxygen libboost-filesystem-dev libasan6

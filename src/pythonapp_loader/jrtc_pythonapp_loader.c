@@ -20,6 +20,7 @@ struct python_state
     char* full_python_path;
     PyInterpreterState* ts;
     void* args;
+    shared_python_state_t* shared_python_state;
 };
 
 void
@@ -191,7 +192,8 @@ exit0:
 }
 
 void
-run_python_using_interpreter(char* python_script, PyInterpreterState* interp, void* args)
+run_python_using_interpreter(
+    char* python_script, PyInterpreterState* interp, void* args, shared_python_state_t* shared_python_state)
 {
     printf_and_flush("Running Python script: %s\n", python_script);
 
@@ -200,7 +202,6 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
         return;
     }
 
-    // Create sub-interpreter only if needed
     PyThreadState* ts = NULL;
     if (interp) {
         ts = PyThreadState_New(interp);
@@ -215,8 +216,6 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
     PyObject* pArgs = NULL;
     PyObject* pCapsule = NULL;
 
-    // Ensure we are using the correct thread state
-    PyThreadState* mainThreadState = PyThreadState_Get(); // Save the main thread state
     if (ts) {
         // Swap to sub-interpreter's thread state
         PyThreadState_Swap(ts);
@@ -273,7 +272,7 @@ cleanup:
     // Clean up: Swap back to the main interpreter's thread state
     if (ts) {
         printf_and_flush("Cleaning up sub-interpreter thread state %s...\n", python_script);
-        PyThreadState_Swap(mainThreadState);
+        PyThreadState_Swap(shared_python_state->main_ts);
         PyThreadState_Clear(ts);
         PyThreadState_Delete(ts);
     }
@@ -283,7 +282,7 @@ void*
 run_subinterpreter(void* state)
 {
     struct python_state* pstate = (struct python_state*)state;
-    run_python_using_interpreter(pstate->full_python_path, pstate->ts, pstate->args);
+    run_python_using_interpreter(pstate->full_python_path, pstate->ts, pstate->args, pstate->shared_python_state);
     if (PyErr_Occurred()) {
         PyErr_Print();
         fprintf_and_flush(stderr, "Error: Exception occurred in sub-interpreter.\n");
@@ -404,7 +403,11 @@ jrtc_start_app(void* args)
     Py_DECREF(sysModule);
 
     // Run your sub-interpreter Python code here
-    struct python_state pstate = {.full_python_path = full_path, .ts = my_sub_ts->interp, .args = args};
+    struct python_state pstate = {
+        .full_python_path = full_path,
+        .ts = my_sub_ts->interp,
+        .args = args,
+        .shared_python_state = shared_python_state};
     run_subinterpreter(&pstate);
 
 cleanup_capsule:
