@@ -309,8 +309,6 @@ jrtc_start_app(void* args)
     char* full_path = env_ctx->params[0].val;
     printf_and_flush("Python App Full path: %s\n", full_path);
 
-    PyThreadState* my_sub_ts = NULL;
-
     // Initialize Python interpreter once and create a new sub-interpreter per thread
     pthread_mutex_lock(&shared_python_state->python_lock);
     if (!shared_python_state->initialized) {
@@ -323,7 +321,9 @@ jrtc_start_app(void* args)
     }
 
     // Create sub-interpreter for this thread
-    my_sub_ts = Py_NewInterpreter();
+    PyGILState_STATE gil_state = PyGILState_Ensure();
+    PyThreadState* my_sub_ts = Py_NewInterpreter();
+    PyGILState_Release(gil_state);
     if (!my_sub_ts) {
         fprintf(stderr, "Failed to create sub-interpreter\n");
         pthread_mutex_unlock(&shared_python_state->python_lock);
