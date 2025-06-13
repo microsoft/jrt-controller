@@ -321,9 +321,7 @@ jrtc_start_app(void* args)
     }
 
     // Create sub-interpreter for this thread
-    PyGILState_STATE gil_state = PyGILState_Ensure();
     PyThreadState* my_sub_ts = Py_NewInterpreter();
-    PyGILState_Release(gil_state);
     if (!my_sub_ts) {
         fprintf(stderr, "Failed to create sub-interpreter\n");
         pthread_mutex_unlock(&shared_python_state->python_lock);
