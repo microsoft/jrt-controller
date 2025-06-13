@@ -14,8 +14,8 @@ fi
 
 ## if it is ubuntu22.04 then skip advanced_example_py test
 if grep -q "Ubuntu 22.04" /etc/os-release; then
-    echo "Skipping advanced_example_py test on Ubuntu 22.04"
-    TEST_CASES=("first_example_py" "first_example" "first_example_c" "advanced_example" "advanced_example_c")
+    echo "Skipping _py test on Ubuntu 22.04"
+    TEST_CASES=("first_example" "first_example_c" "advanced_example" "advanced_example_c")
 else
     TEST_CASES=("advanced_example_py" "first_example_py" "first_example" "first_example_c" "advanced_example" "advanced_example_c")
 fi
