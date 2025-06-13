@@ -216,6 +216,7 @@ run_python_using_interpreter(
     PyObject* pArgs = NULL;
     PyObject* pCapsule = NULL;
 
+    PyThreadState* mainThreadState = PyThreadState_Get();
     if (ts) {
         // Swap to sub-interpreter's thread state
         PyThreadState_Swap(ts);
@@ -272,7 +273,7 @@ cleanup:
     // Clean up: Swap back to the main interpreter's thread state
     if (ts) {
         printf_and_flush("Cleaning up sub-interpreter thread state %s...\n", python_script);
-        PyThreadState_Swap(shared_python_state->main_ts);
+        PyThreadState_Swap(mainThreadState);
         PyThreadState_Clear(ts);
         PyThreadState_Delete(ts);
     }
