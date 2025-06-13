@@ -25,7 +25,7 @@ RUN echo "*** Installing packages" && \
 RUN python3 --version && pip3 --version
 
 RUN apt install -y cmake build-essential libboost-dev git libboost-program-options-dev \
-    gcovr doxygen libboost-filesystem-dev libasan6 python3
+    gcovr doxygen libboost-filesystem-dev libasan6
 
 RUN apt install -y clang-format cppcheck
 RUN apt install -y clang gcc-multilib
@@ -57,7 +57,7 @@ RUN pip3 install -r /jrtc/jbpf-protobuf/3p/nanopb/requirements.txt
 
 RUN pip3 install ctypesgen requests
 
-RUN apt install -y python3-dev zip
+RUN apt install -y zip
 
 # install rust
 RUN apt install -y cargo
