@@ -20,6 +20,7 @@ struct python_state
     char* full_python_path;
     PyInterpreterState* ts;
     void* args;
+    shared_python_state_t* shared_python_state;
 };
 
 void
@@ -137,24 +138,26 @@ import_python_module(const char* python_path)
         return NULL;
     }
 
-    // Extract the module name from the path
-    char* module_name = get_file_name_without_py(python_path);
+    char* module_name = NULL;
+    char* path = NULL;
+
+    if (python_path == NULL || strlen(python_path) == 0) {
+        fprintf_and_flush(stderr, "Error: Invalid Python path provided.\n");
+        return NULL;
+    }
+    module_name = get_file_name_without_py(python_path);
     if (module_name == NULL) {
         fprintf_and_flush(stderr, "Error: Failed to extract module name from path: %s\n", python_path);
         return NULL;
     }
 
-    char* path = get_folder(python_path);
+    path = get_folder(python_path);
     if (path == NULL) {
         fprintf_and_flush(stderr, "Error: Failed to extract path from: %s\n", python_path);
         free(module_name);
         return NULL;
     }
 
-    // Add the path to sys.path so Python can find the module
-    // PyGILState_STATE gstate = PyGILState_Ensure();
-    // PyThreadState* tstate = PyThreadState_Get();
-    // PyEval_RestoreThread(tstate);
     PyObject* sys_path = PySys_GetObject("path"); // Borrowed reference, no need to Py_DECREF
     PyObject* py_path = PyUnicode_DecodeFSDefault(path);
     if (sys_path && py_path) {
@@ -183,15 +186,14 @@ import_python_module(const char* python_path)
     }
 
 exit0:
-    // PyGILState_Release(gstate);
-    // PyEval_SaveThread();
     free(module_name);
     free(path);
     return pModule;
 }
 
 void
-run_python_using_interpreter(char* python_script, PyInterpreterState* interp, void* args)
+run_python_using_interpreter(
+    char* python_script, PyInterpreterState* interp, void* args, shared_python_state_t* shared_python_state)
 {
     printf_and_flush("Running Python script: %s\n", python_script);
 
@@ -200,7 +202,6 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
         return;
     }
 
-    // Create sub-interpreter only if needed
     PyThreadState* ts = NULL;
     if (interp) {
         ts = PyThreadState_New(interp);
@@ -215,8 +216,7 @@ run_python_using_interpreter(char* python_script, PyInterpreterState* interp, vo
     PyObject* pArgs = NULL;
     PyObject* pCapsule = NULL;
 
-    // Ensure we are using the correct thread state
-    PyThreadState* mainThreadState = PyThreadState_Get(); // Save the main thread state
+    PyThreadState* mainThreadState = PyThreadState_Get();
     if (ts) {
         // Swap to sub-interpreter's thread state
         PyThreadState_Swap(ts);
@@ -283,7 +283,7 @@ void*
 run_subinterpreter(void* state)
 {
     struct python_state* pstate = (struct python_state*)state;
-    run_python_using_interpreter(pstate->full_python_path, pstate->ts, pstate->args);
+    run_python_using_interpreter(pstate->full_python_path, pstate->ts, pstate->args, pstate->shared_python_state);
     if (PyErr_Occurred()) {
         PyErr_Print();
         fprintf_and_flush(stderr, "Error: Exception occurred in sub-interpreter.\n");
@@ -305,44 +305,46 @@ jrtc_start_app(void* args)
         fprintf_and_flush(stderr, "Error: Shared Python state is NULL.\n");
         return NULL;
     }
-    printf_and_flush(
-        "Thread %p: &active_interpreter_users = %p\n",
-        pthread_self(),
-        (void*)&shared_python_state->active_interpreter_users);
-    atomic_fetch_add(&shared_python_state->active_interpreter_users, 1);
 
     char* full_path = env_ctx->params[0].val;
-    printf_and_flush("Full path: %s\n", full_path);
-    char* python_type = env_ctx->params[0].key;
-    printf_and_flush("Python type: %s\n", python_type);
+    printf_and_flush("Python App Full path: %s\n", full_path);
 
-    printf_and_flush(
-        "Current active interpreter users %s: %d\n",
-        full_path,
-        atomic_load(&shared_python_state->active_interpreter_users));
-
-    // Initialize the Python interpreter (only once)
+    // Initialize Python interpreter once and create a new sub-interpreter per thread
     pthread_mutex_lock(&shared_python_state->python_lock);
-    if ((atomic_load(&shared_python_state->python_initialized) == 0) && (Py_IsInitialized() == 0)) {
-        Py_Initialize();
-        atomic_store(&shared_python_state->python_initialized, 1);
+    if (!shared_python_state->initialized) {
+        if (!Py_IsInitialized()) {
+            Py_Initialize();
+            shared_python_state->main_ts = PyThreadState_Get();
+        }
+        shared_python_state->initialized = true;
         printf_and_flush("Python interpreter initialized.\n");
     }
+
+    // Create sub-interpreter for this thread
+    PyThreadState* my_sub_ts = Py_NewInterpreter();
+    if (!my_sub_ts) {
+        fprintf(stderr, "Failed to create sub-interpreter\n");
+        pthread_mutex_unlock(&shared_python_state->python_lock);
+        return NULL;
+    }
+
+    // Release the thread state so other threads can create theirs
+    PyEval_ReleaseThread(my_sub_ts);
     pthread_mutex_unlock(&shared_python_state->python_lock);
 
-    // Acquire GIL (if multi-threaded)
-    PyGILState_STATE gstate = PyGILState_Ensure();
-    PyThreadState* ts1 = NULL;
+    printf_and_flush("Starting Python app: %s\n", full_path);
 
-    // Create a Python capsule for the `args`
+    // Acquire the GIL and this thread's sub-interpreter thread state
+    PyEval_AcquireThread(my_sub_ts);
+
+    // Create Python capsule for args
     PyObject* pCapsule = PyCapsule_New(args, "void*", NULL);
     if (!pCapsule) {
         fprintf_and_flush(stderr, "Error: Failed to create Python capsule.\n");
         PyErr_Print();
-        goto cleanup_gil;
+        goto cleanup_thread;
     }
 
-    // === Load additional modules in the main interpreter ===
     for (int i = 0; i < MAX_APP_MODULES; i++) {
         if (env_ctx->app_modules[i] == NULL) {
             break;
@@ -357,16 +359,7 @@ jrtc_start_app(void* args)
         printf_and_flush("Module loaded: %s\n", env_ctx->app_modules[i]);
     }
 
-    // === Create and switch to sub-interpreter ===
-    PyThreadState* main_ts = PyThreadState_Get();
-    ts1 = Py_NewInterpreter(); // Create a sub-interpreter
-    if (!ts1) {
-        fprintf_and_flush(stderr, "Error: Failed to create sub-interpreter.\n");
-        PyErr_Print();
-        goto cleanup_capsule;
-    }
-
-    // Inject modules directly into the subinterpreter's sys.modules
+    // Inject modules into sub-interpreter's sys.modules
     PyObject* sysModule = PyImport_ImportModule("sys");
     if (!sysModule) {
         fprintf_and_flush(stderr, "Error: Failed to import 'sys' in sub-interpreter.\n");
@@ -375,7 +368,6 @@ jrtc_start_app(void* args)
 
     PyObject* sysDict = PyModule_GetDict(sysModule);
     PyObject* modules = PyDict_GetItemString(sysDict, "modules");
-
     if (!modules) {
         fprintf_and_flush(stderr, "Error: Failed to get 'sys.modules' in sub-interpreter.\n");
         Py_DECREF(sysModule);
@@ -390,7 +382,6 @@ jrtc_start_app(void* args)
         char* module_name = get_file_name_without_py(env_ctx->app_modules[i]);
         printf_and_flush("Injecting Module: %s\n", module_name);
         PyObject* module = import_python_module(env_ctx->app_modules[i]);
-
         if (!module) {
             fprintf_and_flush(
                 stderr, "Error: Failed to import module '%s' in sub-interpreter.\n", env_ctx->app_modules[i]);
@@ -398,7 +389,6 @@ jrtc_start_app(void* args)
             continue;
         }
 
-        // Inject module into sub-interpreter's sys.modules
         if (PyDict_SetItemString(modules, module_name, module) < 0) {
             PyErr_Print();
             fprintf_and_flush(stderr, "Failed to inject module: %s\n", module_name);
@@ -409,44 +399,33 @@ jrtc_start_app(void* args)
         Py_DECREF(module);
         free(module_name);
     }
-
     Py_DECREF(sysModule);
 
-    // === Execute in Sub-interpreter ===
-    struct python_state pstate = {.full_python_path = full_path, .ts = ts1->interp, .args = args};
-    PyThreadState_Swap(ts1); // Switch to the sub-interpreter's thread state
+    // Run your sub-interpreter Python code here
+    struct python_state pstate = {
+        .full_python_path = full_path,
+        .ts = my_sub_ts->interp,
+        .args = args,
+        .shared_python_state = shared_python_state};
     run_subinterpreter(&pstate);
 
 cleanup_capsule:
     Py_XDECREF(pCapsule);
 
-cleanup_gil:
-
+cleanup_thread:
     printf_and_flush("Cleaning up sub-interpreter: %s...\n", full_path);
-    printf_and_flush(
-        "Current active interpreter users: %d\n", atomic_load(&shared_python_state->active_interpreter_users));
 
-    if (ts1) {
-        // === Clean up Sub-interpreter ===
-        PyThreadState_Swap(ts1);
-        if (PyThreadState_Get() == ts1) {
-            Py_EndInterpreter(ts1);
-        }
-        PyThreadState_Swap(main_ts);
-        printf_and_flush("Sub-interpreter cleaned up: %s\n", full_path);
-    }
-    PyGILState_Release(gstate);
+    // Release GIL and thread state after run_subinterpreter
+    PyEval_ReleaseThread(my_sub_ts);
 
-    int users_left = atomic_fetch_sub(&shared_python_state->active_interpreter_users, 1) - 1;
-
+    // Now reacquire thread state so it's current for Py_EndInterpreter
     pthread_mutex_lock(&shared_python_state->python_lock);
-    if ((users_left == 0) && Py_IsInitialized()) {
-        Py_FinalizeEx();
-        atomic_store(&shared_python_state->python_initialized, 0);
-        printf_and_flush("Python interpreter finalized.\n");
-    }
+    PyEval_AcquireThread(my_sub_ts);
+    Py_EndInterpreter(my_sub_ts);
     pthread_mutex_unlock(&shared_python_state->python_lock);
 
+    printf_and_flush("Skipping Python interpreter finalization for %s\n", full_path);
     printf_and_flush("Python app terminated: %s\n", full_path);
+
     return NULL;
 }

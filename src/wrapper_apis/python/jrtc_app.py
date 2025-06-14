@@ -296,8 +296,6 @@ class JrtcApp:
             if self.data.app_cfg.sleep_timeout_secs > 0:
                 time.sleep(max(self.data.app_cfg.sleep_timeout_secs, 1e-9))
 
-        self.logger.debug(f"{self.data.app_cfg.context}:: App exiting")
-        self.cleanup()
 
     def get_stream(self, stream_idx: int) -> Optional[JrtcRouterStreamId]:
         if stream_idx < 0 or stream_idx >= len(self.stream_items):

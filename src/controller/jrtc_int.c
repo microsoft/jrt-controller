@@ -35,8 +35,8 @@
 // Global shared Python state, only one instance
 shared_python_state_t shared_python_state = {
     .python_lock = PTHREAD_MUTEX_INITIALIZER,
-    .active_interpreter_users = ATOMIC_VAR_INIT(0),
-    .python_initialized = ATOMIC_VAR_INIT(0),
+    .main_ts = NULL,
+    .initialized = false,
 };
 
 /* Compiler magic to make address sanitizer ignore
