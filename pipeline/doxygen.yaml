@@ -6,10 +6,10 @@ steps:
   - template: print-debug-info.yaml
   - template: build-lib.yaml
     parameters:
-      dockerType: ubuntu22_04
+      dockerType: ubuntu24_04
   - bash: |
       set -x
-      if ! docker run -v `pwd`:/jrtc_out_lib -e DOXYGEN=1 $(containerRegistry)/jrtc-ubuntu22_04:$(imageTag); then
+      if ! docker run -v `pwd`:/jrtc_out_lib -e DOXYGEN=1 $(containerRegistry)/jrtc-ubuntu24_04:$(imageTag); then
           echo ERROR make doc
           exit 1
       fi
