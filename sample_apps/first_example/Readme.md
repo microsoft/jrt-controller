@@ -9,7 +9,7 @@ value to the simple_input codelet via a control_input channel. The simple_input 
 This example assumes that you already have Jbpf and you have already built the Jbpf library without DPDK support (cmake option `-DUSE_DPDK=off`).
 Also, it assumes that you are running all the below steps as root.
 
-Steps to run the example.   The following examples use "ubuntu2204" as the OS, but "mariner" could be used too.
+Steps to run the example.
 
 ## Usage
 

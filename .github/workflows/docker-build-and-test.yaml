@@ -19,7 +19,6 @@ on:
         type: choice
         options:
           - azurelinux
-          - ubuntu22_04
           - ubuntu24_04
       testCase:
         description: 'Test Case'
@@ -47,7 +46,6 @@ jobs:
       matrix:
         dockerType: 
           - { value: "azurelinux", displayName: "Azure Linux", id: "mariner" }
-          - { value: "ubuntu22_04", displayName: "Ubuntu 22.04", id: "ubuntu22_04" }
           - { value: "ubuntu24_04", displayName: "Ubuntu 24.04", id: "ubuntu24_04" }
         testCase: 
           - { description: "Address Sanitizer", id: "test1", sanitizerBuildParam: "-e SANITIZER=1" }
