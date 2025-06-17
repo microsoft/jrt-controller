@@ -244,7 +244,7 @@ aa_channel_encode_fwd_out_data(
 
         msg_size = jrtc_router_create_serialized_msg(data_entries[i], data_to_write, AA_NET_ELEM_SIZE);
 
-        if (msg_size) {
+        if (msg_size > 0) {
             iovec[n_sent][0].iov_base = data_to_write;
             iovec[n_sent][0].iov_len = msg_size;
             jmbuf_list[n_sent] = jmbuf;
@@ -254,7 +254,7 @@ aa_channel_encode_fwd_out_data(
             datagrams[n_sent].msg_hdr.msg_namelen = sizeof(struct sockaddr_in);
             n_sent++;
         } else {
-            jrtc_logger(JRTC_ERROR, "Encoding failed\n");
+            jrtc_logger(JRTC_ERROR, "Encoding failed with msg_size %d\n", msg_size);
             jbpf_mbuf_free(jmbuf, false);
         }
         jrtc_router_channel_release_buf(data_entries[i].data);
