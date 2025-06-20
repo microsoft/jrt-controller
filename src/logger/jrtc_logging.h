@@ -7,6 +7,9 @@
 #include <stddef.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <ctype.h>
+#include <string.h>
 
 #pragma once
 #ifdef __cplusplus
@@ -39,13 +42,63 @@ extern "C"
 #define _STR(x) _VAL(x)
 #define _VAL(x) #x
 
+    static inline const char*
+    get_file_name(const char* file)
+    {
+        const char* p = strrchr(file, '/');
+        return p ? p + 1 : file;
+    }
+
+    static inline char*
+    get_domain(const char* file)
+    {
+        const char* p = strstr(file, "src/");
+        if (p) {
+            p += 4; // Move past "src/"
+            const char* q = strchr(p, '/');
+            if (q) {
+                size_t len = q - p;
+                char* domain = (char*)malloc(len + 1);
+                if (!domain) {
+                    return NULL; // Indicate failure
+                }
+                memcpy(domain, p, len);
+                domain[len] = '\0';
+                // make it uppercase
+                for (size_t i = 0; i < len; i++) {
+                    domain[i] = toupper(domain[i]);
+                }
+                return domain;
+            }
+        }
+        return NULL;
+    }
+
     // Function to generate the log prefix dynamically
     static inline const char*
     get_log_prefix(const char* file, const char* func, int line, const char* level)
     {
         static char buffer[256];
-        snprintf(buffer, sizeof(buffer), "[%s:%s:%s:%d]", level, file, func, line);
-        return buffer;
+        char* domain = get_domain(file);
+        // we may want to cache this, but for now we will just check the env var each time
+        int JRTC_VERBOSE_LOGGING = getenv("JRTC_VERBOSE_LOGGING") != NULL;
+        if (JRTC_VERBOSE_LOGGING) {
+            if (domain) {
+                snprintf(buffer, sizeof(buffer), "[JRTC][%s]:%s:%s:%d", domain, get_file_name(file), func, line);
+            } else {
+                snprintf(buffer, sizeof(buffer), "[JRTC]:%s:%s:%d", get_file_name(file), func, line);
+            }
+            free(domain);
+            return buffer;
+        } else {
+            if (domain) {
+                snprintf(buffer, sizeof(buffer), "[JRTC][%s]", domain);
+            } else {
+                snprintf(buffer, sizeof(buffer), "[JRTC]");
+            }
+            free(domain);
+            return buffer;
+        }
     }
 
 // Define macros using the helper function

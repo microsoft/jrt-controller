@@ -5,16 +5,30 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <time.h>
+#include <sys/time.h>
 
 static const char* STR[] = {FOREACH_LOG_LEVEL(GENERATE_STRING)};
 
 void
 jrtc_default_va_logging(const char* domain, jrtc_logging_level level, const char* s, va_list arg)
 {
-    char output[LOGGING_BUFFER_LEN];
-    snprintf(output, LOGGING_BUFFER_LEN, "%s %s%s", domain, STR[level], s);
-
     if (level >= jrtc_logger_level) {
+        char output[LOGGING_BUFFER_LEN];
+
+        // Get current time in milliseconds
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+
+        // Format the timestamp
+        char timestamp[64];
+        struct tm* tm_info = gmtime(&tv.tv_sec);
+        strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M:%S", tm_info);
+        snprintf(timestamp + strlen(timestamp), sizeof(timestamp) - strlen(timestamp), ".%06ldZ", tv.tv_usec);
+
+        // Add timestamp and log level
+        snprintf(output, LOGGING_BUFFER_LEN, "%s %s%s%s", timestamp, domain, STR[level], s);
+
         FILE* where = level >= INFO ? stderr : stdout;
         vfprintf(where, output, arg);
         fflush(where);
@@ -26,7 +40,17 @@ jrtc_default_logging(const char* domain, jrtc_logging_level level, const char* s
 {
     if (level >= jrtc_logger_level) {
         char output[LOGGING_BUFFER_LEN];
-        snprintf(output, LOGGING_BUFFER_LEN, "%s %s%s", domain, STR[level], s);
+        // Get current time in milliseconds
+        struct timeval tv;
+        gettimeofday(&tv, NULL);
+
+        // Format the timestamp
+        char timestamp[64];
+        struct tm* tm_info = gmtime(&tv.tv_sec);
+        strftime(timestamp, sizeof(timestamp), "%Y-%m-%dT%H:%M:%S", tm_info);
+        snprintf(timestamp + strlen(timestamp), sizeof(timestamp) - strlen(timestamp), ".%06ldZ", tv.tv_usec);
+
+        snprintf(output, LOGGING_BUFFER_LEN, "%s %s %s", timestamp, domain, s);
         va_list ap;
         va_start(ap, s);
         FILE* where = level >= INFO ? stderr : stdout;
