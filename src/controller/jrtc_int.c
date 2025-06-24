@@ -329,7 +329,10 @@ unload_app(int app_id)
     if (res == ETIMEDOUT) {
         jrtc_logger(JRTC_ERROR, "App %s did not exit in time, forcefully terminating\n", env->app_name);
         pthread_cancel(env->app_tid);
-        pthread_join(env->app_tid, NULL);
+        // check if the thread is still running and wait for it to finish
+        if (pthread_kill(env->app_tid, 0) == 0) {
+            pthread_join(env->app_tid, NULL);
+        }
     } else if (res != 0) {
         jrtc_logger(JRTC_ERROR, "Error joining app thread %s: %s\n", env->app_name, strerror(res));
         return -1;

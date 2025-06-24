@@ -1,5 +1,6 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
+import time
 import os
 import sys
 import ctypes
@@ -120,3 +121,9 @@ def jrtc_start_app(capsule):
 
     # clean up app resources
     jrtc_app_destroy(state.app)
+
+
+    ## simulate the app exit taking too much time
+    print("Simulating app exit delay...", flush=True)
+    time.sleep(10)
+    print("FirstExample app has exited.", flush=True)
