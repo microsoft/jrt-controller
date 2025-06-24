@@ -26,10 +26,11 @@ if [[ "$CLANG_FORMAT_CHECK" == "1" ]]; then
     cat /jrtc/.clang-format
     DIRS=("src" "sample_apps" "tests" "tools" "wrapper_apis/c" "test_apps")
     cd /jrtc/
-    echo The clang-format version is $(clang-format --version)
+    echo "The clang-format version is $(clang-format --version)"
     for i in "${DIRS[@]}"; do
         echo "Checking clang-format in $i"
-        find "$i" -iname "*.c" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.hpp" | xargs clang-format --dry-run --Werror
+        find "$i" \( -iname "*.c" -o -iname "*.h" -o -iname "*.cpp" -o -iname "*.hpp" \) -not -iname "*.pb.h" | \
+            xargs clang-format --dry-run --Werror
         if [ $? -ne 0 ]; then
             echo "Error: clang-format check failed."
             exit 1
