@@ -316,17 +316,16 @@ int
 unload_app(int app_id)
 {
     struct timespec timeout;
-    struct app_env* env = app_envs[app_id];
+    struct jrtc_app_env* env = app_envs[app_id];
     if (env == NULL) {
         return -1;
     }
-
     jrtc_logger(JRTC_INFO, "Shutting down app %s\n", env->app_name);
-    atomic_store(env->app_exit, true);
+    atomic_store(&env->app_exit, true);
     jrtc_logger(JRTC_INFO, "Waiting for app %s to exit\n", env->app_name);
     clock_gettime(CLOCK_REALTIME, &timeout);
     timeout.tv_sec += APP_EXIT_TIMEOUT;
-    int res = pthread_timedjoin_np(aenv->app_tid, NULL, &timeout);
+    int res = pthread_timedjoin_np(env->app_tid, NULL, &timeout);
     if (res == ETIMEDOUT) {
         jrtc_logger(JRTC_ERROR, "App %s did not exit in time, forcefully terminating\n", env->app_name);
         pthread_cancel(env->app_tid);
