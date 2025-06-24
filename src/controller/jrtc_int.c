@@ -327,15 +327,19 @@ unload_app(int app_id)
     timeout.tv_sec += APP_EXIT_TIMEOUT;
     int res = pthread_timedjoin_np(env->app_tid, NULL, &timeout);
     if (res == ETIMEDOUT) {
-        jrtc_logger(JRTC_ERROR, "App %s did not exit in time, forcefully terminating\n", env->app_name);
+        jrtc_logger(JRTC_INFO, "App %s did not exit in time, forcefully terminating\n", env->app_name);
         pthread_cancel(env->app_tid);
         // check if the thread is still running and wait for it to finish
         if (pthread_kill(env->app_tid, 0) == 0) {
+            jrtc_logger(JRTC_DEBUG, "Waiting for app %s to exit after forceful termination\n", env->app_name);
             pthread_join(env->app_tid, NULL);
+            jrtc_logger(JRTC_DEBUG, "App %s exited after forceful termination\n", env->app_name);
         }
     } else if (res != 0) {
         jrtc_logger(JRTC_ERROR, "Error joining app thread %s: %s\n", env->app_name, strerror(res));
         return -1;
+    } else {
+        jrtc_logger(JRTC_INFO, "App %s exited successfully\n", env->app_name);
     }
     if (dlclose(env->app_handle) != 0) {
         jrtc_logger(JRTC_ERROR, "Failed to dlclose app %s: %s\n", env->app_name, dlerror());
