@@ -24,7 +24,7 @@ source setup_jrtc_env.sh
 if [[ "$CLANG_FORMAT_CHECK" == "1" ]]; then
     echo "Checking clang-format..."
     cat /jrtc/.clang-format
-    DIRS=("src" "sample_apps" "tests" "tools" "wrapper_apis/c")
+    DIRS=("src" "sample_apps" "tests" "tools" "wrapper_apis/c" "test_apps")
     cd /jrtc/
     echo The clang-format version is $(clang-format --version)
     for i in "${DIRS[@]}"; do

@@ -32,6 +32,8 @@
 #include "jrtc_config.h"
 #include "jrtc_shared_python_state.h"
 
+#define APP_EXIT_TIMEOUT 5
+
 // Global shared Python state, only one instance
 shared_python_state_t shared_python_state = {
     .python_lock = PTHREAD_MUTEX_INITIALIZER,
@@ -314,21 +316,32 @@ int
 unload_app(int app_id)
 {
     struct timespec timeout;
-    if (app_envs[app_id] == NULL) {
+    struct app_env* env = app_envs[app_id];
+    if (env == NULL) {
         return -1;
     }
 
-    jrtc_logger(JRTC_INFO, "Shutting down app %s\n", app_envs[app_id]->app_name);
-    atomic_store(&app_envs[app_id]->app_exit, true);
-    jrtc_logger(JRTC_INFO, "Waiting for app %s to exit\n", app_envs[app_id]->app_name);
+    jrtc_logger(JRTC_INFO, "Shutting down app %s\n", env->app_name);
+    atomic_store(env->app_exit, true);
+    jrtc_logger(JRTC_INFO, "Waiting for app %s to exit\n", env->app_name);
     clock_gettime(CLOCK_REALTIME, &timeout);
-    timeout.tv_sec += 2;
-    pthread_timedjoin_np(app_envs[app_id]->app_tid, NULL, &timeout);
-    dlclose(app_envs[app_id]->app_handle);
-    jrtc_logger(JRTC_INFO, "Deregistering app %s\n", app_envs[app_id]->app_name);
-    jrtc_router_deregister_app(app_envs[app_id]->dapp_ctx);
-    jrtc_logger(JRTC_INFO, "App %s shut down\n", app_envs[app_id]->app_name);
-    free(app_envs[app_id]->app_name);
+    timeout.tv_sec += APP_EXIT_TIMEOUT;
+    int res = pthread_timedjoin_np(aenv->app_tid, NULL, &timeout);
+    if (res == ETIMEDOUT) {
+        jrtc_logger(JRTC_ERROR, "App %s did not exit in time, forcefully terminating\n", env->app_name);
+        pthread_cancel(env->app_tid);
+        pthread_join(env->app_tid, NULL);
+    } else if (res != 0) {
+        jrtc_logger(JRTC_ERROR, "Error joining app thread %s: %s\n", env->app_name, strerror(res));
+        return -1;
+    }
+    if (dlclose(env->app_handle) != 0) {
+        jrtc_logger(JRTC_ERROR, "Failed to dlclose app %s: %s\n", env->app_name, dlerror());
+    }
+    jrtc_logger(JRTC_INFO, "Deregistering app %s\n", env->app_name);
+    jrtc_router_deregister_app(env->dapp_ctx);
+    jrtc_logger(JRTC_INFO, "App %s shut down\n", env->app_name);
+    free(env->app_name);
     _jrtc_release_app_id(app_id);
     return 0;
 }

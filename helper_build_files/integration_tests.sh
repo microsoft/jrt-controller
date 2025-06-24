@@ -14,4 +14,4 @@ echo "...............Building all..............."
 time $JRTC_PATH/helper_build_files/build_all.sh $1 $2
 
 echo "...............Running JRTC Tests..............."
-time $JRTC_PATH/sample_apps/$1/run.sh
+time $JRTC_PATH/$1/run.sh
