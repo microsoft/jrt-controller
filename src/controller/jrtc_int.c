@@ -32,8 +32,6 @@
 #include "jrtc_config.h"
 #include "jrtc_shared_python_state.h"
 
-#define APP_EXIT_TIMEOUT 5
-
 // Global shared Python state, only one instance
 shared_python_state_t shared_python_state = {
     .python_lock = PTHREAD_MUTEX_INITIALIZER,
@@ -315,31 +313,17 @@ error:
 int
 unload_app(int app_id)
 {
-    struct timespec timeout;
     struct jrtc_app_env* env = app_envs[app_id];
     if (env == NULL) {
         return -1;
     }
-    jrtc_logger(JRTC_INFO, "Shutting down app %s\n", env->app_name);
+    jrtc_logger(JRTC_INFO, "Shutting down app %s by setting flag app_exit to true.\n", env->app_name);
     atomic_store(&env->app_exit, true);
-    jrtc_logger(JRTC_INFO, "Waiting for app %s to exit\n", env->app_name);
-    clock_gettime(CLOCK_REALTIME, &timeout);
-    timeout.tv_sec += APP_EXIT_TIMEOUT;
-    int res = pthread_timedjoin_np(env->app_tid, NULL, &timeout);
-    if (res == ETIMEDOUT) {
-        jrtc_logger(JRTC_INFO, "App %s did not exit in time, forcefully terminating\n", env->app_name);
-        pthread_cancel(env->app_tid);
-        // check if the thread is still running and wait for it to finish
-        if (pthread_kill(env->app_tid, 0) == 0) {
-            jrtc_logger(JRTC_DEBUG, "Waiting for app %s to exit after forceful termination\n", env->app_name);
-            pthread_join(env->app_tid, NULL);
-            jrtc_logger(JRTC_DEBUG, "App %s exited after forceful termination\n", env->app_name);
-        }
-    } else if (res != 0) {
-        jrtc_logger(JRTC_ERROR, "Error joining app thread %s: %s\n", env->app_name, strerror(res));
+    jrtc_logger(JRTC_INFO, "Waiting for app %s to exit..\n", env->app_name);
+    int res = pthread_join(env->app_tid, NULL);
+    if (res != 0) {
+        jrtc_logger(JRTC_ERROR, "Failed to join thread for app %s: %s\n", env->app_name, strerror(res));
         return -1;
-    } else {
-        jrtc_logger(JRTC_INFO, "App %s exited successfully\n", env->app_name);
     }
     if (dlclose(env->app_handle) != 0) {
         jrtc_logger(JRTC_ERROR, "Failed to dlclose app %s: %s\n", env->app_name, dlerror());
