@@ -224,8 +224,6 @@ set_config_values(const char* filename, jrtc_config_t* config)
                 in_jbpf_io_config = 1;
             } else if (strcmp(key, "logging") == 0) {
                 in_logging = 1;
-            } else {
-                jrtc_logger(JRTC_ERROR, "Unknown mapping start: %s\n", key);
             }
             key[0] = '\0'; // Reset key
             break;
