@@ -11,3 +11,6 @@ jrtc_router_config:
 jbpf_io_config:
   jbpf_namespace: jbpf
   jbpf_path: /tmp
+logging:
+  jrtc_level: debug
+  jbpf_level: debug
