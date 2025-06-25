@@ -13,4 +13,4 @@ jbpf_io_config:
   jbpf_path: /tmp
 logging:
   jrtc_level: info
-  jbpf_level: warn
+  jbpf_level: debug

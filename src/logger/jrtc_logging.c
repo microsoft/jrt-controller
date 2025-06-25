@@ -8,7 +8,13 @@
 #include <time.h>
 #include <sys/time.h>
 
-static const char* STR[] = {FOREACH_LOG_LEVEL_JRTC(GENERATE_STRING_JRTC)};
+// remove the JRTC_ and _LEVEL suffix from the enum names
+static const char* STR[] = {
+    JRTC_LOG_WRAP("DEBUG"),
+    JRTC_LOG_WRAP("INFO"),
+    JRTC_LOG_WRAP("WARN"),
+    JRTC_LOG_WRAP("ERROR"),
+    JRTC_LOG_WRAP("CRITICAL")};
 
 void
 jrtc_default_va_logging(const char* domain, jrtc_logging_level level, const char* s, va_list arg)
