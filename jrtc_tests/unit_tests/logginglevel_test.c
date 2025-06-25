@@ -27,7 +27,7 @@ test_logging_level()
     assert(jrtc_get_logging_level("info") == JRTC_INFO_LEVEL);
     assert(jrtc_get_logging_level("warn") == JRTC_WARN_LEVEL);
     assert(jrtc_get_logging_level("warning") == JRTC_WARN_LEVEL);
-    assert(jrtc_get_logging_level("error") == JRTC_CRITICAL_LEVEL);
+    assert(jrtc_get_logging_level("error") == JRTC_ERROR_LEVEL);
     assert(jrtc_get_logging_level("critical") == JRTC_CRITICAL_LEVEL);
     assert(jrtc_get_logging_level("fatal") == JRTC_CRITICAL_LEVEL);
 }
