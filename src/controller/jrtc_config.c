@@ -11,6 +11,7 @@
 #include "jbpf_io_defs.h"
 #include "jrtc_config_int.h"
 #include "jrtc_config.h"
+#include "jbpf_logging.h"
 #include <yaml.h>
 
 char*
@@ -118,6 +119,7 @@ set_config_values(const char* filename, jrtc_config_t* config)
     int in_thread_config = 0;
     int in_sched_config = 0;
     int in_jbpf_io_config = 0;
+    int in_logging = 0;
 
     if (!yaml_parser_initialize(&parser)) {
         fprintf(stderr, "Failed to initialize YAML parser\n");
@@ -191,6 +193,19 @@ set_config_values(const char* filename, jrtc_config_t* config)
                     } else if (strcmp(key, "port") == 0) {
                         config->port = atoi(expanded_value);
                     }
+                } else if (in_logging) {
+                    if (strcmp(key, "jrtc_level") == 0) {
+                        jrtc_logging_level level = jrtc_get_logging_level(expanded_value);
+                        jrtc_logger(JRTC_INFO, "Setting logging level to %s (%d)\n", expanded_value, level);
+                        jrtc_set_logging_level(level);
+                    } else if (strcmp(key, "jbpf_level") == 0) {
+                        // Workaround/TODO: Currently jbpf does not have this API
+                        jbpf_logging_level level = (jbpf_logging_level)jrtc_get_logging_level(expanded_value);
+                        jrtc_logger(JRTC_INFO, "Setting JBPF logging level to %s (%d)\n", expanded_value, level);
+                        jbpf_set_logging_level(level);
+                    }
+                } else {
+                    jrtc_logger(JRTC_ERROR, "Unknown key: %s\n", key);
                 }
 
                 free(expanded_value);
@@ -207,6 +222,8 @@ set_config_values(const char* filename, jrtc_config_t* config)
                 in_sched_config = 1;
             } else if (strcmp(key, "jbpf_io_config") == 0) {
                 in_jbpf_io_config = 1;
+            } else if (strcmp(key, "logging") == 0) {
+                in_logging = 1;
             }
             key[0] = '\0'; // Reset key
             break;

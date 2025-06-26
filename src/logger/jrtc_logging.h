@@ -32,25 +32,25 @@ extern "C"
     "]: "
 
 // jrtc domain
-#define FOREACH_LOG_LEVEL(LOG_LEVEL) \
-    LOG_LEVEL(DEBUG)                 \
-    LOG_LEVEL(INFO)                  \
-    LOG_LEVEL(WARN)                  \
-    LOG_LEVEL(ERROR)                 \
-    LOG_LEVEL(CRITICAL)
+#define FOREACH_LOG_LEVEL_JRTC(LOG_LEVEL) \
+    LOG_LEVEL(JRTC_DEBUG_LEVEL)           \
+    LOG_LEVEL(JRTC_INFO_LEVEL)            \
+    LOG_LEVEL(JRTC_WARN_LEVEL)            \
+    LOG_LEVEL(JRTC_ERROR_LEVEL)           \
+    LOG_LEVEL(JRTC_CRITICAL_LEVEL)
 
 #define _STR(x) _VAL(x)
 #define _VAL(x) #x
 
     static inline const char*
-    get_file_name(const char* file)
+    get_file_name_jrtc(const char* file)
     {
         const char* p = strrchr(file, '/');
         return p ? p + 1 : file;
     }
 
     static inline char*
-    get_domain(const char* file)
+    get_domain_jrtc(const char* file)
     {
         const char* p = strstr(file, "src/");
         if (p) {
@@ -76,17 +76,17 @@ extern "C"
 
     // Function to generate the log prefix dynamically
     static inline const char*
-    get_log_prefix(const char* file, const char* func, int line, const char* level)
+    get_log_prefix_jrtc(const char* file, const char* func, int line, const char* level)
     {
         static char buffer[256];
-        char* domain = get_domain(file);
+        char* domain = get_domain_jrtc(file);
         // we may want to cache this, but for now we will just check the env var each time
         int JRTC_VERBOSE_LOGGING = getenv("JRTC_VERBOSE_LOGGING") != NULL;
         if (JRTC_VERBOSE_LOGGING) {
             if (domain) {
-                snprintf(buffer, sizeof(buffer), "[JRTC][%s]:%s:%s:%d", domain, get_file_name(file), func, line);
+                snprintf(buffer, sizeof(buffer), "[JRTC][%s]:%s:%s:%d", domain, get_file_name_jrtc(file), func, line);
             } else {
-                snprintf(buffer, sizeof(buffer), "[JRTC]:%s:%s:%d", get_file_name(file), func, line);
+                snprintf(buffer, sizeof(buffer), "[JRTC]:%s:%s:%d", get_file_name_jrtc(file), func, line);
             }
             free(domain);
             return buffer;
@@ -102,18 +102,18 @@ extern "C"
     }
 
 // Define macros using the helper function
-#define JRTC_CRITICAL get_log_prefix(__FILE__, __func__, __LINE__, "CRITICAL"), CRITICAL
-#define JRTC_ERROR get_log_prefix(__FILE__, __func__, __LINE__, "ERROR"), ERROR
-#define JRTC_WARN get_log_prefix(__FILE__, __func__, __LINE__, "WARN"), WARN
-#define JRTC_INFO get_log_prefix(__FILE__, __func__, __LINE__, "INFO"), INFO
-#define JRTC_DEBUG get_log_prefix(__FILE__, __func__, __LINE__, "DEBUG"), DEBUG
+#define JRTC_CRITICAL get_log_prefix_jrtc(__FILE__, __func__, __LINE__, "CRITICAL"), JRTC_CRITICAL_LEVEL
+#define JRTC_ERROR get_log_prefix_jrtc(__FILE__, __func__, __LINE__, "ERROR"), JRTC_ERROR_LEVEL
+#define JRTC_WARN get_log_prefix_jrtc(__FILE__, __func__, __LINE__, "WARN"), JRTC_WARN_LEVEL
+#define JRTC_INFO get_log_prefix_jrtc(__FILE__, __func__, __LINE__, "INFO"), JRTC_INFO_LEVEL
+#define JRTC_DEBUG get_log_prefix_jrtc(__FILE__, __func__, __LINE__, "DEBUG"), JRTC_DEBUG_LEVEL
 
-#define GENERATE_ENUM_LOG(ENUM) ENUM,
-#define GENERATE_STRING(STRING) JRTC_LOG_WRAP(#STRING),
+#define GENERATE_ENUM_LOG_JRTC(ENUM) ENUM,
+#define GENERATE_STRING_JRTC(STRING) JRTC_LOG_WRAP(#STRING),
 
     typedef enum
     {
-        FOREACH_LOG_LEVEL(GENERATE_ENUM_LOG)
+        FOREACH_LOG_LEVEL_JRTC(GENERATE_ENUM_LOG_JRTC)
     } jrtc_logging_level;
 
     /**
@@ -190,6 +190,23 @@ extern "C"
      */
     void
     jrtc_set_va_logging_function(jrtc_va_logger_function_type func);
+
+    /**
+     * @brief Get the logging level from a string, if the string is not recognized, it defaults to DEBUG
+     * @param level_str The logging level string (e.g., "DEBUG", "INFO", "WARN", "ERROR", "CRITICAL")
+     * @ingroup logger
+     * @return The logging level
+     */
+    jrtc_logging_level
+    jrtc_get_logging_level(const char* level_str);
+
+    /**
+     * @brief Get current jrtc logging level
+     * @ingroup logger
+     * @return The current logging level
+     */
+    jrtc_logging_level
+    jrtc_get_current_logging_level(void);
 
 #pragma once
 #ifdef __cplusplus
