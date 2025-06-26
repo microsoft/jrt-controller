@@ -100,7 +100,7 @@ jrtc_get_logging_level(const char* level_str)
         return JRTC_CRITICAL_LEVEL;
     }
     // If no match found, return DEBUG as default
-    jrtc_logger(JRTC_ERROR, "Unknown logging level: %s. Defaulting to DEBUG.\n", level_str);
+    jrtc_logger(JRTC_WARN, "Unknown logging level: %s. Defaulting to DEBUG.\n", level_str);
     return JRTC_DEBUG_LEVEL;
 }
 
