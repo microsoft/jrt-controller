@@ -27,16 +27,16 @@ else
 fi
 
 echo "...............Building jbpf codelets..............."
-cd $JRTC_PATH/sample_apps/$1
+cd $JRTC_PATH/$1
 source ../../setup_jrtc_env.sh
 ## Check if Makefile exists
 if [ -f "Makefile" ]; then
     make
 fi
 
-if [[ $rebuild == true || ! -f $JRTC_PATH/sample_apps/$1/simple_agent_ipc/simple_agent_ipc ]]; then
+if [[ $rebuild == true || ! -f $JRTC_PATH/$1/simple_agent_ipc/simple_agent_ipc ]]; then
     echo "...............Building jbpf IPC agent..............."
-    cd $JRTC_PATH/sample_apps/$1
+    cd $JRTC_PATH/$1
     source ../../setup_jrtc_env.sh
     make -C simple_agent_ipc
 else

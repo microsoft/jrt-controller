@@ -1,0 +1,12 @@
+# Copyright (c) Microsoft Corporation.
+# Licensed under the MIT license.
+
+codeletset_id: data_generator_codeletset
+codelet_descriptor:
+  - codelet_name: codelet
+    codelet_path: ${JRTC_PATH}/test_apps/jbpf_codelets/data_generator/data_generator_codelet.o
+    hook_name: test1
+    priority: 2
+    runtime_threshold: 50000
+    out_io_channel:
+      - name: ringbuf

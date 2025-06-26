@@ -12,7 +12,15 @@ if ! pushd "$JRTC_PATH/helper_build_files"; then
     exit 2
 fi
 
-TEST_CASES=("advanced_example_py" "first_example_py" "first_example" "first_example_c" "advanced_example" "advanced_example_c")
+TEST_CASES=(
+    "test_apps/first_example_py"
+    "sample_apps/advanced_example_py"
+    "sample_apps/first_example_py"
+    "sample_apps/first_example"
+    "sample_apps/first_example_c"
+    "sample_apps/advanced_example"
+    "sample_apps/advanced_example_c"
+)
 echo "Running integration tests for the following cases: ${TEST_CASES[*]}"
 
 JRTC_TESTS_OUTPUT=/tmp/jrtc_tests_output.log
@@ -32,7 +40,7 @@ for TEST in "${TEST_CASES[@]}"; do
     timeout 10 tail -f "$JRTC_TESTS_OUTPUT" | grep -q .  # Wait until file is non-empty
     cat "$JRTC_TESTS_OUTPUT"
 
-    if ! "$JRTC_PATH/sample_apps/$TEST/assert.sh" "$JRTC_TESTS_OUTPUT" "$TEST"; then
+    if ! "$JRTC_PATH/$TEST/assert.sh" "$JRTC_TESTS_OUTPUT" "$TEST"; then
         echo "Test Assertion failed for $TEST"
         exit 4
     fi

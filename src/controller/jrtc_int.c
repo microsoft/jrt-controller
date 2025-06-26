@@ -313,22 +313,26 @@ error:
 int
 unload_app(int app_id)
 {
-    struct timespec timeout;
-    if (app_envs[app_id] == NULL) {
+    struct jrtc_app_env* env = app_envs[app_id];
+    if (env == NULL) {
         return -1;
     }
-
-    jrtc_logger(JRTC_INFO, "Shutting down app %s\n", app_envs[app_id]->app_name);
-    atomic_store(&app_envs[app_id]->app_exit, true);
-    jrtc_logger(JRTC_INFO, "Waiting for app %s to exit\n", app_envs[app_id]->app_name);
-    clock_gettime(CLOCK_REALTIME, &timeout);
-    timeout.tv_sec += 2;
-    pthread_timedjoin_np(app_envs[app_id]->app_tid, NULL, &timeout);
-    dlclose(app_envs[app_id]->app_handle);
-    jrtc_logger(JRTC_INFO, "Deregistering app %s\n", app_envs[app_id]->app_name);
-    jrtc_router_deregister_app(app_envs[app_id]->dapp_ctx);
-    jrtc_logger(JRTC_INFO, "App %s shut down\n", app_envs[app_id]->app_name);
-    free(app_envs[app_id]->app_name);
+    jrtc_logger(JRTC_INFO, "Shutting down app %s by setting flag app_exit to true.\n", env->app_name);
+    atomic_store(&env->app_exit, true);
+    jrtc_logger(JRTC_INFO, "Waiting for app %s to exit..\n", env->app_name);
+    int res = pthread_join(env->app_tid, NULL);
+    if (res != 0) {
+        jrtc_logger(JRTC_ERROR, "Fatal: Failed to join thread for app %s: %s\n", env->app_name, strerror(res));
+        abort();
+    }
+    if (dlclose(env->app_handle) != 0) {
+        jrtc_logger(JRTC_ERROR, "Fatal: Failed to dlclose app %s: %s\n", env->app_name, dlerror());
+        abort();
+    }
+    jrtc_logger(JRTC_INFO, "Deregistering app %s\n", env->app_name);
+    jrtc_router_deregister_app(env->dapp_ctx);
+    jrtc_logger(JRTC_INFO, "App %s shut down\n", env->app_name);
+    free(env->app_name);
     _jrtc_release_app_id(app_id);
     return 0;
 }

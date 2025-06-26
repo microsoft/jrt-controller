@@ -3,3 +3,6 @@ src/rest_api_lib/Cargo.lock
 src/rest_api_lib/target/
 /build
 /out
+*.o
+*.pb.h
+*_pb.py

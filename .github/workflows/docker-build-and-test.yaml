@@ -80,6 +80,7 @@ jobs:
           fi
           echo "****************CPU Model*********"
           lscpu
+
       - name: Setup Docker
         run: echo "Setting up Docker for ${{ matrix.dockerType.displayName }}"
 
@@ -91,12 +92,14 @@ jobs:
             -t ${{ env.ACR }}/jrtc-${{ matrix.dockerType.id }}:${{ env.IMAGE_TAG }} \
             -f deploy/${{ matrix.dockerType.value }}.Dockerfile .
           docker tag ${{ env.ACR }}/jrtc-${{ matrix.dockerType.id }}:${{ env.IMAGE_TAG }} jrtc
+
       - name: Run Container to Build JRTC
         run: |
           docker run \
             -v "$(pwd)":/jrtc_out_lib \
             -e INITIALIZE_SUBMODULES=0 \
             ${{ matrix.testCase.sanitizerBuildParam }} jrtc
+
       - name: Run Tests
         run: |
           set -ex
@@ -112,6 +115,7 @@ jobs:
             -v "$(pwd)":/jrtc_out_lib \
             ${{ matrix.testCase.sanitizerBuildParam }} \
             -e RUN_TESTS=1 jrtc
+
       - name: Run Integration Tests
         run: |
           set -ex
