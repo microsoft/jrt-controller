@@ -322,11 +322,12 @@ unload_app(int app_id)
     jrtc_logger(JRTC_INFO, "Waiting for app %s to exit..\n", env->app_name);
     int res = pthread_join(env->app_tid, NULL);
     if (res != 0) {
-        jrtc_logger(JRTC_ERROR, "Failed to join thread for app %s: %s\n", env->app_name, strerror(res));
-        return -1;
+        jrtc_logger(JRTC_ERROR, "Fatal: Failed to join thread for app %s: %s\n", env->app_name, strerror(res));
+        abort();
     }
     if (dlclose(env->app_handle) != 0) {
-        jrtc_logger(JRTC_ERROR, "Failed to dlclose app %s: %s\n", env->app_name, dlerror());
+        jrtc_logger(JRTC_ERROR, "Fatal: Failed to dlclose app %s: %s\n", env->app_name, dlerror());
+        abort();
     }
     jrtc_logger(JRTC_INFO, "Deregistering app %s\n", env->app_name);
     jrtc_router_deregister_app(env->dapp_ctx);
