@@ -5,6 +5,7 @@
 # Copyright (c) Microsoft Corporation.
 # Licensed under the MIT license.
 
+set -e
 export PYTHONVERBOSE=0
 
 # Check if JRTC_PATH is set

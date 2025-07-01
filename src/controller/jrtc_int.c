@@ -238,14 +238,35 @@ _jrtc_release_app_id(int app_id)
     }
 }
 
+bool
+_is_app_loaded(char* app_path)
+{
+    for (int i = 0; i < MAX_NUM_JRTC_APPS; i++) {
+        if (app_envs[i]->app_path != NULL) {
+            if (strcmp(app_envs[i]->app_path, app_path) == 0) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 int
 load_app(load_app_request_t load_req)
 {
 
     struct jrtc_app_env* app_env;
 
-    if (!load_req.app || !load_req.app_size)
+    if (!load_req.app || !load_req.app_size) {
+        jrtc_logger(JRTC_CRITICAL, "Invalid app data or size for app %s\n", load_req.app_name);
         return -1;
+    }
+
+    // check if the app is already loaded
+    if (_is_app_loaded(load_req.app_path)) {
+        jrtc_logger(JRTC_CRITICAL, "App %s is already loaded\n", load_req.app_path);
+        return -1;
+    }
 
     app_env = calloc(1, sizeof(struct jrtc_app_env));
 
