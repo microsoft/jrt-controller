@@ -263,7 +263,7 @@ load_app(load_app_request_t load_req)
     }
 
     // check if the app is already loaded
-    if (_is_app_loaded(load_req.app_path)) {
+    if (load_req.app_path != NULL && _is_app_loaded(load_req.app_path)) {
         jrtc_logger(JRTC_CRITICAL, "App %s is already loaded\n", load_req.app_path);
         return -1;
     }
