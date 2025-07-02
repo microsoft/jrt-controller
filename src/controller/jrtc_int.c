@@ -242,6 +242,9 @@ bool
 _is_app_loaded(char* app_path)
 {
     for (int i = 0; i < MAX_NUM_JRTC_APPS; i++) {
+        if (app_envs[i] == NULL) {
+            continue;
+        }
         if (app_envs[i]->app_path != NULL) {
             if (strcmp(app_envs[i]->app_path, app_path) == 0) {
                 return true;
