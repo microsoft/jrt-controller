@@ -285,7 +285,7 @@ load_app(load_app_request_t load_req)
             JRTC_WARN,
             "App %s: %s is already loaded\n",
             load_req.app_name,
-            load_req.app_path ? load_req.app_path : "(unknown path)");
+            load_req.app_path ? load_req.app_path : "(app_path is null)");
         return -1;
     }
 
