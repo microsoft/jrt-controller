@@ -246,7 +246,7 @@ _is_app_loaded(load_app_request_t load_req)
         return false;
     }
     // if it is python app type
-    if (strcmp(load_req.app_type, "python") == 0) {
+    if ((load_req.app_type != NULL) && (strcmp(load_req.app_type, "python") == 0)) {
         // check the app_envs[].params[0]
         for (int i = 0; i < MAX_NUM_JRTC_APPS; i++) {
             if (app_envs[i] != NULL && app_envs[i]->params[0].key != NULL &&
@@ -258,7 +258,8 @@ _is_app_loaded(load_app_request_t load_req)
     } else {
         // check if the app loaded by app_path
         for (int i = 0; i < MAX_NUM_JRTC_APPS; i++) {
-            if (app_envs[i] != NULL && strcmp(app_envs[i]->app_path, load_req.app_path) == 0) {
+            if ((app_envs[i] != NULL) && (app_envs[i]->app_path != NULL) &&
+                (strcmp(app_envs[i]->app_path, load_req.app_path) == 0)) {
                 return true;
             }
         }
@@ -278,7 +279,7 @@ load_app(load_app_request_t load_req)
     }
 
     // check if the app is already loaded
-    jrtc_logger(JRTC_INFO, "Checking if app %s is already loaded\n", load_req.app_name);
+    jrtc_logger(JRTC_DEBUG, "Checking if app %s is already loaded\n", load_req.app_name);
     if (_is_app_loaded(load_req)) {
         jrtc_logger(
             JRTC_WARN,
