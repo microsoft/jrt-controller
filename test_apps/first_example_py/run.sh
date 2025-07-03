@@ -83,7 +83,10 @@ cd $JRTC_PATH/test_apps/first_example_py && source ../../setup_jrtc_env.sh
 
 ## to test if we can load in any directory
 cd $JRTC_PATH
-test_apps/first_example_py/load_app.sh
+if ! test_apps/first_example_py/load_app.sh; then
+    echo "Failed to load app. Exiting."
+    exit 1
+fi
 
 ## Wait to see output
 echo "Waiting for output..."
@@ -104,7 +107,10 @@ echo "Running: Load YAML"
 cd $JRTC_PATH/test_apps/first_example_py && source ../../setup_jrtc_env.sh 
 
 cd $JRTC_PATH
-test_apps/first_example_py/load_app.sh
+if ! test_apps/first_example_py/load_app.sh; then
+    echo "Failed to load app. Exiting."
+    exit 1
+fi
 
 ## Wait to see output
 echo "Waiting for output..."

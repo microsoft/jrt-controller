@@ -238,19 +238,63 @@ _jrtc_release_app_id(int app_id)
     }
 }
 
+bool
+_is_app_loaded(load_app_request_t load_req)
+{
+    if (load_req.app_type == NULL) {
+        jrtc_logger(JRTC_INFO, "App type is NULL for app %s\n", load_req.app_name);
+        return false;
+    }
+    // if it is python app type
+    if ((load_req.app_type != NULL) && (strcmp(load_req.app_type, "python") == 0)) {
+        // check the app_envs[].params[0]
+        for (int i = 0; i < MAX_NUM_JRTC_APPS; i++) {
+            if (app_envs[i] != NULL && app_envs[i]->params[0].key != NULL &&
+                strcmp(app_envs[i]->params[0].key, load_req.params[0].key) == 0 && app_envs[i]->params[0].val != NULL &&
+                strcmp(app_envs[i]->params[0].val, load_req.params[0].val) == 0) {
+                return true;
+            }
+        }
+    } else {
+        // check if the app loaded by app_path
+        for (int i = 0; i < MAX_NUM_JRTC_APPS; i++) {
+            if ((app_envs[i] != NULL) && (app_envs[i]->app_path != NULL) &&
+                (strcmp(app_envs[i]->app_path, load_req.app_path) == 0)) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 int
 load_app(load_app_request_t load_req)
 {
 
     struct jrtc_app_env* app_env;
 
-    if (!load_req.app || !load_req.app_size)
+    if (!load_req.app || !load_req.app_size) {
+        jrtc_logger(JRTC_CRITICAL, "Invalid app data or size for app %s\n", load_req.app_name);
         return -1;
+    }
+
+    // check if the app is already loaded
+    jrtc_logger(JRTC_DEBUG, "Checking if app %s is already loaded\n", load_req.app_name);
+    if (_is_app_loaded(load_req)) {
+        jrtc_logger(
+            JRTC_WARN,
+            "App %s: %s is already loaded\n",
+            load_req.app_name,
+            load_req.app_path ? load_req.app_path : "(app_path is null)");
+        return -1;
+    }
 
     app_env = calloc(1, sizeof(struct jrtc_app_env));
 
-    if (!app_env)
+    if (!app_env) {
+        jrtc_logger(JRTC_CRITICAL, "Failed to allocate memory for app environment\n");
         return -1;
+    }
 
     int app_id = _jrtc_reserve_app_id(app_env);
 
