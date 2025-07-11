@@ -238,7 +238,7 @@ func TestGetHostNameFromDeviceId(t *testing.T) {
 	assert.Equal(t, "1.1.1.1:1234", host1)
 	assert.Equal(t, "2.2.2.2:5678", host2)
 	assert.Equal(t, "device with ID 3 not found", err3.Error())
-	assert.Nil(t, host3) // Should be nil since the ID does not exist
+	assert.Equal(t, "", host3) // Should be empty for non-existent ID
 }
 
 func TestGetDeviceMap(t *testing.T) {
