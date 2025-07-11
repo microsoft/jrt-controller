@@ -217,3 +217,44 @@ func createFileWithContent(name, content string) (string, func(), error) {
 
 	return f.Name(), cleanup, nil
 }
+
+// TestGetHostNameFromDeviceId tests the GetHostNameFromDeviceId method
+func TestGetHostNameFromDeviceId(t *testing.T) {
+	// Arrange - create a JBPFConfig with devices
+	cfg := &JBPFConfig{
+		Devices: []*JBPFDevice{
+			{ID: 1, IP: "1.1.1.1", Port: 1234},
+			{ID: 2, IP: "2.2.2.2", Port: 5678},
+		},
+	}
+	// Act - get hostnames for device IDs
+	host1, err1 := cfg.GetHostNameFromDeviceId(1)
+	host2, err2 := cfg.GetHostNameFromDeviceId(2)
+	host3, err3 := cfg.GetHostNameFromDeviceId(3) // Non-existent ID
+	require.Nil(t, err1)
+	require.Nil(t, err2)
+	require.NotNil(t, err3)
+	// Assert - check the hostnames
+	assert.Equal(t, "1.1.1.1:1234", host1)
+	assert.Equal(t, "2.2.2.2:5678", host2)
+	assert.Equal(t, "device with ID 3 not found", err3.Error())
+	assert.Nil(t, host3) // Should be nil since the ID does not exist
+}
+
+func TestGetDeviceMap(t *testing.T) {
+	// Arrange - create a JBPFConfig with devices
+	cfg := &JBPFConfig{
+		Devices: []*JBPFDevice{
+			{ID: 1, IP: "1.1.1.1", Port: 1234},
+			{ID: 2, IP: "2.2.2.2", Port: 5678},
+		},
+	}
+	// Act - get the device map
+	deviceMap := cfg.GetDeviceMap()
+	// Assert - check the device map
+	expectedMap := map[string]uint8{
+		"1.1.1.1:1234": 1,
+		"2.2.2.2:5678": 2,
+	}
+	assert.Equal(t, expectedMap, deviceMap)
+}

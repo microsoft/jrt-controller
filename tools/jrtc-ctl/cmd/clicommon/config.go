@@ -89,6 +89,16 @@ func (c *JBPFConfig) GetDeviceMap() map[string]uint8 {
 	return out
 }
 
+// GetHostNameFromDeviceId returns the hostname for a given device ID
+func (c *JBPFConfig) GetHostNameFromDeviceId(id uint8) (string, error) {
+	for _, d := range c.Devices {
+		if d.ID == id {
+			return fmt.Sprintf("%s:%d", d.IP, d.Port), nil
+		}
+	}
+	return "", fmt.Errorf("device with ID %d not found", id)
+}
+
 // CLIConfig represents a configuration
 type CLIConfig struct {
 	Apps     []*App      `json:"app,omitempty"`
