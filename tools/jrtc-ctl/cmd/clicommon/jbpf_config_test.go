@@ -218,8 +218,8 @@ func createFileWithContent(name, content string) (string, func(), error) {
 	return f.Name(), cleanup, nil
 }
 
-// TestGetHostNameFromDeviceId tests the GetHostNameFromDeviceId method
-func TestGetHostNameFromDeviceId(t *testing.T) {
+// TestGetHostNameFromDeviceID tests the GetHostNameFromDeviceID method
+func TestGetHostNameFromDeviceID(t *testing.T) {
 	// Arrange - create a JBPFConfig with devices
 	cfg := &JBPFConfig{
 		Devices: []*JBPFDevice{
@@ -228,9 +228,9 @@ func TestGetHostNameFromDeviceId(t *testing.T) {
 		},
 	}
 	// Act - get hostnames for device IDs
-	host1, err1 := cfg.GetHostNameFromDeviceId(1)
-	host2, err2 := cfg.GetHostNameFromDeviceId(2)
-	host3, err3 := cfg.GetHostNameFromDeviceId(3) // Non-existent ID
+	host1, err1 := cfg.GetHostNameFromDeviceID(1)
+	host2, err2 := cfg.GetHostNameFromDeviceID(2)
+	host3, err3 := cfg.GetHostNameFromDeviceID(3) // Non-existent ID
 	require.Nil(t, err1)
 	require.Nil(t, err2)
 	require.NotNil(t, err3)

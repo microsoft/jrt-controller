@@ -309,8 +309,10 @@ load_app(load_app_request_t load_req)
 
     app_env->app_handle = app_handle;
     app_env->app_exit = false;
+    app_env->app_path = strdup(load_req.app_path ? load_req.app_path : "unknown");
     app_env->io_queue_size = load_req.ioq_size;
     memset(app_env->params, 0, sizeof(app_env->params));
+    memset(app_env->device_mapping, 0, sizeof(app_env->device_mapping));
 
     for (int i = 0; i < MAX_APP_PARAMS; i++) {
         if (load_req.params[i].key != NULL) {
@@ -318,6 +320,15 @@ load_app(load_app_request_t load_req)
         }
         if (load_req.params[i].val != NULL) {
             app_env->params[i].val = strdup(load_req.params[i].val);
+        }
+    }
+
+    for (int i = 0; i < MAX_DEVICE_MAPPING; i++) {
+        if (load_req.device_mapping[i].key != NULL) {
+            app_env->device_mapping[i].key = strdup(load_req.device_mapping[i].key);
+        }
+        if (load_req.device_mapping[i].val != NULL) {
+            app_env->device_mapping[i].val = strdup(load_req.device_mapping[i].val);
         }
     }
 
@@ -377,6 +388,7 @@ unload_app(int app_id)
     jrtc_router_deregister_app(env->dapp_ctx);
     jrtc_logger(JRTC_INFO, "App %s shut down\n", env->app_name);
     free(env->app_name);
+    free(env->app_path);
     _jrtc_release_app_id(app_id);
     return 0;
 }
@@ -414,7 +426,9 @@ load_default_north_io_app()
 
     load_req_north_io.deadline_us = 0;
     load_req_north_io.app_name = strdup("north_io_app");
+    load_req_north_io.app_path = strdup(north_io_app_name);
     memset(load_req_north_io.params, 0, sizeof(load_req_north_io.params));
+    memset(load_req_north_io.device_mapping, 0, sizeof(load_req_north_io.device_mapping));
     memset(load_req_north_io.app_modules, 0, sizeof(load_req_north_io.app_modules));
 
     int res = load_app(load_req_north_io);
@@ -425,6 +439,7 @@ load_default_north_io_app()
     }
 
     free(load_req_north_io.app_name);
+    free(load_req_north_io.app_path);
     free(north_io_app_name);
     free(north_io_data);
     return res;

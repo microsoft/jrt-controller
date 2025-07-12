@@ -38,6 +38,7 @@ type runOptions struct {
 	sharedLibraryPath string
 	appType           string
 	appParams         map[string]interface{}
+	deviceMapping     map[string]interface{}
 	appModules        []string
 }
 
@@ -116,7 +117,7 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 			return err
 		}
 
-		req, err := jrtc.NewJrtcAppLoadRequest(opts.sharedLibraryPath, opts.appName, opts.ioqSize, opts.deadline, opts.period, opts.runtime, opts.appType, &opts.appModules, &opts.appParams)
+		req, err := jrtc.NewJrtcAppLoadRequest(opts.sharedLibraryPath, opts.appName, opts.ioqSize, opts.deadline, opts.period, opts.runtime, opts.appType, &opts.appModules, &opts.appParams, &opts.deviceMapping)
 		if err != nil {
 			return err
 		}

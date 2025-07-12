@@ -309,6 +309,14 @@ jrtc_start_app(void* args)
     char* full_path = env_ctx->params[0].val;
     printf_and_flush("Python App Full path: %s\n", full_path);
 
+    for (int i = 0; i < MAX_DEVICE_MAPPING; i++) {
+        if (env_ctx->device_mapping[i].key == NULL) {
+            break;
+        }
+        printf_and_flush(
+            "Device Mapping %d: %s = %s\n", i, env_ctx->device_mapping[i].key, env_ctx->device_mapping[i].val);
+    }
+
     // Initialize Python interpreter once and create a new sub-interpreter per thread
     pthread_mutex_lock(&shared_python_state->python_lock);
     if (!shared_python_state->initialized) {

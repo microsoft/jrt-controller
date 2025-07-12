@@ -234,6 +234,9 @@
           "app_params": {
             "type": "object"
           },
+          "device_mapping": {
+            "type": "object"
+          },          
           "app_modules": {
             "type": "array",
             "items": {

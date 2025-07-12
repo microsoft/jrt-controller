@@ -121,6 +121,8 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 
 	g, _ := errgroup.WithContext(cmd.Context())
 
+	allDevices := cfg.JBPF.GetDeviceMap()
+
 	for _, app := range cfg.Apps {
 		a := app
 		// TODO: Send schemas for jrt-controller apps
@@ -132,6 +134,9 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 			}
 			if a.AppParams == nil {
 				a.AppParams = make(map[string]interface{})
+			}
+			if a.DeviceMapping == nil {
+				a.DeviceMapping = make(map[string]interface{})
 			}
 			if a.AppModules == nil {
 				a.AppModules = make([]string, 0)
@@ -145,8 +150,13 @@ func run(cmd *cobra.Command, opts *runOptions) error {
 					return err
 				}
 			}
+			// Populate the deviceMapping with device IDs and names
+			for addr, id := range allDevices {
+				logger.Infof("Adding device mapping for %s with ID %d", addr, id)
+				a.DeviceMapping[fmt.Sprintf("%d", id)] = addr
+			}
 
-			req, err := jrtc.NewJrtcAppLoadRequestFromBytes(a.SharedLibraryCode, a.SharedLibraryPath, a.Name, a.IOQSize, a.Deadline, a.Period, a.Runtime, a.AppType, &a.AppModules, &a.AppParams)
+			req, err := jrtc.NewJrtcAppLoadRequestFromBytes(a.SharedLibraryCode, a.SharedLibraryPath, a.Name, a.IOQSize, a.Deadline, a.Period, a.Runtime, a.AppType, &a.AppModules, &a.AppParams, &a.DeviceMapping)
 			if err != nil {
 				return err
 			}
