@@ -25,7 +25,7 @@ use utoipa_swagger_ui::SwaggerUi;
 use std::collections::HashMap;
 
 #[repr(C)]
-pub struct AppParamKeyValuePair {
+pub struct KeyValuePair {
     pub key: *mut i8,
     pub val: *mut i8,
 }
@@ -41,7 +41,8 @@ pub struct LoadAppRequest {
     pub ioq_size: u32,
     pub app_path: *mut c_char,
     pub app_type: *mut c_char,
-    pub app_params: [AppParamKeyValuePair; 255], // Fixed-size array
+    pub app_params: [KeyValuePair; 255], // Fixed-size array
+    pub device_mapping: [KeyValuePair; 255], // Fixed-size array
     pub app_modules: [*mut c_char; 255], // Fixed-size array
 }
 
@@ -73,6 +74,7 @@ struct JrtcAppLoadRequest {
     app_path: String,
     app_type: String,
     app_params: HashMap<String, String>,
+    device_mapping: HashMap<String, String>,
     app_modules: Vec<String>,
 }
 
@@ -184,6 +186,7 @@ async fn load_app(
     let app_path = payload_cloned.app_path;
     let app_type = payload_cloned.app_type;
     let app_params = payload_cloned.app_params;
+    let device_mapping = payload_cloned.device_mapping;
     let app_modules = payload_cloned.app_modules;
 
     let c_app_name = match CString::new(app_name.clone()) {
@@ -228,7 +231,8 @@ async fn load_app(
         }
     };
 
-    let mut c_app_params: [AppParamKeyValuePair; 255] = unsafe { std::mem::zeroed() }; // Initialize
+    let mut c_app_params: [KeyValuePair; 255] = unsafe { std::mem::zeroed() }; // Initialize
+    let mut c_device_mapping: [KeyValuePair; 255] = unsafe { std::mem::zeroed() }; // Initialize
 
     for (i, (key, value)) in app_params.iter().enumerate() {
         if i >= 255 {
@@ -237,7 +241,17 @@ async fn load_app(
         let c_key = CString::new(key.clone()).unwrap().into_raw();
         let c_val = CString::new(value.clone()).unwrap().into_raw();
 
-        c_app_params[i] = AppParamKeyValuePair { key: c_key, val: c_val };
+        c_app_params[i] = KeyValuePair { key: c_key, val: c_val };
+    }
+
+    for (i, (key, value)) in device_mapping.iter().enumerate() {
+        if i >= 255 {
+            break; // Prevent overflow
+        }
+        let c_key = CString::new(key.clone()).unwrap().into_raw();
+        let c_val = CString::new(value.clone()).unwrap().into_raw();
+
+        c_device_mapping[i] = KeyValuePair { key: c_key, val: c_val };
     }
 
     let mut c_app_modules: [*mut c_char; 255] = unsafe { std::mem::zeroed() }; // Initialize
@@ -260,6 +274,7 @@ async fn load_app(
         app_path: c_app_path.into_raw(),
         app_type: c_app_type.into_raw(),
         app_params: c_app_params,
+        device_mapping: c_device_mapping,
         app_modules: c_app_modules,
     };
 

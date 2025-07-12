@@ -64,7 +64,10 @@ type App struct {
 	AppType           string        `json:"type" jsonschema:"required"` // type is a string e.g. "c" or "python"
 	// params is a dictionary e.g. key value pairs
 	AppParams map[string]interface{} `json:"params,omitempty"`
-	// modules is a list of strings e.g. ["module1", "module2"]
+	// device_mapping is a dictionary e.g. key value pairs
+	// where key is the device ID and value is the device name
+	DeviceMapping map[string]interface{} `json:"-"`
+	// app_modules is a list of strings e.g. ["module1", "module2"]
 	AppModules []string `json:"modules,omitempty"`
 }
 
@@ -87,6 +90,16 @@ func (c *JBPFConfig) GetDeviceMap() map[string]uint8 {
 		out[fmt.Sprintf("%s:%d", d.IP, d.Port)] = d.ID
 	}
 	return out
+}
+
+// GetHostNameFromDeviceID returns the hostname for a given device ID
+func (c *JBPFConfig) GetHostNameFromDeviceID(id uint8) (string, error) {
+	for _, d := range c.Devices {
+		if d.ID == id {
+			return fmt.Sprintf("%s:%d", d.IP, d.Port), nil
+		}
+	}
+	return "", fmt.Errorf("device with ID %d not found", id)
 }
 
 // CLIConfig represents a configuration

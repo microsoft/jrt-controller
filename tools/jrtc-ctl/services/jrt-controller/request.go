@@ -19,6 +19,7 @@ func NewJrtcAppLoadRequest(
 	appType string,
 	appModules *[]string,
 	appParams *map[string]interface{},
+	deviceMapping *map[string]interface{},
 ) (*JrtcAppLoadRequest, error) {
 	fi, err := os.Stat(sharedLibraryPath)
 	if err != nil {
@@ -35,16 +36,17 @@ func NewJrtcAppLoadRequest(
 	f.InitFromBytes(sharedObject, sharedLibraryPath)
 
 	return &JrtcAppLoadRequest{
-		App:        f,
-		AppName:    appName,
-		DeadlineUs: int32(deadline.Microseconds()),
-		IoqSize:    ioqSize,
-		PeriodUs:   int32(period.Microseconds()),
-		RuntimeUs:  int32(runtime.Microseconds()),
-		AppPath:    &sharedLibraryPath,
-		AppType:    &appType,
-		AppModules: appModules,
-		AppParams:  appParams,
+		App:           f,
+		AppName:       appName,
+		DeadlineUs:    int32(deadline.Microseconds()),
+		IoqSize:       ioqSize,
+		PeriodUs:      int32(period.Microseconds()),
+		RuntimeUs:     int32(runtime.Microseconds()),
+		AppPath:       &sharedLibraryPath,
+		AppType:       &appType,
+		AppModules:    appModules,
+		AppParams:     appParams,
+		DeviceMapping: deviceMapping,
 	}, nil
 }
 
@@ -56,20 +58,22 @@ func NewJrtcAppLoadRequestFromBytes(
 	appType string,
 	appModules *[]string,
 	appParams *map[string]interface{},
+	deviceMapping *map[string]interface{},
 ) (*JrtcAppLoadRequest, error) {
 	var f openapi_types.File
 	f.InitFromBytes(sharedLibraryCode, sharedLibraryPath)
 
 	return &JrtcAppLoadRequest{
-		App:        f,
-		AppName:    appName,
-		DeadlineUs: int32(deadline.Microseconds()),
-		IoqSize:    ioqSize,
-		PeriodUs:   int32(period.Microseconds()),
-		RuntimeUs:  int32(runtime.Microseconds()),
-		AppPath:    &sharedLibraryPath,
-		AppType:    &appType,
-		AppModules: appModules,
-		AppParams:  appParams,
+		App:           f,
+		AppName:       appName,
+		DeadlineUs:    int32(deadline.Microseconds()),
+		IoqSize:       ioqSize,
+		PeriodUs:      int32(period.Microseconds()),
+		RuntimeUs:     int32(runtime.Microseconds()),
+		AppPath:       &sharedLibraryPath,
+		AppType:       &appType,
+		AppModules:    appModules,
+		AppParams:     appParams,
+		DeviceMapping: deviceMapping,
 	}, nil
 }

@@ -23,6 +23,16 @@ def register_dll(path):
         raise ImportError(f"Failed to load {path} {e}")
         return None
 
+class KeyValuePair(ctypes.Structure):
+    _fields_ = [
+        ("key", ctypes.c_char_p),
+        ("value", ctypes.c_char_p),
+    ]
+
+MAX_APP_PARAMS = 255
+MAX_DEVICE_MAPPING = 255
+MAX_APP_MODULES = 255
+
 class JrtcAppEnv(ctypes.Structure):
     _fields_ = [
         ("app_name", ctypes.c_char_p),  # Define as c_char_p
@@ -33,8 +43,11 @@ class JrtcAppEnv(ctypes.Structure):
         ("io_queue_size", ctypes.c_uint),
         ("app_exit", ctypes.c_int),
         ("sched_config", jrtc_bindings.struct_jrtc_sched_config),
-        ("app_params",ctypes.c_char_p * 255),
-        ("app_modules", ctypes.c_char_p * 255),
+        ("app_path", ctypes.c_char_p),
+        ("params", KeyValuePair * MAX_APP_PARAMS),
+        ("device_mapping", KeyValuePair * MAX_DEVICE_MAPPING),
+        ("app_modules", ctypes.c_char_p * MAX_APP_MODULES),
+        ("shared_python_state", ctypes.c_void_p),
     ]
 
 def get_ctx_from_capsule(capsule):

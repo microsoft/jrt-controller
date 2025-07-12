@@ -24,15 +24,16 @@ using atomic_bool = std::atomic<bool>;
  */
 #define MAX_APP_NAME_SIZE 16
 #define MAX_APP_PARAMS 255
+#define MAX_DEVICE_MAPPING 255
 #define MAX_APP_MODULES 255
 
 typedef pthread_t app_id_t;
 
-typedef struct _app_param_key_value_pair
+typedef struct _key_value_pair
 {
     char* key;
     char* val;
-} app_param_key_value_pair_t;
+} key_value_pair_t;
 
 /**
  * @brief The jrtc_app_env struct
@@ -60,7 +61,8 @@ struct jrtc_app_env
     atomic_bool app_exit;
     jrtc_sched_config_t sched_config;
     char* app_path;
-    app_param_key_value_pair_t params[MAX_APP_PARAMS];
+    key_value_pair_t params[MAX_APP_PARAMS];
+    key_value_pair_t device_mapping[MAX_DEVICE_MAPPING];
     char* app_modules[MAX_APP_MODULES];
     void* shared_python_state; // Pointer to shared Python state for multi-threaded apps
 };
