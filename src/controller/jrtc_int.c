@@ -239,40 +239,58 @@ _jrtc_release_app_id(int app_id)
 }
 
 bool
-_is_app_loaded(load_app_request_t load_req)
+_is_app_loaded(load_app_request_t* load_req)
 {
-    if (load_req.app_type == NULL) {
-        jrtc_logger(JRTC_INFO, "App type is NULL for app %s\n", load_req.app_name);
+    if ((load_req == NULL) || (load_req->app_type == NULL)) {
+        jrtc_logger(JRTC_INFO, "App type is NULL for app %s\n", load_req->app_name);
         return false;
     }
     // if it is python app type
-    if ((load_req.app_type != NULL) && (strcmp(load_req.app_type, "python") == 0)) {
+    if ((load_req->app_type != NULL) && (strcmp(load_req->app_type, "python") == 0)) {
+        jrtc_logger(JRTC_DEBUG, "Checking if Python app %s is already loaded\n", load_req->app_name);
         // check the app_envs[].params[0]
-        for (int i = 0; i < MAX_NUM_JRTC_APPS; i++) {
-            if (app_envs[i] != NULL && app_envs[i]->params[0].key != NULL &&
-                strcmp(app_envs[i]->params[0].key, load_req.params[0].key) == 0 && app_envs[i]->params[0].val != NULL &&
-                strcmp(app_envs[i]->params[0].val, load_req.params[0].val) == 0) {
-                jrtc_logger(
-                    JRTC_INFO,
-                    "Python App %s with params %s:%s is already loaded\n",
-                    load_req.app_name,
-                    load_req.params[0].key,
-                    load_req.params[0].val);
-                return true;
+        if (load_req->params[0].key != NULL && load_req->params[0].val != NULL) {
+            for (int i = 0; i < MAX_NUM_JRTC_APPS; i++) {
+                if (app_envs[i] != NULL && app_envs[i]->params[0].key != NULL &&
+                    strcmp(app_envs[i]->params[0].key, load_req->params[0].key) == 0 &&
+                    app_envs[i]->params[0].val != NULL &&
+                    strcmp(app_envs[i]->params[0].val, load_req->params[0].val) == 0) {
+                    jrtc_logger(
+                        JRTC_INFO,
+                        "Python App %s with params %s:%s is already loaded\n",
+                        load_req->app_name,
+                        load_req->params[0].key,
+                        load_req->params[0].val);
+                    return true;
+                }
             }
+        } else {
+            jrtc_logger(
+                JRTC_WARN,
+                "Python App %s has no params set, cannot check if it is already loaded\n",
+                load_req->app_name);
         }
     } else {
-        // check if the app loaded by app_path
-        for (int i = 0; i < MAX_NUM_JRTC_APPS; i++) {
-            if ((app_envs[i] != NULL) && (app_envs[i]->app_path != NULL) &&
-                (strcmp(app_envs[i]->app_path, load_req.app_path) == 0)) {
-                jrtc_logger(
-                    JRTC_INFO,
-                    "App %s with app_path %s is already loaded\n",
-                    load_req.app_name,
-                    load_req.app_path ? load_req.app_path : "(app_path is null)");
-                return true;
+        jrtc_logger(
+            JRTC_DEBUG,
+            "Checking if app %s with app_path %s is already loaded\n",
+            load_req->app_name,
+            load_req->app_path);
+        if (load_req->app_path != NULL) {
+            for (int i = 0; i < MAX_NUM_JRTC_APPS; i++) {
+                if (app_envs[i] != NULL && app_envs[i]->app_path != NULL &&
+                    strcmp(app_envs[i]->app_path, load_req->app_path) == 0) {
+                    jrtc_logger(
+                        JRTC_INFO,
+                        "App %s with app_path %s is already loaded\n",
+                        load_req->app_name,
+                        load_req->app_path);
+                    return true;
+                }
             }
+        } else {
+            jrtc_logger(
+                JRTC_WARN, "App %s has no app_path set, cannot check if it is already loaded\n", load_req->app_name);
         }
     }
     return false;
@@ -290,8 +308,8 @@ load_app(load_app_request_t load_req)
     }
 
     // check if the app is already loaded
-    jrtc_logger(JRTC_DEBUG, "Checking if app %s is already loaded\n", load_req.app_name);
-    if (_is_app_loaded(load_req)) {
+    jrtc_logger(JRTC_DEBUG, "Checking if app1 %s is already loaded\n", load_req.app_name);
+    if (_is_app_loaded(&load_req)) {
         jrtc_logger(
             JRTC_WARN,
             "App %s: %s is already loaded\n",
@@ -430,7 +448,7 @@ load_default_north_io_app()
         return -1;
     }
 
-    load_app_request_t load_req_north_io;
+    load_app_request_t load_req_north_io = {0};
     load_req_north_io.app = north_io_data;
     load_req_north_io.app_size = north_io_size;
     load_req_north_io.ioq_size = 1000;
