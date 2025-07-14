@@ -308,7 +308,7 @@ load_app(load_app_request_t load_req)
     }
 
     // check if the app is already loaded
-    jrtc_logger(JRTC_DEBUG, "Checking if app1 %s is already loaded\n", load_req.app_name);
+    jrtc_logger(JRTC_DEBUG, "Checking if app %s is already loaded\n", load_req.app_name);
     if (_is_app_loaded(&load_req)) {
         jrtc_logger(
             JRTC_WARN,
