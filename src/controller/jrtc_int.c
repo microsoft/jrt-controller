@@ -252,6 +252,12 @@ _is_app_loaded(load_app_request_t load_req)
             if (app_envs[i] != NULL && app_envs[i]->params[0].key != NULL &&
                 strcmp(app_envs[i]->params[0].key, load_req.params[0].key) == 0 && app_envs[i]->params[0].val != NULL &&
                 strcmp(app_envs[i]->params[0].val, load_req.params[0].val) == 0) {
+                jrtc_logger(
+                    JRTC_INFO,
+                    "Python App %s with params %s:%s is already loaded\n",
+                    load_req.app_name,
+                    load_req.params[0].key,
+                    load_req.params[0].val);
                 return true;
             }
         }
@@ -260,6 +266,11 @@ _is_app_loaded(load_app_request_t load_req)
         for (int i = 0; i < MAX_NUM_JRTC_APPS; i++) {
             if ((app_envs[i] != NULL) && (app_envs[i]->app_path != NULL) &&
                 (strcmp(app_envs[i]->app_path, load_req.app_path) == 0)) {
+                jrtc_logger(
+                    JRTC_INFO,
+                    "App %s with app_path %s is already loaded\n",
+                    load_req.app_name,
+                    load_req.app_path ? load_req.app_path : "(app_path is null)");
                 return true;
             }
         }
