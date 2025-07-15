@@ -11,6 +11,7 @@ if JRTC_APP_PATH is None:
     raise ValueError("JRTC_APP_PATH not set")
 sys.path.append(f"{JRTC_APP_PATH}")
 
+from jrtc_wrapper_utils import get_ctx_from_capsule
 import jrtc_app
 from jrtc_app import *
 
@@ -76,6 +77,28 @@ def app_handler(
 # Main function to start the app (converted from jrtc_start_app)
 def jrtc_start_app(capsule):
     print("Starting FirstExample app...", flush=True)
+    env_ctx = get_ctx_from_capsule(capsule)
+    if not env_ctx:
+        raise ValueError("Failed to retrieve JrtcAppEnv from capsule")
+
+    ## Extract necessary fields from env_ctx and make assertions
+    app_name = env_ctx.app_name.decode("utf-8")
+    io_queue_size = env_ctx.io_queue_size
+    app_path = env_ctx.app_path.decode("utf-8")
+    app_modules = env_ctx.app_modules
+    app_params = env_ctx.params
+    device_mapping = env_ctx.device_mapping
+
+    ## assertion
+    assert app_name == "app1", f"Unexpected app name: {app_name}"
+    assert io_queue_size == 1000, f"Unexpected IO queue size: {io_queue_size}"
+    assert app_path.split("/")[-1] == "libjrtc_pythonapp_loader.so", f"Unexpected app path: {app_path}"
+    assert app_modules[0].decode("utf-8").split('/')[-1] == "generated_data.py", f"Unexpected first module: {app_modules[0]}"
+    assert app_modules[1].decode("utf-8").split('/')[-1] == "simple_input.py", f"Unexpected second module: {app_modules[1]}"
+    assert app_params[0].key.decode("utf-8") == "python", f"Unexpected app parameter key: {app_params[0].key}"
+    assert app_params[0].value.decode("utf-8").split('/')[-1] == "first_example.py", f"Unexpected app parameter value: {app_params[0].value}"
+    assert device_mapping[0].key.decode("utf-8") == "1", f"Unexpected device mapping key: {device_mapping[0].key}"
+    assert device_mapping[0].value.decode("utf-8") == "127.0.0.1:8080", f"Unexpected device mapping value: {device_mapping[0].value}"
     
     streams = [
         # GENERATOR_OUT_STREAM_IDX

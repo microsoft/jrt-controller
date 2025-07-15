@@ -30,7 +30,8 @@ typedef struct load_app_request
     uint32_t ioq_size;
     char* app_path;
     char* app_type;
-    app_param_key_value_pair_t params[MAX_APP_PARAMS];
+    key_value_pair_t params[MAX_APP_PARAMS];
+    key_value_pair_t device_mapping[MAX_DEVICE_MAPPING];
     char* app_modules[MAX_APP_MODULES];
 } load_app_request_t;
 
