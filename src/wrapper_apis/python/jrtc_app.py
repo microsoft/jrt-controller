@@ -346,12 +346,6 @@ def jrtc_app_router_channel_send_output_msg(
         return -1
     return jrtc_router_channel_send_output_msg(chan_ctx, data, data_len)
 
-def jrtc_app_router_stream_id_get_device_id(app: JrtcApp, stream_idx: int) -> Optional[int]:
-    stream = app.get_stream(stream_idx)
-    if not stream:
-        return
-    return jrtc_router_stream_id_get_device_id(stream)
-
 __all__ = [
     "JRTC_ROUTER_REQ_DEST_ANY",
     "JRTC_ROUTER_REQ_DEVICE_ID_ANY",
@@ -369,5 +363,4 @@ __all__ = [
     "jrtc_app_destroy",
     "jrtc_app_router_channel_send_input_msg",
     "jrtc_app_router_channel_send_output_msg",
-    "jrtc_app_router_stream_id_get_device_id",
 ]
