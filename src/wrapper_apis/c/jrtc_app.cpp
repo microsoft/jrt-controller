@@ -5,6 +5,7 @@
 #include <thread>
 #include <cassert>
 #include <iostream>
+#include <memory>
 #include "jrtc_app.hpp"
 
 // ###########################################################
@@ -91,7 +92,7 @@ JrtcApp::Init()
 
         // Create channel if needed
         if (s.appChannel) {
-            si.chan_ctx = jrtc_router_channel_create(
+            dapp_channel_ctx* raw_ctx = jrtc_router_channel_create(
                 env_ctx->dapp_ctx,
                 s.appChannel->is_output,
                 s.appChannel->num_elems,
@@ -99,10 +100,11 @@ JrtcApp::Init()
                 si.sid,
                 0,
                 0);
-            if (si.chan_ctx == NULL) {
+            if (raw_ctx == NULL) {
                 std::cout << app_cfg->context << "::  Failure generating channel context for " << s.sid << std::endl;
                 return -1;
             }
+            si.chan_ctx.reset(raw_ctx);
         }
 
         // Register stream if it is for reception
@@ -115,7 +117,7 @@ JrtcApp::Init()
             si.registered = true;
         }
 
-        stream_items.push_back(si);
+        stream_items.push_back(std::move(si));
 
         // Check if the initialisation timeout has been exceeded
         if (app_cfg->initialization_timeout_secs > 0) {
@@ -167,9 +169,6 @@ JrtcApp::CleanUp()
     for (auto& si : stream_items) {
         if (si.registered) {
             jrtc_router_channel_deregister_stream_id_req(env_ctx->dapp_ctx, si.sid);
-        }
-        if (si.chan_ctx) {
-            jrtc_router_channel_destroy(si.chan_ctx);
         }
     }
 }
@@ -237,7 +236,7 @@ JrtcApp::get_stream(int stream_idx)
 dapp_channel_ctx_t
 JrtcApp::get_chan_ctx(int stream_idx)
 {
-    return (static_cast<size_t>(stream_idx) < stream_items.size()) ? stream_items[stream_idx].chan_ctx : nullptr;
+    return (static_cast<size_t>(stream_idx) < stream_items.size()) ? stream_items[stream_idx].chan_ctx.get() : nullptr;
 }
 
 // ###########################################################

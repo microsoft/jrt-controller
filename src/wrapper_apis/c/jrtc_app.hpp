@@ -10,6 +10,7 @@
 #include <optional>
 #include <functional>
 #include <any>
+#include <memory>
 
 #include "jrtc_app.h"
 
@@ -22,7 +23,14 @@ class JrtcApp
     {
         jrtc_router_stream_id_t sid; // Stream ID
         bool registered;             // Registration status of the stream
-        dapp_channel_ctx_t chan_ctx; // Channel context associated with the stream
+        std::unique_ptr<dapp_channel_ctx, decltype(&jrtc_router_channel_destroy)>
+            chan_ctx; // Channel context associated with the stream
+
+        StreamItem() : sid(), registered(false), chan_ctx(nullptr, jrtc_router_channel_destroy) {}
+        StreamItem(jrtc_router_stream_id_t s, bool r, dapp_channel_ctx* c)
+            : sid(s), registered(r), chan_ctx(c, jrtc_router_channel_destroy)
+        {
+        }
     };
 
     // Constructor initializing the JrtcApp instance
